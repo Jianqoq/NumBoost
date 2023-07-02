@@ -28,8 +28,6 @@ int isEmpty(Stack *stack)
 // Function to add an item to stack.  It increases top by 1
 PyObject *push(Stack *stack, Tuple item)
 {
-    // printf("%d max: %d\n", stack->len, stack->max_len);
-
     if (isFull(stack))
     {
         PyErr_SetString(PyExc_RuntimeError, "Stack overflowed");

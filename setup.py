@@ -12,7 +12,7 @@ mymodule = Extension('tensor',
 class build_ext(_build_ext):
     def get_ext_fullpath(self, ext_name):
         filename = _build_ext.get_ext_filename(self, ext_name)
-        return os.path.join('../doc_file', filename)
+        return os.path.join('C:/Users/123/PycharmProjects/Auto-Differentiation/doc_file', filename)
 
 setup(name='tensor',
       cmdclass={'build_ext': build_ext},
