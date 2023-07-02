@@ -267,7 +267,9 @@ _Generic_backward(PyObject *self, PyObject *args)
         if (grad_fn_name == NULL)
         {
             continue;
-        } else if (grad_fn_name == PyUnicode_FromString("")) {
+        } 
+        else if (grad_fn_name == PyUnicode_FromString("")) 
+        {
             PyObject *g = PyObject_GetAttrString(tuple.node, "grad");
             if (Py_IsNone(g))
             {
@@ -290,6 +292,8 @@ _Generic_backward(PyObject *self, PyObject *args)
         get_method(grad_fn)((Tensor *)tuple.node, tuple.ndarray, &current_grad1, &current_grad2);
         PyObject *x = PyObject_GetAttrString(tuple.node, "x");
         PyObject *y = PyObject_GetAttrString(tuple.node, "y");
+        PyObject_Print(x, stdout, 0);
+        PyObject_Print(y, stdout, 0);
         if (tuple.node != x)
         {
             grad_fn = PyUnicode_AsUTF8(PyObject_GetAttrString(x, "grad_fn"));
@@ -340,7 +344,7 @@ void init_map()
     add_entry("MulBackward", mul_backward_fn);
     add_entry("SubBackward", sub_backward_fn);
     add_entry("DivBackward", div_backward_fn);
-    add_entry("MatmulBackward", matmul_backward_fn);
+    add_entry("MatMulBackward", matmul_backward_fn);
 }
 
 PyMODINIT_FUNC
