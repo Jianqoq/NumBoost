@@ -1,3 +1,5 @@
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #include "tensor.h"
 
 Tensor *
@@ -824,5 +826,128 @@ PyObject *tensor_and(Tensor *self, PyObject *other){
         return (PyObject *)new_tensor;
     }
 }
+
+PyObject *tensor_xor(Tensor *self, PyObject *other){
+    Tensor *tmp;
+    if (Py_TYPE(other) == &Tensor_type)
+    {
+        tmp = (Tensor *)other;
+        PyObject *numpy_result = PyNumber_Xor(self->data, tmp->data);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor *new_tensor = new_Tensor(
+            &Tensor_type, self, tmp, numpy_result, self->data,
+            tmp->data, self->has_conv, self->vars, self->require_grad,
+            "XorBackward", self->graph, self->axis, self->dim,
+            self->base);
+        return (PyObject *)new_tensor;
+    }
+    else
+    {
+        PyObject *numpy_result = PyNumber_Xor(self->data, other);
+
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor *new_tensor = new_Tensor_scalar(
+            &Tensor_type, self, numpy_result, other,
+            self->has_conv, self->vars, self->require_grad, "XorBackward",
+            self->graph, self->axis, self->dim, self->base);
+        return (PyObject *)new_tensor;
+    }
+}
+
+PyObject *tensor_or(Tensor *self, PyObject *other){
+    Tensor *tmp;
+    if (Py_TYPE(other) == &Tensor_type)
+    {
+        tmp = (Tensor *)other;
+        PyObject *numpy_result = PyNumber_Or(self->data, tmp->data);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor *new_tensor = new_Tensor(
+            &Tensor_type, self, tmp, numpy_result, self->data,
+            tmp->data, self->has_conv, self->vars, self->require_grad,
+            "OrBackward", self->graph, self->axis, self->dim,
+            self->base);
+        return (PyObject *)new_tensor;
+    }
+    else
+    {
+        PyObject *numpy_result = PyNumber_Or(self->data, other);
+
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor *new_tensor = new_Tensor_scalar(
+            &Tensor_type, self, numpy_result, other,
+            self->has_conv, self->vars, self->require_grad, "OrBackward",
+            self->graph, self->axis, self->dim, self->base);
+        return (PyObject *)new_tensor;
+    }
+}
+
+PyObject *tensor_bool(Tensor *self){
+    PyObject *numpy_result = Py_IsTrue(self->data);
+
+    if (numpy_result == NULL)
+    {
+        PyErr_Print();
+        PyErr_Clear();
+        return NULL;
+    }
+    Tensor *new_tensor = new_Tensor_scalar(
+        &Tensor_type, self, numpy_result, NULL,
+        self->has_conv, self->vars, self->require_grad, "BoolBackward",
+        self->graph, self->axis, self->dim, self->base);
+    return (PyObject *)new_tensor;
+}
+
+PyObject *tensor_int(Tensor *self){
+    if (PyArray_SIZE((PyArrayObject*)self->data) > 1) {
+        PyErr_SetString(PyExc_TypeError, "only size-1 arrays can be converted to Python scalars");
+        return NULL;
+    }
+    PyObject *numpy_result = PyArray_Cast((PyArrayObject*)self->data, NPY_INT64);
+    long long *data = (long long *)PyArray_DATA((PyArrayObject*)numpy_result);
+    if (numpy_result == NULL || data == NULL)
+    {
+        PyErr_Print();
+        PyErr_Clear();
+        return NULL;
+    }
+    return PyLong_FromLongLong(data[0]);
+}
+
+PyObject *tensor_float(Tensor *self){
+    if (PyArray_SIZE((PyArrayObject*)self->data) > 1) {
+        PyErr_SetString(PyExc_TypeError, "only size-1 arrays can be converted to Python scalars");
+        return NULL;
+    }
+    PyObject *numpy_result = PyArray_Cast((PyArrayObject*)self->data, NPY_FLOAT64);
+    double *data = (double *)PyArray_DATA((PyArrayObject*)numpy_result);
+    if (numpy_result == NULL || data == NULL)
+    {
+        PyErr_Print();
+        PyErr_Clear();
+        return NULL;
+    }
+    return PyFloat_FromDouble(data[0]);
+}
+
 
 

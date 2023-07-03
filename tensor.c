@@ -182,7 +182,7 @@ _Generic_backward(PyObject *self, PyObject *args)
         return NULL;
     }
     grad_fn = PyUnicode_AsUTF8(PyObject_GetAttrString(self, "grad_fn"));
-    uint64_t depth = PyLong_AsUnsignedLongLong(PyObject_GetAttrString(self, "depth"));
+    unsigned long depth = PyLong_AsUnsignedLong(PyObject_GetAttrString(self, "depth"));
     Stack *stack = createStack(depth);
     Tuple tuple = {self, grad};
     push(stack, tuple);
@@ -312,5 +312,9 @@ PyInit_tensor(void)
     tensor_operator_methods.nb_lshift = (binaryfunc)tensor_lshift;
     tensor_operator_methods.nb_rshift = (binaryfunc)tensor_rshift;
     tensor_operator_methods.nb_and = (binaryfunc)tensor_and;
+    tensor_operator_methods.nb_xor = (binaryfunc)tensor_xor;
+    tensor_operator_methods.nb_or = (binaryfunc)tensor_or;
+    tensor_operator_methods.nb_float = (unaryfunc)tensor_float;
+    tensor_operator_methods.nb_int = (unaryfunc)tensor_int;
     return m;
 }

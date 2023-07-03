@@ -13,6 +13,7 @@ def test_C_Tensor_addition(array, require_grad):
     o = array + array
     assert np.allclose(o, l.data), f"Addition test failed. correct: {o} | got: {l.data}"
 
+
 @pytest.mark.parametrize("array, require_grad", [(np.array([1, 2, 3]), True)])
 def test_C_Tensor_subtraction(array, require_grad):
     p = Tensor(array, require_grad)
@@ -105,5 +106,37 @@ def test_C_Tensor_and(array, require_grad):
     l = p and p
     o = array and array
     assert np.allclose(o, l.data), f"Addition test failed. correct: {o} | got: {l.data}"
+
+
+@pytest.mark.parametrize("array, require_grad", [(np.array([-1]), True), (np.array([1]), True)])  # test not perfect
+def test_C_Tensor_xor(array, require_grad):
+    p = Tensor(array, require_grad)
+    l = p ^ p
+    o = array ^ array
+    assert np.allclose(o, l.data), f"Addition test failed. correct: {o} | got: {l.data}"
+
+
+@pytest.mark.parametrize("array, require_grad", [(np.array([-1]), True), (np.array([1]), True)])  # test not perfect
+def test_C_Tensor_or(array, require_grad):
+    p = Tensor(array, require_grad)
+    l = p or p
+    o = array or array
+    assert np.allclose(o, l.data), f"Addition test failed. correct: {o} | got: {l.data}"
+
+
+@pytest.mark.parametrize("array, require_grad", [(np.array([-1]), True), (np.array([1]), True)])  # test not perfect
+def test_C_Tensor_float(array, require_grad):
+    p = Tensor(array, require_grad)
+    l = float(p)
+    o = float(array)
+    assert np.allclose(o, l), f"Addition test failed. correct: {o} | got: {l}"
+
+
+@pytest.mark.parametrize("array, require_grad", [(np.array([-1.]), True), (np.array([1]), True)])  # test not perfect
+def test_C_Tensor_int(array, require_grad):
+    p = Tensor(array, require_grad)
+    l = int(p)
+    o = int(array)
+    assert np.allclose(o, l), f"Addition test failed. correct: {o} | got: {l}"
 
 

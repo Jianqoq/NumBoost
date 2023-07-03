@@ -73,6 +73,12 @@ PyObject *tensor_invert(Tensor *self);
 PyObject *tensor_lshift(Tensor *self, PyObject *other);
 PyObject *tensor_rshift(Tensor *self, PyObject *other);
 PyObject *tensor_and(Tensor *self, PyObject *other);
+PyObject *tensor_xor(Tensor *self, PyObject *other);
+PyObject *tensor_or(Tensor *self, PyObject *other);
+PyObject *tensor_bool(Tensor *self);
+PyObject *tensor_int(Tensor *self);
+PyObject *tensor_float(Tensor *self);
+
 void INCREF_TENSOR(Tensor *self);
 typedef struct
 {

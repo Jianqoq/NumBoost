@@ -34,7 +34,6 @@ PyObject *push(Stack *stack, Tuple item)
                 PyErr_Print();
         PyErr_Clear();
         Py_Finalize();
-        printf("Stack overflowed\n");
         return NULL;
     }
     stack->len++;
