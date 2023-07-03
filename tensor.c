@@ -16,7 +16,6 @@ void INCREF_TENSOR(Tensor *self)
     Py_INCREF(self->y);
     Py_INCREF(self->graph);
     Py_INCREF(self->axis);
-    Py_INCREF(self->stride);
     Py_INCREF(self->base);
 }
 
@@ -25,11 +24,6 @@ void add_entry(const char *key, void(__cdecl *method)(Tensor *, PyObject *, PyOb
     Dict *entry = (Dict *)malloc(sizeof(Dict));
     entry->key = key;
     entry->method = method;
-    // char address_string[64];
-    // sprintf(address_string, "%p", (void*)method);
-    // char *address = (char*)malloc(128 * sizeof(char));
-    // sprintf(address, "<%s %s>", key, address_string);
-    // entry->address = address;
     HASH_ADD_STR(dict, key, entry);
 }
 
@@ -72,77 +66,18 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Tensor *self = (Tensor *)PyObject_GC_New(Tensor, type);
     if (self != NULL)
     {
-        self->data = Py_None;
-        Py_INCREF(self->data);
-        if (self->data == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->x = Py_None;
-        Py_INCREF(self->x);
-        if (self->x == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->y = Py_None;
-        Py_INCREF(self->y);
-        if (self->y == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->has_conv = 0;
-        self->vars = 1;
-        self->require_grad = false;
-        self->grad_fn = "";
-        self->grad = Py_None;
-        if (self->grad == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->shape = Py_None;
-        if (self->shape == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
-        if (self->grad_fn == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->graph = Py_None;
-        Py_INCREF(self->data);
-        if (self->graph == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->axis = Py_None;
-        Py_INCREF(self->axis);
-        if (self->axis == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->dim = 1;
-        self->stride = Py_None;
-        Py_INCREF(self->stride);
-        if (self->stride == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->base = Py_None;
-        Py_INCREF(self->base);
-        if (self->base == NULL)
-        {
-            Py_DECREF(self);
-            return NULL;
-        }
+        Tensor_SetData_without_init_value(self, Py_None);
+        Tensor_SetX_without_init_value(self, Py_None);
+        Tensor_SetY_without_init_value(self, Py_None);
+        Tensor_SetHasConv(self, 0);
+        Tensor_SetVars(self, 1);
+        Tensor_SetRequireGrad(self, false);
+        Tensor_SetGradFn(self, "");
+        Tensor_SetGrad_without_init_value(self, Py_None);
+        Tensor_SetGraph_without_init_value(self, Py_None);
+        Tensor_SetAxis_without_init_value(self, Py_None);
+        Tensor_SetBase_without_init_value(self, Py_None);
+        Tensor_SetDim(self, 1);
     }
     return (PyObject *)self;
 }
@@ -151,7 +86,7 @@ static int
 __init__(Tensor *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"data", "requires_grad", NULL};
-    PyObject *data = NULL, *tmp = NULL, *cache = NULL;
+    PyObject *data = NULL, *cache = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(
             args, kwds, "O|p", kwlist, &data, &self->require_grad))
@@ -159,15 +94,8 @@ __init__(Tensor *self, PyObject *args, PyObject *kwds)
 
     if (data)
     {
-        tmp = self->data;
         cache = PyArray_FromAny(data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
-        Py_INCREF(cache);
-        self->data = cache;
-        Py_DECREF(tmp);
-        PyObject *shape = PyObject_GetAttrString(self->data, "shape");
-        Py_DECREF(self->shape);
-        self->shape = cache;
-        Py_INCREF(self->shape);
+        Tensor_SetData(self, cache);
     }
 
     PyObject_GC_Track(self);
@@ -183,8 +111,8 @@ Tensor_dealloc(Tensor *self)
     Py_CLEAR(self->y);
     Py_CLEAR(self->axis);
     Py_CLEAR(self->graph);
-    Py_CLEAR(self->stride);
     Py_CLEAR(self->base);
+    Py_CLEAR(self->grad);
     PyObject_GC_Del(self);
 }
 
@@ -197,8 +125,8 @@ Tensor_clear(Tensor *self)
     Py_CLEAR(self->y);
     Py_CLEAR(self->axis);
     Py_CLEAR(self->graph);
-    Py_CLEAR(self->stride);
     Py_CLEAR(self->base);
+    Py_CLEAR(self->grad);
     PyObject_GC_Track(self);
     return 0;
 }
@@ -211,8 +139,8 @@ Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     Py_VISIT(self->y);
     Py_VISIT(self->axis);
     Py_VISIT(self->graph);
-    Py_VISIT(self->stride);
     Py_VISIT(self->base);
+    Py_VISIT(self->grad);
     return 0;
 }
 
@@ -234,11 +162,9 @@ static PyMemberDef
         {"graph", T_OBJECT, offsetof(Tensor, graph), 0, "graph"},
         {"axis", T_OBJECT, offsetof(Tensor, axis), 0, "axis"},
         {"dim", T_INT, offsetof(Tensor, dim), 0, "dim"},
-        {"stride", T_OBJECT, offsetof(Tensor, stride), 0, "stride"},
         {"base", T_OBJECT, offsetof(Tensor, base), 0, "base"},
         {"grad", T_OBJECT, offsetof(Tensor, grad), 0, "grad"},
-        {"shape", T_OBJECT, offsetof(Tensor, shape), 0, "shape"},
-        {NULL} /* Sentinel */
+        {NULL}
 };
 
 static PyNumberMethods
@@ -292,8 +218,6 @@ _Generic_backward(PyObject *self, PyObject *args)
         get_method(grad_fn)((Tensor *)tuple.node, tuple.ndarray, &current_grad1, &current_grad2);
         PyObject *x = PyObject_GetAttrString(tuple.node, "x");
         PyObject *y = PyObject_GetAttrString(tuple.node, "y");
-        PyObject_Print(x, stdout, 0);
-        PyObject_Print(y, stdout, 0);
         if (tuple.node != x)
         {
             grad_fn = PyUnicode_AsUTF8(PyObject_GetAttrString(x, "grad_fn"));
@@ -326,8 +250,7 @@ PyTypeObject
         .tp_doc = "Tensor objects",
         .tp_basicsize = sizeof(Tensor),
         .tp_itemsize = 0,
-        .tp_flags =
-            Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+        .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
         .tp_new = __new__,
         .tp_init = (initproc)__init__,
         .tp_members = properties,
@@ -381,5 +304,11 @@ PyInit_tensor(void)
     tensor_operator_methods.nb_matrix_multiply = (binaryfunc)tensor_matmul;
     tensor_operator_methods.nb_inplace_matrix_multiply =
         (binaryfunc)tensor_imatmul;
+    tensor_operator_methods.nb_absolute = (unaryfunc)tensor_absolute;
+    tensor_operator_methods.nb_positive = (unaryfunc)tensor_positive;
+    tensor_operator_methods.nb_invert = (unaryfunc)tensor_invert;
+    tensor_operator_methods.nb_lshift = (binaryfunc)tensor_lshift;
+    tensor_operator_methods.nb_rshift = (binaryfunc)tensor_rshift;
+    tensor_operator_methods.nb_and = (binaryfunc)tensor_and;
     return m;
 }

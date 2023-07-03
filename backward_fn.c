@@ -91,8 +91,8 @@ void matmul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject 
     if (0 < nd < 2)
     {
         nd = 1;
-        transposed1 = tmp2;
-        transposed2 = tmp4;
+        transposed1 = (PyObject *)tmp2;
+        transposed2 = (PyObject *)tmp4;
     }
     else if (nd >= 2)
     {

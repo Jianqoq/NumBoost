@@ -3,7 +3,7 @@
 #include "tensor.h"
 
 // Function to create a stack of given capacity.
-Stack *createStack(uint64_t capacity)
+Stack *createStack(unsigned long capacity)
 {
     Stack *stack = (Stack *)malloc(sizeof(Stack));
     stack->len = 0;

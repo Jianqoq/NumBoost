@@ -11,9 +11,9 @@
 typedef struct
 {
     PyObject_HEAD
-    PyObject *data; /* numpy array */
-    PyObject *x;        /* numpy array */
-    PyObject *y;        /* numpy array */
+        PyObject *data; /* numpy array */
+    PyObject *x;        /* Tensor */
+    PyObject *y;        /* Tensor|scalar */
     int has_conv;
     unsigned long long vars;
     bool require_grad;
@@ -21,12 +21,31 @@ typedef struct
     PyObject *graph;
     PyObject *axis;
     PyObject *grad;
-    PyObject *shape;
     int dim;
-    PyObject *stride;
     PyObject *base;
 
 } Tensor;
+
+void Tensor_SetData(Tensor *self, PyObject *data);
+void Tensor_SetX(Tensor *self, PyObject *x);
+void Tensor_SetY(Tensor *self, PyObject *y);
+void Tensor_SetGrad(Tensor *self, PyObject *grad);
+void Tensor_SetGraph(Tensor *self, PyObject *graph);
+void Tensor_SetBase(Tensor *self, PyObject *base);
+void Tensor_SetGradFn(Tensor *self, const char *grad_fn);
+void Tensor_SetRequireGrad(Tensor *self, bool require_grad);
+void Tensor_SetVars(Tensor *self, unsigned long long vars);
+void Tensor_SetDim(Tensor *self, int dim);
+void Tensor_SetAxis(Tensor *self, PyObject *axis);
+void Tensor_SetHasConv(Tensor *self, int has_conv);
+void Tensor_SetData_without_init_value(Tensor *self, PyObject *data);
+void Tensor_SetX_without_init_value(Tensor *self, PyObject *x);
+void Tensor_SetY_without_init_value(Tensor *self, PyObject *y);
+void Tensor_SetGrad_without_init_value(Tensor *self, PyObject *grad);
+void Tensor_SetGraph_without_init_value(Tensor *self, PyObject *graph);
+void Tensor_SetBase_without_init_value(Tensor *self, PyObject *base);
+void Tensor_SetAxis_without_init_value(Tensor *self, PyObject *axis);
+
 void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
 void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
 void mul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
@@ -41,29 +60,35 @@ PyObject *tensor_imul(Tensor *self, PyObject *other);
 PyObject *tensor_div(Tensor *self, PyObject *other);
 PyObject *tensor_idiv(Tensor *self, PyObject *other);
 PyObject *tensor_negative(Tensor *self);
+PyObject *tensor_inegative(Tensor *self);
 PyObject *tensor_sub(Tensor *self, PyObject *other);
 PyObject *tensor_isub(Tensor *self, PyObject *other);
 PyObject *tensor_pow(Tensor *self, PyObject *other);
 PyObject *tensor_ipow(Tensor *self, PyObject *other);
 PyObject *tensor_matmul(Tensor *self, Tensor *other);
 PyObject *tensor_imatmul(Tensor *self, Tensor *other);
+PyObject *tensor_positive(Tensor *self);
+PyObject *tensor_absolute(Tensor *self);
+PyObject *tensor_invert(Tensor *self);
+PyObject *tensor_lshift(Tensor *self, PyObject *other);
+PyObject *tensor_rshift(Tensor *self, PyObject *other);
+PyObject *tensor_and(Tensor *self, PyObject *other);
 void INCREF_TENSOR(Tensor *self);
 typedef struct
 {
     const char *key;
-    void (__cdecl *method)(Tensor *, PyObject *, PyObject **, PyObject **);
-    // const char *address;
+    void(__cdecl *method)(Tensor *, PyObject *, PyObject **, PyObject **);
     UT_hash_handle hh;
 } Dict;
 
 void init_map();
 
-void (__cdecl *get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **);
+void(__cdecl *get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **);
 
 Dict *get_address(const char *key);
 
 typedef struct
-{   
+{
     PyObject *node;
     PyObject *ndarray;
 } Tuple;
@@ -78,7 +103,7 @@ typedef struct
 Stack *createStack(uint64_t capacity);
 int isFull(Stack *stack);
 int isEmpty(Stack *stack);
-PyObject* push(Stack *stack, Tuple item);
+PyObject *push(Stack *stack, Tuple item);
 Tuple pop(Stack *stack);
-PyObject * _Generic_backward(PyObject *self, PyObject *grad);
+PyObject *_Generic_backward(PyObject *self, PyObject *grad);
 #endif
