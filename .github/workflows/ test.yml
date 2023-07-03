@@ -21,7 +21,7 @@ jobs:
         run: python setup.py build_ext
 
       - name: Run tests
-        run: python -m unittest discover test/
+        run: pytest test/
 
       - name: Run benchmarks
         run: python test/benchmark/object_creation_benchmark.py
