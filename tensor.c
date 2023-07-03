@@ -304,8 +304,7 @@ PyInit_tensor(void)
     tensor_operator_methods.nb_power = (ternaryfunc)tensor_pow;
     tensor_operator_methods.nb_inplace_power = (ternaryfunc)tensor_ipow;
     tensor_operator_methods.nb_matrix_multiply = (binaryfunc)tensor_matmul;
-    tensor_operator_methods.nb_inplace_matrix_multiply =
-        (binaryfunc)tensor_imatmul;
+    tensor_operator_methods.nb_inplace_matrix_multiply = (binaryfunc)tensor_imatmul;
     tensor_operator_methods.nb_absolute = (unaryfunc)tensor_absolute;
     tensor_operator_methods.nb_positive = (unaryfunc)tensor_positive;
     tensor_operator_methods.nb_invert = (unaryfunc)tensor_invert;
@@ -316,5 +315,9 @@ PyInit_tensor(void)
     tensor_operator_methods.nb_or = (binaryfunc)tensor_or;
     tensor_operator_methods.nb_float = (unaryfunc)tensor_float;
     tensor_operator_methods.nb_int = (unaryfunc)tensor_int;
+    tensor_operator_methods.nb_remainder = (binaryfunc)tensor_remainder;
+    tensor_operator_methods.nb_inplace_or = (binaryfunc)tensor_ior;
+    tensor_operator_methods.nb_inplace_and = (binaryfunc)tensor_iand;
+    tensor_operator_methods.nb_inplace_xor = (binaryfunc)tensor_ixor;
     return m;
 }

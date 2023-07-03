@@ -11,7 +11,7 @@
 typedef struct
 {
     PyObject_HEAD
-        PyObject *data; /* numpy array */
+        PyObject *data; /* ndarray */
     PyObject *x;        /* Tensor */
     PyObject *y;        /* Tensor|scalar */
     int has_conv;
@@ -78,12 +78,16 @@ PyObject *tensor_or(Tensor *self, PyObject *other);
 PyObject *tensor_bool(Tensor *self);
 PyObject *tensor_int(Tensor *self);
 PyObject *tensor_float(Tensor *self);
+PyObject *tensor_remainder(Tensor *self, PyObject *other);
+PyObject *tensor_ior(Tensor *self, PyObject *other);
+PyObject *tensor_ixor(Tensor *self, PyObject *other);
+PyObject *tensor_iand(Tensor *self, PyObject *other);
 
 void INCREF_TENSOR(Tensor *self);
 typedef struct
 {
     const char *key;
-    void(*method)(Tensor *, PyObject *, PyObject **, PyObject **);
+    void (*method)(Tensor *, PyObject *, PyObject **, PyObject **);
     UT_hash_handle hh;
 } Dict;
 
