@@ -1,7 +1,8 @@
 import numpy as np
 import os
 import sys
-import pytest
+import timeit
+import statistics
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from tensor import Tensor
 
@@ -36,22 +37,32 @@ class MyTensor:
         return self
 
 
-def C_Tensor(array, require_grad):
-    Tensor(array, require_grad)
+def C_Tensor(arr):
+    Tensor(arr, True)
 
 
-def Python_Tensor(array, require_grad):
-    MyTensor(array, require_grad)
+def Python_Tensor(arr):
+    MyTensor(arr, True)
 
 
-@pytest.mark.benchmark
-def test_C_Tensor(benchmark):
-    array = np.array([[1, 2, 3], [4, 5, 6]])
-    benchmark(C_Tensor, array, True)
+array = np.array([1, 2, 3])
+stmt_code = """
+result = C_Tensor(array)
+"""
 
+stmt_code2 = """
+result = Python_Tensor(array)
+"""
 
-@pytest.mark.benchmark
-def test_Python_Tensor(benchmark):
-    array = np.array([[1, 2, 3], [4, 5, 6]])
-    benchmark(Python_Tensor, array, True)
+print("Creating Objects")
+time = [timeit.timeit(stmt_code, globals=globals(), number=1000000) for _ in range(10)]
+print(''.join(format(i, ".5f") + " s\t\t" for i in time), end="")
+print("stdev:", statistics.stdev(time))
+time2 = [timeit.timeit(stmt_code2, globals=globals(), number=1000000) for _ in range(10)]
+print(''.join(format(i, ".5f") + " s\t\t" for i in time2), end="")
+print("stdev:", statistics.stdev(time2))
+mean = statistics.mean(time)
+mean2 = statistics.mean(time2)
+print("\nDiff:", (mean2 - mean)/mean * 100, "%")
+
 
