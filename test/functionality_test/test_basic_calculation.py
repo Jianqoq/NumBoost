@@ -80,12 +80,12 @@ def test_C_Tensor_invert(array, require_grad):
 @pytest.mark.parametrize("array, require_grad", [(np.array([-1, -2, -3]), True), (np.array([1, 2, 3]), True)])
 def test_C_Tensor_lshift(array, require_grad):
     p = Tensor(array, require_grad)
-    l = p << 5
-    o = array << 5
-    assert np.allclose(o, l.data), f"Addition test failed. correct: {o} | got: {l.data}"
-    l = p << np.array([[1, 2, 3], [4, 5, 6]])
-    o = array << np.array([[1, 2, 3], [4, 5, 6]])
-    assert np.allclose(o, l.data), f"Addition test failed. correct: {o} | got: {l.data}"
+    result1 = p << 5
+    result2 = array << 5
+    assert np.allclose(result2, result1.data), f"Addition test failed. correct: {result2} | got: {result1.data}"
+    result1 = p << np.array([[1, 2, 3], [4, 5, 6]])
+    result2 = array << np.array([[1, 2, 3], [4, 5, 6]])
+    assert np.allclose(result2, result1.data), f"Addition test failed. correct: {result2} | got: {result1.data}"
 
 
 @pytest.mark.parametrize("array, require_grad", [(np.array([-1, -2, -3]), True), (np.array([1, 2, 3]), True)])
