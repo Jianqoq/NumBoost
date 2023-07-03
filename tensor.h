@@ -77,13 +77,13 @@ void INCREF_TENSOR(Tensor *self);
 typedef struct
 {
     const char *key;
-    void(__cdecl *method)(Tensor *, PyObject *, PyObject **, PyObject **);
+    void(__cdecl (*method))(Tensor *, PyObject *, PyObject **, PyObject **);
     UT_hash_handle hh;
 } Dict;
 
 void init_map();
 
-void(__cdecl *get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **);
+void(__cdecl (*get_method)(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **);
 
 Dict *get_address(const char *key);
 
@@ -100,7 +100,7 @@ typedef struct
     long long index;
     Tuple *array;
 } Stack;
-Stack *createStack(uint64_t capacity);
+Stack *createStack(unsigned long capacity);
 int isFull(Stack *stack);
 int isEmpty(Stack *stack);
 PyObject *push(Stack *stack, Tuple item);
