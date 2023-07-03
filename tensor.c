@@ -168,7 +168,44 @@ static PyMemberDef
         {NULL}};
 
 static PyNumberMethods
-    tensor_operator_methods = {NULL};
+    tensor_operator_methods = {
+    (binaryfunc)tensor_add,
+    (binaryfunc)tensor_sub,
+    (binaryfunc)tensor_mul,
+    (binaryfunc)tensor_remainder,
+    (binaryfunc)tensor_divmod,
+    (ternaryfunc)tensor_pow,
+    (unaryfunc)tensor_negative,
+    (unaryfunc)tensor_positive,
+    (unaryfunc)tensor_absolute,
+    0, // inquiry tensor_bool,
+    (unaryfunc)tensor_invert,
+    (binaryfunc)tensor_lshift,
+    (binaryfunc)tensor_rshift,
+    (binaryfunc)tensor_and,
+    (binaryfunc)tensor_xor,
+    (binaryfunc)tensor_or,
+    (unaryfunc)tensor_int,
+    0, // void *tensor_reserved;
+    (unaryfunc)tensor_float,
+    (binaryfunc)tensor_iadd,
+    (binaryfunc)tensor_isub,
+    (binaryfunc)tensor_imul,
+    (binaryfunc)tensor_iremainder,
+    (ternaryfunc)tensor_ipow,
+    (binaryfunc)tensor_ilshift,
+    (binaryfunc)tensor_irshift,
+    (binaryfunc)tensor_iand,
+    (binaryfunc)tensor_ixor,
+    (binaryfunc)tensor_ior,
+    (binaryfunc)tensor_floordiv,
+    (binaryfunc)tensor_div,
+    (binaryfunc)tensor_ifloordiv,
+    (binaryfunc)tensor_idiv,
+    0,
+    (binaryfunc)tensor_matmul,
+    (binaryfunc)tensor_imatmul
+    };
 
 PyObject *
 _Generic_backward(PyObject *self, PyObject *args)
@@ -292,32 +329,5 @@ PyInit_tensor(void)
         return NULL;
     };
     Py_AtExit(cleanup_function);
-    tensor_operator_methods.nb_add = (binaryfunc)tensor_add;
-    tensor_operator_methods.nb_inplace_add = (binaryfunc)tensor_iadd;
-    tensor_operator_methods.nb_multiply = (binaryfunc)tensor_mul;
-    tensor_operator_methods.nb_inplace_multiply = (binaryfunc)tensor_imul;
-    tensor_operator_methods.nb_true_divide = (binaryfunc)tensor_div;
-    tensor_operator_methods.nb_inplace_true_divide = (binaryfunc)tensor_idiv;
-    tensor_operator_methods.nb_negative = (unaryfunc)tensor_negative;
-    tensor_operator_methods.nb_subtract = (binaryfunc)tensor_sub;
-    tensor_operator_methods.nb_inplace_subtract = (binaryfunc)tensor_isub;
-    tensor_operator_methods.nb_power = (ternaryfunc)tensor_pow;
-    tensor_operator_methods.nb_inplace_power = (ternaryfunc)tensor_ipow;
-    tensor_operator_methods.nb_matrix_multiply = (binaryfunc)tensor_matmul;
-    tensor_operator_methods.nb_inplace_matrix_multiply = (binaryfunc)tensor_imatmul;
-    tensor_operator_methods.nb_absolute = (unaryfunc)tensor_absolute;
-    tensor_operator_methods.nb_positive = (unaryfunc)tensor_positive;
-    tensor_operator_methods.nb_invert = (unaryfunc)tensor_invert;
-    tensor_operator_methods.nb_lshift = (binaryfunc)tensor_lshift;
-    tensor_operator_methods.nb_rshift = (binaryfunc)tensor_rshift;
-    tensor_operator_methods.nb_and = (binaryfunc)tensor_and;
-    tensor_operator_methods.nb_xor = (binaryfunc)tensor_xor;
-    tensor_operator_methods.nb_or = (binaryfunc)tensor_or;
-    tensor_operator_methods.nb_float = (unaryfunc)tensor_float;
-    tensor_operator_methods.nb_int = (unaryfunc)tensor_int;
-    tensor_operator_methods.nb_remainder = (binaryfunc)tensor_remainder;
-    tensor_operator_methods.nb_inplace_or = (binaryfunc)tensor_ior;
-    tensor_operator_methods.nb_inplace_and = (binaryfunc)tensor_iand;
-    tensor_operator_methods.nb_inplace_xor = (binaryfunc)tensor_ixor;
     return m;
 }

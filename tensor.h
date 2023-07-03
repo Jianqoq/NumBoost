@@ -82,6 +82,12 @@ PyObject *tensor_remainder(Tensor *self, PyObject *other);
 PyObject *tensor_ior(Tensor *self, PyObject *other);
 PyObject *tensor_ixor(Tensor *self, PyObject *other);
 PyObject *tensor_iand(Tensor *self, PyObject *other);
+PyObject *tensor_ilshift(Tensor *self, PyObject *other);
+PyObject *tensor_irshift(Tensor *self, PyObject *other);
+PyObject *tensor_divmod(Tensor *self, PyObject *other);
+PyObject *tensor_iremainder(Tensor *self, PyObject *other);
+PyObject *tensor_floordiv(Tensor *self, PyObject *other);
+PyObject *tensor_ifloordiv(Tensor *self, PyObject *other);
 
 void INCREF_TENSOR(Tensor *self);
 typedef struct

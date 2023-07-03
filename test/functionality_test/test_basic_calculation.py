@@ -174,3 +174,46 @@ def test_C_Tensor_iand(array, require_grad):
     array2 &= array2
     assert np.allclose(array2, p.data), f"correct: {array2} | got: {p.data}"
 
+
+@pytest.mark.parametrize("array, require_grad", [(np.array([-1, 2, 3]), True), (np.array([-1, 2, 3]), True)])
+def test_C_Tensor_ilshift(array, require_grad):
+    p = Tensor(array, require_grad)
+    array2 = array.copy()
+    p <<= p
+    array2 <<= array2
+    assert np.allclose(array2, p.data), f"correct: {array2} | got: {p.data}"
+
+
+@pytest.mark.parametrize("array, require_grad", [(np.array([-1, 2, 3]), True), (np.array([-1, 2, 3]), True)])
+def test_C_Tensor_divmod(array, require_grad):
+    p = Tensor(array, require_grad)
+    l = divmod(p, 3)
+    o = divmod(array, 3)
+    assert np.allclose(o, l.data), f"correct: {o} | got: {l.data}"
+
+
+@pytest.mark.parametrize("array, require_grad", [(np.array([-1, 2, 3]), True), (np.array([-1, 2, 3]), True)])
+def test_C_Tensor_iremainder(array, require_grad):
+    p = Tensor(array, require_grad)
+    array2 = array.copy()
+    p %= p
+    array2 %= array2
+    assert np.allclose(array2, p.data), f"correct: {array2} | got: {p.data}"
+
+
+@pytest.mark.parametrize("array, require_grad", [(np.array([-1, 2, 3]), True), (np.array([-1, 2, 3]), True)])
+def test_C_Tensor_floordiv(array, require_grad):
+    p = Tensor(array, require_grad)
+    l = p // p
+    o = array // array
+    assert np.allclose(o, l.data), f"correct: {o} | got: {l.data}"
+
+
+@pytest.mark.parametrize("array, require_grad", [(np.array([-1, 2, 3]), True), (np.array([-1, 2, 3]), True)])
+def test_C_Tensor_ifloordiv(array, require_grad):
+    p = Tensor(array, require_grad)
+    array2 = array.copy()
+    p //= p
+    array2 //= array2
+    assert np.allclose(array2, p.data), f"correct: {array2} | got: {p.data}"
+

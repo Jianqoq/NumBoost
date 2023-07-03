@@ -186,7 +186,7 @@ tensor_iadd(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, (PyObject*)tmp);
+        Tensor_SetY(self, (PyObject *)tmp);
     }
     else
     {
@@ -262,7 +262,7 @@ tensor_imul(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, (PyObject*)tmp);
+        Tensor_SetY(self, (PyObject *)tmp);
     }
     else
     {
@@ -338,7 +338,7 @@ tensor_idiv(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, (PyObject*)tmp);
+        Tensor_SetY(self, (PyObject *)tmp);
     }
     else
     {
@@ -400,7 +400,7 @@ tensor_negative(Tensor *self)
     if (self->require_grad)
     {
         self->grad_fn = "NegativeBackward";
-        Tensor_SetX(self, (PyObject*)self);
+        Tensor_SetX(self, (PyObject *)self);
         Tensor_SetY(self, negative_1);
     }
     Tensor_SetData(self, numpy_result);
@@ -608,7 +608,7 @@ tensor_imatmul(Tensor *self, Tensor *other)
     }
     if (self->require_grad)
     {
-        Tensor_SetX(self, (PyObject*)other);
+        Tensor_SetX(self, (PyObject *)other);
         self->grad_fn = "InplaceMatMulBackward";
     }
     Tensor_SetData(self, numpy_result);
@@ -695,7 +695,48 @@ tensor_lshift(Tensor *self, PyObject *other)
     }
 }
 
-PyObject *tensor_rshift(Tensor *self, PyObject *other)
+PyObject *
+tensor_ilshift(Tensor *self, PyObject *other)
+{
+    if (Py_TYPE(other) == &Tensor_type)
+    {
+        Tensor *tmp = (Tensor *)other;
+        PyObject *numpy_result = PyNumber_InPlaceLshift(self->data, tmp->data);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        if (self->require_grad)
+        {
+            Tensor_SetX(self, (PyObject *)tmp);
+            self->grad_fn = "InplaceLshiftBackward";
+        }
+        Tensor_SetData(self, numpy_result);
+        return (PyObject *)self;
+    }
+    else
+    {
+        PyObject *numpy_result = PyNumber_InPlaceLshift(self->data, other);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        if (self->require_grad)
+        {
+            Tensor_SetX(self, other);
+            self->grad_fn = "InplaceLshiftBackward";
+        }
+        Tensor_SetData(self, numpy_result);
+        return (PyObject *)self;
+    }
+}
+
+PyObject *
+tensor_rshift(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     if (Py_TYPE(other) == &Tensor_type)
@@ -733,7 +774,48 @@ PyObject *tensor_rshift(Tensor *self, PyObject *other)
     }
 }
 
-PyObject *tensor_and(Tensor *self, PyObject *other)
+PyObject *
+tensor_irshift(Tensor *self, PyObject *other)
+{
+    if (Py_TYPE(other) == &Tensor_type)
+    {
+        Tensor *tmp = (Tensor *)other;
+        PyObject *numpy_result = PyNumber_InPlaceRshift(self->data, tmp->data);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        if (self->require_grad)
+        {
+            Tensor_SetX(self, (PyObject *)tmp);
+            self->grad_fn = "InplaceRshiftBackward";
+        }
+        Tensor_SetData(self, numpy_result);
+        return (PyObject *)self;
+    }
+    else
+    {
+        PyObject *numpy_result = PyNumber_InPlaceRshift(self->data, other);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        if (self->require_grad)
+        {
+            Tensor_SetX(self, other);
+            self->grad_fn = "InplaceRshiftBackward";
+        }
+        Tensor_SetData(self, numpy_result);
+        return (PyObject *)self;
+    }
+}
+
+PyObject *
+tensor_and(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     if (Py_TYPE(other) == &Tensor_type)
@@ -771,7 +853,8 @@ PyObject *tensor_and(Tensor *self, PyObject *other)
     }
 }
 
-PyObject *tensor_xor(Tensor *self, PyObject *other)
+PyObject *
+tensor_xor(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     if (Py_TYPE(other) == &Tensor_type)
@@ -809,7 +892,8 @@ PyObject *tensor_xor(Tensor *self, PyObject *other)
     }
 }
 
-PyObject *tensor_or(Tensor *self, PyObject *other)
+PyObject *
+tensor_or(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     if (Py_TYPE(other) == &Tensor_type)
@@ -847,7 +931,8 @@ PyObject *tensor_or(Tensor *self, PyObject *other)
     }
 }
 
-PyObject *tensor_int(Tensor *self)
+PyObject *
+tensor_int(Tensor *self)
 {
     if (PyArray_SIZE((PyArrayObject *)self->data) > 1)
     {
@@ -865,7 +950,8 @@ PyObject *tensor_int(Tensor *self)
     return PyLong_FromLongLong(data[0]);
 }
 
-PyObject *tensor_float(Tensor *self)
+PyObject *
+tensor_float(Tensor *self)
 {
     if (PyArray_SIZE((PyArrayObject *)self->data) > 1)
     {
@@ -1007,7 +1093,7 @@ tensor_ixor(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, (PyObject*)tmp);
+        Tensor_SetY(self, (PyObject *)tmp);
     }
     else
     {
@@ -1026,5 +1112,159 @@ tensor_ixor(Tensor *self, PyObject *other)
     }
     Tensor_SetX(self, self->data);
     Tensor_SetData(self, numpy_result);
+    return (PyObject *)self;
+}
+
+PyObject *
+tensor_divmod(Tensor *self, PyObject *other)
+{
+    Tensor *tmp;
+    if (Py_TYPE(other) == &Tensor_type)
+    {
+        tmp = (Tensor *)other;
+        PyObject *numpy_result = PyNumber_Divmod(self->data, tmp->data);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor *new_tensor = new_Tensor(
+            &Tensor_type, self, tmp, numpy_result, self->data,
+            tmp->data, self->has_conv, self->vars, self->require_grad,
+            "DivmodBackward", self->graph, self->axis, self->dim,
+            self->base);
+        return (PyObject *)new_tensor;
+    }
+    else
+    {
+        PyObject *numpy_result = PyNumber_Divmod(self->data, other);
+
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor *new_tensor = new_Tensor_scalar(
+            &Tensor_type, self, numpy_result, other,
+            self->has_conv, self->vars, self->require_grad, "DivmodBackward",
+            self->graph, self->axis, self->dim, self->base);
+        return (PyObject *)new_tensor;
+    }
+}
+
+PyObject *
+tensor_iremainder(Tensor *self, PyObject *other)
+{
+    Tensor *tmp;
+    PyObject *numpy_result;
+    if (Py_TYPE(other) == &Tensor_type)
+    {
+        tmp = (Tensor *)other;
+        numpy_result = PyNumber_InPlaceRemainder(self->data, tmp->data);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor_SetY(self, tmp);
+    }
+    else
+    {
+        numpy_result = PyNumber_InPlaceRemainder(self->data, other);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor_SetY(self, other);
+    }
+    if (self->require_grad)
+    {
+        self->grad_fn = "InplaceRemainderBackward";
+    }
+    Tensor_SetX(self, self->data);
+    // Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
+    return (PyObject *)self;
+}
+
+PyObject *
+tensor_floordiv(Tensor *self, PyObject *other)
+{
+    Tensor *tmp;
+    if (Py_TYPE(other) == &Tensor_type)
+    {
+        tmp = (Tensor *)other;
+        PyObject *numpy_result = PyNumber_FloorDivide(self->data, tmp->data);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor *new_tensor = new_Tensor(
+            &Tensor_type, self, tmp, numpy_result, self->data,
+            tmp->data, self->has_conv, self->vars, self->require_grad,
+            "FloorDivideBackward", self->graph, self->axis, self->dim,
+            self->base);
+        return (PyObject *)new_tensor;
+    }
+    else
+    {
+        PyObject *numpy_result = PyNumber_FloorDivide(self->data, other);
+
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor *new_tensor = new_Tensor_scalar(
+            &Tensor_type, self, numpy_result, other,
+            self->has_conv, self->vars, self->require_grad, "FloorDivideBackward",
+            self->graph, self->axis, self->dim, self->base);
+        return (PyObject *)new_tensor;
+    }
+}
+
+PyObject *
+tensor_ifloordiv(Tensor *self, PyObject *other)
+{
+    Tensor *tmp;
+    PyObject *numpy_result;
+    if (Py_TYPE(other) == &Tensor_type)
+    {
+        tmp = (Tensor *)other;
+        numpy_result = PyNumber_InPlaceFloorDivide(self->data, tmp->data);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor_SetY(self, tmp->data);
+    }
+    else
+    {
+        numpy_result = PyNumber_InPlaceFloorDivide(self->data, other);
+        if (numpy_result == NULL)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+            return NULL;
+        }
+        Tensor_SetY(self, other);
+    }
+    if (self->require_grad)
+    {
+        self->grad_fn = "InplaceFloorDivideBackward";
+    }
+    Tensor_SetX(self, self->data);
+    Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
