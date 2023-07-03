@@ -4,10 +4,7 @@ on: [push]
 
 jobs:
   build-linux:
-    runs-on: windows-latest-8-cores
-    strategy:
-      max-parallel: 5
-
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
