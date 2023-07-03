@@ -1,4 +1,5 @@
 #define PY_SSIZE_T_CLEAN
+#define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #include "tensor.h"
 
 static Dict *dict = NULL;
@@ -19,7 +20,7 @@ void INCREF_TENSOR(Tensor *self)
     Py_INCREF(self->base);
 }
 
-void add_entry(const char *key, void(__cdecl *method)(Tensor *, PyObject *, PyObject **, PyObject **))
+void add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
 {
     Dict *entry = (Dict *)malloc(sizeof(Dict));
     entry->key = key;
@@ -27,7 +28,7 @@ void add_entry(const char *key, void(__cdecl *method)(Tensor *, PyObject *, PyOb
     HASH_ADD_STR(dict, key, entry);
 }
 
-void(__cdecl *get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
+void (*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
 {
     Dict *entry;
     HASH_FIND_STR(dict, key, entry);
@@ -164,8 +165,7 @@ static PyMemberDef
         {"dim", T_INT, offsetof(Tensor, dim), 0, "dim"},
         {"base", T_OBJECT, offsetof(Tensor, base), 0, "base"},
         {"grad", T_OBJECT, offsetof(Tensor, grad), 0, "grad"},
-        {NULL}
-};
+        {NULL}};
 
 static PyNumberMethods
     tensor_operator_methods = {NULL};
@@ -193,8 +193,8 @@ _Generic_backward(PyObject *self, PyObject *args)
         if (grad_fn_name == NULL)
         {
             continue;
-        } 
-        else if (grad_fn_name == PyUnicode_FromString("")) 
+        }
+        else if (grad_fn_name == PyUnicode_FromString(""))
         {
             PyObject *g = PyObject_GetAttrString(tuple.node, "grad");
             if (Py_IsNone(g))
@@ -203,7 +203,9 @@ _Generic_backward(PyObject *self, PyObject *args)
                 Py_INCREF(tuple.ndarray);
                 PyObject_SetAttrString(tuple.node, "grad", tuple.ndarray);
                 continue;
-            } else {
+            }
+            else
+            {
                 PyObject *grad = PyObject_GetAttrString(tuple.node, "grad");
                 PyObject *new_grad = PyNumber_Add(grad, tuple.ndarray);
                 PyObject *tmp = PyObject_GetAttrString(tuple.node, "grad");

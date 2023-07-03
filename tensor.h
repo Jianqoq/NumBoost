@@ -7,7 +7,7 @@
 #include "uthash.h"
 #include <stdlib.h>
 #include <string.h>
-
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 typedef struct
 {
     PyObject_HEAD
@@ -51,7 +51,7 @@ void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
 void mul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
 void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
 void matmul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
-PyTypeObject Tensor_type;
+extern PyTypeObject Tensor_type;
 
 PyObject *tensor_add(Tensor *self, PyObject *other);
 PyObject *tensor_iadd(Tensor *self, PyObject *other);
@@ -77,13 +77,13 @@ void INCREF_TENSOR(Tensor *self);
 typedef struct
 {
     const char *key;
-    void(__cdecl (*method))(Tensor *, PyObject *, PyObject **, PyObject **);
+    void(*method)(Tensor *, PyObject *, PyObject **, PyObject **);
     UT_hash_handle hh;
 } Dict;
 
 void init_map();
 
-void(__cdecl (*get_method)(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **);
+void (*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **);
 
 Dict *get_address(const char *key);
 

@@ -1,8 +1,9 @@
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #include "tensor.h"
 
 void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
-    import_array();
     if (PyErr_Occurred())
     {
         PyErr_Print();
@@ -24,7 +25,6 @@ void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
 
 void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
-    import_array();
     PyObject *grad2 = PyNumber_Negative(grad);
     *out1 = self->data;
     Py_INCREF(self->data);
@@ -39,7 +39,6 @@ void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
 
 void mul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
-    import_array();
     Tensor *tmp1 = (Tensor *)self->x;
     Tensor *tmp2 = (Tensor *)self->y;
     PyObject *grad1 = PyNumber_Multiply(grad, tmp1->data);
@@ -57,7 +56,6 @@ void mul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
 
 void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
-    import_array();
     Tensor *tmp1 = (Tensor *)self->x;
     Tensor *tmp2 = (Tensor *)self->y;
     PyObject *grad1 = PyNumber_TrueDivide(grad, tmp2->data);
@@ -70,6 +68,57 @@ void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
         PyErr_Print();
         PyErr_Clear();
     }
+    *out1 = grad1;
+    Py_INCREF(grad1);
+    *out2 = grad2;
+    Py_INCREF(grad2);
+};
+
+void matmul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
+{
+    PyObject *transposed1 = NULL;
+    PyObject *transposed2 = NULL;
+    Tensor *tmp1 = (Tensor *)self->y;
+    PyArrayObject *tmp2 = (PyArrayObject *)tmp1->data;
+    Tensor *tmp3 = (Tensor *)self->x;
+    PyArrayObject *tmp4 = (PyArrayObject *)tmp3->data;
+    int nd = tmp2->nd;
+    npy_intp *dims = NULL;
+    if (0 < nd && nd < 2)
+    {
+        nd = 1;
+        transposed1 = (PyObject *)tmp2;
+        transposed2 = (PyObject *)tmp4;
+    }
+    else if (nd >= 2)
+    {
+        dims = malloc(nd * sizeof(npy_intp));
+        dims[nd - 2] = nd - 1;
+        dims[nd - 1] = nd - 2;
+        for (int i = 0; i < nd; i++)
+        {
+            dims[i] = i;
+        }
+        PyArray_Dims permute = {dims, nd};
+        transposed1 = PyArray_Transpose(tmp2, &permute);
+        transposed2 = PyArray_Transpose(tmp4, &permute);
+    }
+    else
+    {
+        PyErr_Print();
+        PyErr_Clear();
+        Py_Finalize();
+    }
+    PyObject *grad1 = PyNumber_MatrixMultiply(grad, transposed1);
+    PyObject *grad2 = PyNumber_MatrixMultiply(transposed2, grad);
+
+    if (grad1 == NULL || grad2 == NULL)
+    {
+        PyErr_Print();
+        PyErr_Clear();
+        free(dims);
+    }
+    free(dims);
     *out1 = grad1;
     Py_INCREF(grad1);
     *out2 = grad2;

@@ -10,6 +10,7 @@ from tensor import Tensor
 def test_C_Tensor_addition(array, require_grad):
     p = Tensor(array, require_grad)
     l = p + p
+    l.backward(array)
     o = array + array
     assert np.allclose(o, l.data), f"Addition test failed. correct: {o} | got: {l.data}"
 
