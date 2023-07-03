@@ -1,0 +1,28 @@
+name: Test and Benchmark
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt  # 安装依赖项，可以根据需要修改命令
+
+      - name: Run tests
+        run: python -m unittest discover test/  # 运行测试，可以根据需要修改命令
+
+      - name: Run benchmarks
+        run: pytest test/ --benchmark-storage=/dev/null
