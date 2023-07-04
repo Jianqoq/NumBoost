@@ -117,18 +117,16 @@ __str__(Tensor *self)
     sprintf(require_grad, "%s", self->require_grad ? "true" : "false");
     const char *str = PyUnicode_AsUTF8(py_str);
     uint64_t str_len = strlen(str);
-    PyArrayObject_fields *fields = (PyArrayObject_fields *)self->data;
-    int ndim = fields->nd;
     uint64_t count = 0;
     char *prefix = "Tensor(";
     uint64_t length = strlen((const char *)prefix);
-    for (int i = 0; i < str_len; i++)
+    for (uint64_t i = 0; i < str_len; i++)
         if (str[i] == '\n')
             count++;
     uint64_t len = length * count + str_len;
     result = (char *)malloc((len + 1) * sizeof(char));
     count = 0;
-    int index = 0;
+    uint64_t index = 0;
     while (index < len)
     {
         if (str[count] != '\n')
@@ -138,7 +136,7 @@ __str__(Tensor *self)
         else
         {
             result[index++] = '\n';
-            for (int i = 0; i < length; i++)
+            for (uint64_t i = 0; i < length; i++)
             {
                 result[index++] = ' ';
             }
@@ -155,13 +153,13 @@ __str__(Tensor *self)
                                   ">", ")\n"};
     uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
     uint64_t string_total_len = 1;
-    for (int i = 0; i < string_array_len; i++)
+    for (uint64_t i = 0; i < string_array_len; i++)
     {
         string_total_len += strlen(string_array[i]);
     }
     char *dest = (char *)malloc(string_total_len * sizeof(char));
     dest[0] = '\0';
-    for (int i = 0; i < string_array_len; i++)
+    for (uint64_t i = 0; i < string_array_len; i++)
     {
         strcat(dest, string_array[i]);
     }
