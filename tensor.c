@@ -103,6 +103,75 @@ __init__(Tensor *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+PyObject *
+__str__(Tensor *self)
+{
+    char *result;
+    PyObject *py_str = PyObject_Str(self->data);
+    char require_grad[6];
+    sprintf(require_grad, "%s", self->require_grad ? "true" : "false");
+    const char *str = PyUnicode_AsUTF8(py_str);
+    uint64_t str_len = strlen(str);
+    PyArrayObject_fields *fields = (PyArrayObject_fields *)self->data;
+    int ndim = fields->nd;
+    uint64_t count = 0;
+    char *prefix = "Tensor(";
+    uint64_t length = strlen((const char *)prefix);
+    for (int i = 0; i < str_len; i++)
+        if (str[i] == '\n')
+            count++;
+    uint64_t len = length * count + str_len;
+    result = (char *)malloc((len + 1) * sizeof(char));
+    count = 0;
+    int index = 0;
+    while (index < len)
+    {
+        if (str[count] != '\n')
+        {
+            result[index++] = str[count];
+        }
+        else
+        {
+            result[index++] = '\n';
+            for (int i = 0; i < length; i++)
+            {
+                result[index++] = ' ';
+            }
+        }
+        count++;
+    }
+    result[index++] = '\0';
+    const char *string_array[] = {(const char *)prefix,
+                                  (const char *)result,
+                                  ", requires_grad=",
+                                  (const char *)require_grad,
+                                  ", backward=",
+                                  "<", self->grad_fn,
+                                  ">", ")\n"};
+    uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
+    uint64_t string_total_len = 1;
+    for (int i = 0; i < string_array_len; i++)
+    {
+        string_total_len += strlen(string_array[i]);
+    }
+    char *dest = (char *)malloc(string_total_len * sizeof(char));
+    dest[0] = '\0';
+    for (int i = 0; i < string_array_len; i++)
+    {
+        strcat(dest, string_array[i]);
+    }
+    PyObject *representation = PyUnicode_FromString((const char *)dest);
+    free(dest);
+    Py_DECREF(py_str);
+    return representation;
+}
+
+PyObject *
+__repr__(Tensor *self)
+{
+    return __str__(self);
+}
+
 static void
 Tensor_dealloc(Tensor *self)
 {
@@ -169,43 +238,42 @@ static PyMemberDef
 
 static PyNumberMethods
     tensor_operator_methods = {
-    (binaryfunc)tensor_add,
-    (binaryfunc)tensor_sub,
-    (binaryfunc)tensor_mul,
-    (binaryfunc)tensor_remainder,
-    (binaryfunc)tensor_divmod,
-    (ternaryfunc)tensor_pow,
-    (unaryfunc)tensor_negative,
-    (unaryfunc)tensor_positive,
-    (unaryfunc)tensor_absolute,
-    0, // inquiry tensor_bool,
-    (unaryfunc)tensor_invert,
-    (binaryfunc)tensor_lshift,
-    (binaryfunc)tensor_rshift,
-    (binaryfunc)tensor_and,
-    (binaryfunc)tensor_xor,
-    (binaryfunc)tensor_or,
-    (unaryfunc)tensor_int,
-    0, // void *tensor_reserved;
-    (unaryfunc)tensor_float,
-    (binaryfunc)tensor_iadd,
-    (binaryfunc)tensor_isub,
-    (binaryfunc)tensor_imul,
-    (binaryfunc)tensor_iremainder,
-    (ternaryfunc)tensor_ipow,
-    (binaryfunc)tensor_ilshift,
-    (binaryfunc)tensor_irshift,
-    (binaryfunc)tensor_iand,
-    (binaryfunc)tensor_ixor,
-    (binaryfunc)tensor_ior,
-    (binaryfunc)tensor_floordiv,
-    (binaryfunc)tensor_div,
-    (binaryfunc)tensor_ifloordiv,
-    (binaryfunc)tensor_idiv,
-    0,
-    (binaryfunc)tensor_matmul,
-    (binaryfunc)tensor_imatmul
-    };
+        (binaryfunc)tensor_add,
+        (binaryfunc)tensor_sub,
+        (binaryfunc)tensor_mul,
+        (binaryfunc)tensor_remainder,
+        (binaryfunc)tensor_divmod,
+        (ternaryfunc)tensor_pow,
+        (unaryfunc)tensor_negative,
+        (unaryfunc)tensor_positive,
+        (unaryfunc)tensor_absolute,
+        0, // inquiry tensor_bool,
+        (unaryfunc)tensor_invert,
+        (binaryfunc)tensor_lshift,
+        (binaryfunc)tensor_rshift,
+        (binaryfunc)tensor_and,
+        (binaryfunc)tensor_xor,
+        (binaryfunc)tensor_or,
+        (unaryfunc)tensor_int,
+        0, // void *tensor_reserved;
+        (unaryfunc)tensor_float,
+        (binaryfunc)tensor_iadd,
+        (binaryfunc)tensor_isub,
+        (binaryfunc)tensor_imul,
+        (binaryfunc)tensor_iremainder,
+        (ternaryfunc)tensor_ipow,
+        (binaryfunc)tensor_ilshift,
+        (binaryfunc)tensor_irshift,
+        (binaryfunc)tensor_iand,
+        (binaryfunc)tensor_ixor,
+        (binaryfunc)tensor_ior,
+        (binaryfunc)tensor_floordiv,
+        (binaryfunc)tensor_div,
+        (binaryfunc)tensor_ifloordiv,
+        (binaryfunc)tensor_idiv,
+        0,
+        (binaryfunc)tensor_matmul,
+        (binaryfunc)tensor_imatmul};
 
 PyObject *
 _Generic_backward(PyObject *self, PyObject *args)
@@ -298,7 +366,10 @@ PyTypeObject
         .tp_clear = (inquiry)Tensor_clear,
         .tp_traverse = (traverseproc)Tensor_traverse,
         .tp_as_number = &tensor_operator_methods,
-        .tp_methods = Tensor_methods};
+        .tp_methods = Tensor_methods,
+        .tp_str = (reprfunc)__str__,
+        .tp_repr = (reprfunc)__repr__,
+};
 
 void init_map()
 {

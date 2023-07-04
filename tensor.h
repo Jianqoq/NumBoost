@@ -11,7 +11,7 @@
 typedef struct
 {
     PyObject_HEAD
-        PyObject *data; /* ndarray */
+    PyObject *data;     /* ndarray */
     PyObject *x;        /* Tensor */
     PyObject *y;        /* Tensor|scalar */
     int has_conv;
@@ -45,6 +45,20 @@ void Tensor_SetGrad_without_init_value(Tensor *self, PyObject *grad);
 void Tensor_SetGraph_without_init_value(Tensor *self, PyObject *graph);
 void Tensor_SetBase_without_init_value(Tensor *self, PyObject *base);
 void Tensor_SetAxis_without_init_value(Tensor *self, PyObject *axis);
+void Tensor_SetData_startwone(Tensor *self, PyObject *data);
+void Tensor_SetX_startwone(Tensor *self, PyObject *x);
+void Tensor_SetY_startwone(Tensor *self, PyObject *y);
+void Tensor_SetGrad_startwone(Tensor *self, PyObject *grad);
+void Tensor_SetGraph_startwone(Tensor *self, PyObject *graph);
+void Tensor_SetBase_startwone(Tensor *self, PyObject *base);
+void Tensor_SetAxis_startwone(Tensor *self, PyObject *axis);
+void Tensor_SetData_startwone_without_init(Tensor *self, PyObject *data);
+void Tensor_SetX_startwone_without_init(Tensor *self, PyObject *x);
+void Tensor_SetY_startwone_without_init(Tensor *self, PyObject *y);
+void Tensor_SetGrad_startwone_without_init(Tensor *self, PyObject *grad);
+void Tensor_SetGraph_startwone_without_init(Tensor *self, PyObject *graph);
+void Tensor_SetBase_startwone_without_init(Tensor *self, PyObject *base);
+void Tensor_SetAxis_startwone_without_init(Tensor *self, PyObject *axis);
 
 void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
 void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);

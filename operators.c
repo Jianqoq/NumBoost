@@ -27,7 +27,7 @@ new_Tensor(PyTypeObject *type, Tensor *tensor, Tensor *tensor2, PyObject *data,
             Tensor_SetRequireGrad(self, false);
             Tensor_SetVars(self, 0);
         }
-        Tensor_SetData_without_init_value(self, data);
+        Tensor_SetData_startwone_without_init(self, data);
         Tensor_SetHasConv(self, has_conv);
         Tensor_SetGraph_without_init_value(self, graph);
         Tensor_SetDim(self, dim);
@@ -53,7 +53,7 @@ new_Tensor_scalar(PyTypeObject *type, Tensor *self, PyObject *data, PyObject *y,
     tensor = (Tensor *)type->tp_alloc(type, 0);
     if (tensor != NULL)
     {
-        Tensor_SetData_without_init_value(tensor, data);
+        Tensor_SetData_startwone_without_init(tensor, data);
         if (self->require_grad)
         {
             Tensor_SetX_without_init_value(tensor, (PyObject *)self);
@@ -97,7 +97,7 @@ new_Tensor_x(PyTypeObject *type, Tensor *self, PyObject *data, int has_conv, uin
     tensor = (Tensor *)type->tp_alloc(type, 0);
     if (tensor != NULL)
     {
-        Tensor_SetData_without_init_value(tensor, data);
+        Tensor_SetData_startwone_without_init(tensor, data);
         if (self->require_grad)
         {
             Tensor_SetX_without_init_value(tensor, (PyObject *)self);
@@ -176,6 +176,11 @@ tensor_iadd(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     PyObject *numpy_result;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a leaf variable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -186,7 +191,12 @@ tensor_iadd(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, (PyObject *)tmp);
+        if (tmp->require_grad)
+        {
+            Tensor_SetX(self, (PyObject *)self);
+            Tensor_SetY(self, other);
+            self->grad_fn = "InplaceAddBackward";
+        }
     }
     else
     {
@@ -197,14 +207,9 @@ tensor_iadd(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, other);
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "InplaceAddBackward";
-    }
-    Tensor_SetX(self, self->data);
     Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
 
@@ -252,6 +257,11 @@ tensor_imul(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     PyObject *numpy_result;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a leaf variable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -262,7 +272,12 @@ tensor_imul(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, (PyObject *)tmp);
+        if (tmp->require_grad)
+        {
+            Tensor_SetX(self, (PyObject *)self);
+            Tensor_SetY(self, other);
+            self->grad_fn = "InplaceMulBackward";
+        }
     }
     else
     {
@@ -273,14 +288,9 @@ tensor_imul(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, other);
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "InplaceMulBackward";
-    }
-    Tensor_SetX(self, self->data);
     Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
 
@@ -328,6 +338,11 @@ tensor_idiv(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     PyObject *numpy_result;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a leaf variable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -338,7 +353,12 @@ tensor_idiv(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, (PyObject *)tmp);
+        if (tmp->require_grad)
+        {
+            Tensor_SetX(self, (PyObject *)self);
+            Tensor_SetY(self, other);
+            self->grad_fn = "InplaceDivBackward";
+        }
     }
     else
     {
@@ -349,20 +369,20 @@ tensor_idiv(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, other);
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "InplaceDivBackward";
-    }
-    Tensor_SetX(self, self->data);
     Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
 
 PyObject *
 tensor_inegative(Tensor *self)
 {
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a leaf variable");
+        return NULL;
+    }
     PyObject *numpy_result =
         PyNumber_InPlaceMultiply(self->data, PyLong_FromLong(-1));
     if (numpy_result == NULL)
@@ -371,17 +391,7 @@ tensor_inegative(Tensor *self)
         PyErr_Clear();
         return NULL;
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "NegativeBackward";
-        Py_DECREF(self->x);
-        Py_DECREF(self->y);
-        self->x = self->data;
-        Py_INCREF(self->x);
-    }
-    Py_DECREF(self->data);
-    self->data = numpy_result;
-    Py_INCREF(self->data);
+    Tensor_SetData(self, numpy_result);
     return (PyObject *)self;
 }
 
@@ -452,6 +462,11 @@ tensor_isub(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     PyObject *numpy_result;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a leaf variable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -462,7 +477,12 @@ tensor_isub(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, tmp->data);
+        if (tmp->require_grad)
+        {
+            Tensor_SetX(self, (PyObject *)self);
+            Tensor_SetY(self, other);
+            self->grad_fn = "InplaceSubBackward";
+        }
     }
     else
     {
@@ -473,14 +493,9 @@ tensor_isub(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, other);
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "InplaceSubBackward";
-    }
-    Tensor_SetX(self, self->data);
     Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
 
@@ -491,8 +506,7 @@ tensor_pow(Tensor *self, PyObject *other)
     if (Py_TYPE(other) == &Tensor_type)
     {
         temp = (Tensor *)other;
-        PyObject *numpy_result =
-            PyNumber_Power(self->data, temp->data, Py_None);
+        PyObject *numpy_result = PyNumber_Power(self->data, temp->data, Py_None);
         if (numpy_result == NULL)
         {
             PyErr_Print();
@@ -526,28 +540,28 @@ PyObject *
 tensor_ipow(Tensor *self, PyObject *other)
 {
     PyObject *numpy_result;
-    Tensor *temp;
-    Py_DECREF(self->x);
-    Py_DECREF(self->y);
+    Tensor *tmp;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a leaf variable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
-        temp = (Tensor *)other;
-        numpy_result = PyNumber_InPlacePower(self->data, temp->data, Py_None);
+        tmp = (Tensor *)other;
+        numpy_result = PyNumber_InPlacePower(self->data, tmp->data, Py_None);
         if (numpy_result == NULL)
         {
             PyErr_Print();
             PyErr_Clear();
             return NULL;
         }
-        if (!self->require_grad && !temp->require_grad)
+        if (tmp->require_grad)
         {
-            Py_DECREF(self->data);
-            self->data = numpy_result;
-            Py_INCREF(self->data);
-            Py_INCREF(self);
-            return (PyObject *)self;
+            Tensor_SetX(self, (PyObject *)self);
+            Tensor_SetY(self, other);
+            self->grad_fn = "InplacePowerBackward";
         }
-        self->y = temp->data;
     }
     else
     {
@@ -558,23 +572,9 @@ tensor_ipow(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        if (!self->require_grad)
-        {
-            Py_DECREF(self->data);
-            self->data = numpy_result;
-            Py_INCREF(self->data);
-            Py_INCREF(self);
-            return (PyObject *)self;
-        }
-        self->y = other;
     }
-    self->grad_fn = "InplacePowBackward";
-    self->x = self->data;
-    Py_INCREF(self->x);
-    Py_INCREF(self->y);
-    Py_DECREF(self->data);
-    self->data = numpy_result;
-    Py_INCREF(self->data);
+    Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
 
@@ -598,6 +598,11 @@ tensor_matmul(Tensor *self, Tensor *other)
 PyObject *
 tensor_imatmul(Tensor *self, Tensor *other)
 {
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a leaf variable");
+        return NULL;
+    }
     PyObject *numpy_result =
         PyNumber_InPlaceMatrixMultiply(self->data, other->data);
     if (numpy_result == NULL)
@@ -606,12 +611,14 @@ tensor_imatmul(Tensor *self, Tensor *other)
         PyErr_Clear();
         return NULL;
     }
-    if (self->require_grad)
+    if (other->require_grad)
     {
-        Tensor_SetX(self, (PyObject *)other);
+        Tensor_SetX(self, (PyObject *)self);
+        Tensor_SetY(self, (PyObject *)other);
         self->grad_fn = "InplaceMatMulBackward";
     }
     Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
 
@@ -642,6 +649,11 @@ tensor_absolute(Tensor *self)
 PyObject *
 tensor_invert(Tensor *self)
 {
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Logic invert operation auto backward not implemented yet");
+        return NULL;
+    }
     PyObject *numpy_result = PyNumber_Invert(self->data);
     if (numpy_result == NULL)
     {
@@ -651,7 +663,7 @@ tensor_invert(Tensor *self)
     }
     Tensor *new_tensor = new_Tensor_x(
         &Tensor_type, self, numpy_result,
-        self->has_conv, self->vars, self->require_grad, "InvertBackward",
+        self->has_conv, self->vars, self->require_grad, "",
         self->graph, self->axis, self->dim, self->base);
     return (PyObject *)new_tensor;
 }
@@ -660,6 +672,11 @@ PyObject *
 tensor_lshift(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "shift operation auto backward not implemented yet");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -672,8 +689,8 @@ tensor_lshift(Tensor *self, PyObject *other)
         }
         Tensor *new_tensor = new_Tensor(
             &Tensor_type, self, tmp, numpy_result, self->data,
-            tmp->data, self->has_conv, self->vars, self->require_grad,
-            "LshiftBackward", self->graph, self->axis, self->dim,
+            tmp->data, self->has_conv, self->vars, false,
+            "", self->graph, self->axis, self->dim,
             self->base);
         return (PyObject *)new_tensor;
     }
@@ -689,7 +706,7 @@ tensor_lshift(Tensor *self, PyObject *other)
         }
         Tensor *new_tensor = new_Tensor_scalar(
             &Tensor_type, self, numpy_result, other,
-            self->has_conv, self->vars, self->require_grad, "LshiftBackward",
+            self->has_conv, self->vars, false, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
     }
@@ -698,6 +715,11 @@ tensor_lshift(Tensor *self, PyObject *other)
 PyObject *
 tensor_ilshift(Tensor *self, PyObject *other)
 {
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "shift operation auto backward not implemented yet");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         Tensor *tmp = (Tensor *)other;
@@ -708,11 +730,17 @@ tensor_ilshift(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        if (self->require_grad)
-        {
-            Tensor_SetX(self, (PyObject *)tmp);
-            self->grad_fn = "InplaceLshiftBackward";
-        }
+        // if (self->require_grad)
+        // {
+        //     PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a left variable");
+        //     return NULL;
+        // }
+        // else if (tmp->require_grad)
+        // {
+        //     Tensor_SetX(self, (PyObject *)other);
+        //     self->grad_fn = "InplaceLshiftBackward";
+        // }
+        Py_INCREF(self);
         Tensor_SetData(self, numpy_result);
         return (PyObject *)self;
     }
@@ -725,11 +753,13 @@ tensor_ilshift(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        if (self->require_grad)
-        {
-            Tensor_SetX(self, other);
-            self->grad_fn = "InplaceLshiftBackward";
-        }
+        // if (self->require_grad)
+        // {
+        //     PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a left variable");
+        //     return NULL;
+        // }
+        // self->grad_fn = "";
+        Py_INCREF(self);
         Tensor_SetData(self, numpy_result);
         return (PyObject *)self;
     }
@@ -739,6 +769,11 @@ PyObject *
 tensor_rshift(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "shift operation auto backward not implemented yet");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -751,8 +786,8 @@ tensor_rshift(Tensor *self, PyObject *other)
         }
         Tensor *new_tensor = new_Tensor(
             &Tensor_type, self, tmp, numpy_result, self->data,
-            tmp->data, self->has_conv, self->vars, self->require_grad,
-            "RshiftBackward", self->graph, self->axis, self->dim,
+            tmp->data, self->has_conv, self->vars, false,
+            "", self->graph, self->axis, self->dim,
             self->base);
         return (PyObject *)new_tensor;
     }
@@ -768,7 +803,7 @@ tensor_rshift(Tensor *self, PyObject *other)
         }
         Tensor *new_tensor = new_Tensor_scalar(
             &Tensor_type, self, numpy_result, other,
-            self->has_conv, self->vars, self->require_grad, "RshiftBackward",
+            self->has_conv, self->vars, false, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
     }
@@ -777,6 +812,11 @@ tensor_rshift(Tensor *self, PyObject *other)
 PyObject *
 tensor_irshift(Tensor *self, PyObject *other)
 {
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "shift operation auto backward not implemented yet");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         Tensor *tmp = (Tensor *)other;
@@ -787,11 +827,17 @@ tensor_irshift(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        if (self->require_grad)
-        {
-            Tensor_SetX(self, (PyObject *)tmp);
-            self->grad_fn = "InplaceRshiftBackward";
-        }
+        // if (self->require_grad)
+        // {
+        //     PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true");
+        //     return NULL;
+        // }
+        // else if (tmp->require_grad)
+        // {
+        //     Tensor_SetX(self, (PyObject *)other);
+        //     self->grad_fn = "InplaceRshiftBackward";
+        // }
+        Py_INCREF(self);
         Tensor_SetData(self, numpy_result);
         return (PyObject *)self;
     }
@@ -804,11 +850,13 @@ tensor_irshift(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        if (self->require_grad)
-        {
-            Tensor_SetX(self, other);
-            self->grad_fn = "InplaceRshiftBackward";
-        }
+        // if (self->require_grad)
+        // {
+        //     PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true");
+        //     return NULL;
+        // }
+        // self->grad_fn = "";
+        Py_INCREF(self);
         Tensor_SetData(self, numpy_result);
         return (PyObject *)self;
     }
@@ -818,6 +866,11 @@ PyObject *
 tensor_and(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Logic operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -857,6 +910,11 @@ PyObject *
 tensor_xor(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Logic operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -896,6 +954,11 @@ PyObject *
 tensor_or(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Logic operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -973,6 +1036,11 @@ PyObject *
 tensor_remainder(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Remainder operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -986,7 +1054,7 @@ tensor_remainder(Tensor *self, PyObject *other)
         Tensor *new_tensor = new_Tensor(
             &Tensor_type, self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
-            "NotDifferentiable", self->graph, self->axis, self->dim,
+            "", self->graph, self->axis, self->dim,
             self->base);
         return (PyObject *)new_tensor;
     }
@@ -1002,7 +1070,7 @@ tensor_remainder(Tensor *self, PyObject *other)
         }
         Tensor *new_tensor = new_Tensor_scalar(
             &Tensor_type, self, numpy_result, other,
-            self->has_conv, self->vars, self->require_grad, "NotDifferentiable",
+            self->has_conv, self->vars, self->require_grad, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
     }
@@ -1013,6 +1081,11 @@ tensor_iand(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     PyObject *numpy_result;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Logic operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -1034,11 +1107,7 @@ tensor_iand(Tensor *self, PyObject *other)
             return NULL;
         }
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "InplaceAndBackward";
-        Tensor_SetY(self, other);
-    }
+    self->grad_fn = "";
     Tensor_SetData(self, numpy_result);
     return (PyObject *)self;
 }
@@ -1048,6 +1117,11 @@ tensor_ior(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     PyObject *numpy_result;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Logic operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -1069,11 +1143,7 @@ tensor_ior(Tensor *self, PyObject *other)
             return NULL;
         }
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "InplaceAndBackward";
-        Tensor_SetY(self, other);
-    }
+    self->grad_fn = "";
     Tensor_SetData(self, numpy_result);
     return (PyObject *)self;
 }
@@ -1083,6 +1153,11 @@ tensor_ixor(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     PyObject *numpy_result;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Logic operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -1106,10 +1181,7 @@ tensor_ixor(Tensor *self, PyObject *other)
         }
         Tensor_SetY(self, other);
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "SubBackward";
-    }
+    self->grad_fn = "";
     Tensor_SetX(self, self->data);
     Tensor_SetData(self, numpy_result);
     return (PyObject *)self;
@@ -1119,6 +1191,11 @@ PyObject *
 tensor_divmod(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Divmod operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -1132,7 +1209,7 @@ tensor_divmod(Tensor *self, PyObject *other)
         Tensor *new_tensor = new_Tensor(
             &Tensor_type, self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
-            "DivmodBackward", self->graph, self->axis, self->dim,
+            "", self->graph, self->axis, self->dim,
             self->base);
         return (PyObject *)new_tensor;
     }
@@ -1148,7 +1225,7 @@ tensor_divmod(Tensor *self, PyObject *other)
         }
         Tensor *new_tensor = new_Tensor_scalar(
             &Tensor_type, self, numpy_result, other,
-            self->has_conv, self->vars, self->require_grad, "DivmodBackward",
+            self->has_conv, self->vars, self->require_grad, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
     }
@@ -1159,6 +1236,11 @@ tensor_iremainder(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     PyObject *numpy_result;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Inplace remainder operation doesn't support auto backward");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -1169,7 +1251,7 @@ tensor_iremainder(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, tmp);
+        Tensor_SetY(self, (PyObject *)tmp);
     }
     else
     {
@@ -1196,6 +1278,11 @@ PyObject *
 tensor_floordiv(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Floor divide operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -1209,7 +1296,7 @@ tensor_floordiv(Tensor *self, PyObject *other)
         Tensor *new_tensor = new_Tensor(
             &Tensor_type, self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
-            "FloorDivideBackward", self->graph, self->axis, self->dim,
+            "", self->graph, self->axis, self->dim,
             self->base);
         return (PyObject *)new_tensor;
     }
@@ -1236,6 +1323,11 @@ tensor_ifloordiv(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
     PyObject *numpy_result;
+    if (self->require_grad)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Floor divide operation is not differentiable");
+        return NULL;
+    }
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
@@ -1246,7 +1338,6 @@ tensor_ifloordiv(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, tmp->data);
     }
     else
     {
@@ -1257,13 +1348,7 @@ tensor_ifloordiv(Tensor *self, PyObject *other)
             PyErr_Clear();
             return NULL;
         }
-        Tensor_SetY(self, other);
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "InplaceFloorDivideBackward";
-    }
-    Tensor_SetX(self, self->data);
     Tensor_SetData(self, numpy_result);
     Py_INCREF(self);
     return (PyObject *)self;
