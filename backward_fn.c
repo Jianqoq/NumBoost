@@ -80,9 +80,10 @@ void matmul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject 
     PyObject *transposed2 = NULL;
     Tensor *tmp1 = (Tensor *)self->y;
     PyArrayObject *tmp2 = (PyArrayObject *)tmp1->data;
+    PyArrayObject_fields *fields = (PyArrayObject_fields *)tmp2;
     Tensor *tmp3 = (Tensor *)self->x;
     PyArrayObject *tmp4 = (PyArrayObject *)tmp3->data;
-    int nd = tmp2->nd;
+    int nd = fields->nd;
     npy_intp *dims = NULL;
     if (0 < nd && nd < 2)
     {
