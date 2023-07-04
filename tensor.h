@@ -63,6 +63,7 @@ void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
 void mul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
 void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
 void matmul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
+void negative_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
 extern PyTypeObject Tensor_type;
 
 PyObject *tensor_add(Tensor *self, PyObject *other);

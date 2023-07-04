@@ -1,6 +1,7 @@
 #define NO_IMPORT_ARRAY
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #include "numpy/arrayobject.h"
+#include "numpy/__ufunc_api.h"
 #include "tensor.h"
 
 Tensor *
@@ -117,11 +118,38 @@ new_Tensor_x(PyTypeObject *type, Tensor *self, PyObject *data, int has_conv, uin
         }
         Tensor_SetHasConv(tensor, has_conv);
         Tensor_SetGraph_without_init_value(tensor, graph);
-        Tensor_SetHasConv(tensor, has_conv);
-        Tensor_SetVars(tensor, vars);
         Tensor_SetDim(tensor, dim);
         Tensor_SetAxis_without_init_value(tensor, axis);
         Tensor_SetBase_without_init_value(tensor, base);
+        Tensor_SetGrad_without_init_value(tensor, Py_None);
+        return tensor;
+    }
+    else
+    {
+        PyErr_Print();
+        PyErr_Clear();
+        return NULL;
+    }
+}
+
+Tensor *
+Tensor__new__(PyTypeObject *type, PyObject *data)
+{
+    Tensor *tensor;
+    tensor = (Tensor *)type->tp_alloc(type, 0);
+    if (tensor != NULL)
+    {
+        Tensor_SetData_startwone_without_init(tensor, data);
+        Tensor_SetX_without_init_value(tensor, Py_None);
+        Tensor_SetY_without_init_value(tensor, Py_None);
+        Tensor_SetRequireGrad(tensor, false);
+        Tensor_SetGradFn(tensor, "");
+        Tensor_SetVars(tensor, 0);
+        Tensor_SetHasConv(tensor, 0);
+        Tensor_SetGraph_without_init_value(tensor, Py_None);
+        Tensor_SetDim(tensor, 0);
+        Tensor_SetAxis_without_init_value(tensor, Py_None);
+        Tensor_SetBase_without_init_value(tensor, Py_None);
         Tensor_SetGrad_without_init_value(tensor, Py_None);
         return tensor;
     }
@@ -400,23 +428,8 @@ PyObject *
 tensor_negative(Tensor *self)
 {
     PyObject *negative_1 = PyLong_FromLong(-1);
-    PyObject *numpy_result =
-        PyNumber_Multiply(self->data, negative_1);
-    if (numpy_result == NULL)
-    {
-        PyErr_Print();
-        PyErr_Clear();
-        return NULL;
-    }
-    if (self->require_grad)
-    {
-        self->grad_fn = "NegativeBackward";
-        Tensor_SetX(self, (PyObject *)self);
-        Tensor_SetY(self, negative_1);
-    }
-    Tensor_SetData(self, numpy_result);
-    Py_INCREF(self);
-    return (PyObject *)self;
+    Tensor *new_tensor = Tensor__new__(&Tensor_type, negative_1);
+    return tensor_mul(self, (PyObject*)new_tensor);
 }
 
 PyObject *

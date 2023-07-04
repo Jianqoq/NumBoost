@@ -12,8 +12,7 @@ RunTimeError(PyObject *self, const char *message)
     return NULL;
 }
 
-void 
-INCREF_TENSOR(Tensor *self)
+void INCREF_TENSOR(Tensor *self)
 {
     Py_INCREF(self->data);
     Py_INCREF(self->x);
@@ -23,8 +22,7 @@ INCREF_TENSOR(Tensor *self)
     Py_INCREF(self->base);
 }
 
-void 
-add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
+void add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
 {
     Dict *entry = (Dict *)malloc(sizeof(Dict));
     entry->key = key;
@@ -32,8 +30,7 @@ add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyO
     HASH_ADD_STR(dict, key, entry);
 }
 
-void 
-(*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
+void (*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
 {
     Dict *entry;
     HASH_FIND_STR(dict, key, entry);
@@ -56,7 +53,7 @@ get_address(const char *key)
     return NULL;
 }
 
-static void 
+static void
 free_dict()
 {
     Dict *entry, *tmp;
@@ -301,6 +298,11 @@ _Generic_backward(PyObject *self, PyObject *args)
         PyObject *grad_fn_name = PyObject_GetAttrString(tuple.node, "grad_fn");
         if (grad_fn_name == NULL)
         {
+            if (PyErr_Occurred())
+            {
+                PyErr_SetString(PyExc_RuntimeError, "grad_fn_name is NULL");
+                return NULL;
+            }
             continue;
         }
         else if (grad_fn_name == PyUnicode_FromString(""))
@@ -316,8 +318,18 @@ _Generic_backward(PyObject *self, PyObject *args)
             else
             {
                 PyObject *grad = PyObject_GetAttrString(tuple.node, "grad");
+                if (grad == NULL)
+                {
+                    PyErr_SetString(PyExc_RuntimeError, "can't get grad attribute");
+                    return NULL;
+                }
                 PyObject *new_grad = PyNumber_Add(grad, tuple.ndarray);
                 PyObject *tmp = PyObject_GetAttrString(tuple.node, "grad");
+                if (tmp == NULL)
+                {
+                    PyErr_SetString(PyExc_RuntimeError, "can't get grad attribute");
+                    return NULL;
+                }
                 Py_DECREF(tmp);
                 Py_INCREF(new_grad);
                 PyObject_SetAttrString(tuple.node, "grad", new_grad);
@@ -327,6 +339,11 @@ _Generic_backward(PyObject *self, PyObject *args)
         }
         grad_fn = PyUnicode_AsUTF8(grad_fn_name);
         get_method(grad_fn)((Tensor *)tuple.node, tuple.ndarray, &current_grad1, &current_grad2);
+        if (current_grad1 == NULL || current_grad2 == NULL)
+        {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot get grad");
+            return NULL;
+        }
         PyObject *x = PyObject_GetAttrString(tuple.node, "x");
         PyObject *y = PyObject_GetAttrString(tuple.node, "y");
         if (tuple.node != x)
@@ -335,7 +352,13 @@ _Generic_backward(PyObject *self, PyObject *args)
             Tuple tuple2 = {x, current_grad1};
             push(stack, tuple2);
         }
-        grad_fn = PyUnicode_AsUTF8(PyObject_GetAttrString(y, "grad_fn"));
+        grad_fn_name = PyObject_GetAttrString(y, "grad_fn");
+        if (grad_fn_name == NULL)
+        {
+            PyErr_SetString(PyExc_RuntimeError, "grad_fn_name is NULL");
+            return NULL;
+        }
+        grad_fn = PyUnicode_AsUTF8(grad_fn_name);
         Tuple tuple2 = {y, current_grad2};
         push(stack, tuple2);
     }
@@ -382,6 +405,7 @@ void init_map()
     add_entry("SubBackward", sub_backward_fn);
     add_entry("DivBackward", div_backward_fn);
     add_entry("MatMulBackward", matmul_backward_fn);
+    add_entry("NegativeBackward", negative_backward_fn);
 }
 
 PyMODINIT_FUNC
