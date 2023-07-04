@@ -3,7 +3,6 @@
 #include <Python.h>
 #include <stdbool.h>
 #include "structmember.h"
-#include "numpy/arrayobject.h"
 #include "uthash.h"
 #include <stdlib.h>
 #include <string.h>
@@ -88,7 +87,6 @@ PyObject *tensor_rshift(Tensor *self, PyObject *other);
 PyObject *tensor_and(Tensor *self, PyObject *other);
 PyObject *tensor_xor(Tensor *self, PyObject *other);
 PyObject *tensor_or(Tensor *self, PyObject *other);
-PyObject *tensor_bool(Tensor *self);
 PyObject *tensor_int(Tensor *self);
 PyObject *tensor_float(Tensor *self);
 PyObject *tensor_remainder(Tensor *self, PyObject *other);

@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
+#include "numpy/arrayobject.h"
 #include "tensor.h"
 
 static Dict *dict = NULL;

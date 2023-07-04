@@ -1,5 +1,6 @@
 #define NO_IMPORT_ARRAY
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
+#include "numpy/arrayobject.h"
 #include "tensor.h"
 
 void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
@@ -62,7 +63,7 @@ void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
     PyObject *midle = PyNumber_Power(tmp2->data, PyLong_FromLong(2), Py_None);
     PyObject *midle2 = PyNumber_Negative(tmp1->data);
     PyObject *tmp = PyNumber_TrueDivide(midle2, midle);
-    PyObject *grad2 = PyNumber_Multiply(grad, tmp1->data);
+    PyObject *grad2 = PyNumber_Multiply(grad, tmp);
     if (grad1 == NULL || grad2 == NULL)
     {
         PyErr_Print();
