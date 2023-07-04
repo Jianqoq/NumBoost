@@ -1109,6 +1109,7 @@ tensor_iand(Tensor *self, PyObject *other)
     }
     self->grad_fn = "";
     Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
 
@@ -1145,6 +1146,7 @@ tensor_ior(Tensor *self, PyObject *other)
     }
     self->grad_fn = "";
     Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
 
@@ -1184,6 +1186,7 @@ tensor_ixor(Tensor *self, PyObject *other)
     self->grad_fn = "";
     Tensor_SetX(self, self->data);
     Tensor_SetData(self, numpy_result);
+    Py_INCREF(self);
     return (PyObject *)self;
 }
 

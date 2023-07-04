@@ -4,13 +4,15 @@
 
 static Dict *dict = NULL;
 
-PyObject *RunTimeError(PyObject *self, const char *message)
+PyObject *
+RunTimeError(PyObject *self, const char *message)
 {
     PyErr_SetString(PyExc_RuntimeError, message);
     return NULL;
 }
 
-void INCREF_TENSOR(Tensor *self)
+void 
+INCREF_TENSOR(Tensor *self)
 {
     Py_INCREF(self->data);
     Py_INCREF(self->x);
@@ -20,7 +22,8 @@ void INCREF_TENSOR(Tensor *self)
     Py_INCREF(self->base);
 }
 
-void add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
+void 
+add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
 {
     Dict *entry = (Dict *)malloc(sizeof(Dict));
     entry->key = key;
@@ -28,7 +31,8 @@ void add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **
     HASH_ADD_STR(dict, key, entry);
 }
 
-void (*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
+void 
+(*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
 {
     Dict *entry;
     HASH_FIND_STR(dict, key, entry);
@@ -51,7 +55,8 @@ get_address(const char *key)
     return NULL;
 }
 
-static void free_dict()
+static void 
+free_dict()
 {
     Dict *entry, *tmp;
     HASH_ITER(hh, dict, entry, tmp)
