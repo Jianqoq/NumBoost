@@ -341,7 +341,6 @@ _Generic_backward(PyObject *self, PyObject *args)
         get_method(grad_fn)((Tensor *)tuple.node, tuple.ndarray, &current_grad1, &current_grad2);
         if (current_grad1 == NULL || current_grad2 == NULL)
         {
-            PyErr_SetString(PyExc_RuntimeError, "Cannot get grad");
             return NULL;
         }
         PyObject *x = PyObject_GetAttrString(tuple.node, "x");

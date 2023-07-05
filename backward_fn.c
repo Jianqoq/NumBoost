@@ -15,8 +15,24 @@ static bool shape_is_equal(npy_intp *dims1, npy_intp *dims2, int *nd)
     return 1;
 }
 
-void check_shape(PyArrayObject *grad, PyObject *origin_data, PyObject **out)
+int vaild_shape(PyArrayObject *grad, PyArrayObject *a, const char *error_msg)
 {
+    PyArrayObject_fields *fields = (PyArrayObject_fields *)grad;
+    PyArrayObject_fields *fields2 = (PyArrayObject_fields *)a;
+    for (uint8_t i = 0; i < fields->nd; i++)
+    {
+        if (fields->dimensions[i] != fields2->dimensions[i])
+        {
+            PyErr_SetString(PyExc_ValueError, error_msg);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+void check_shape(PyArrayObject *grad, PyObject *origin_data, PyObject **out, const char *error_msg)
+{
+
     PyArrayObject_fields *fields = (PyArrayObject_fields *)grad;
     PyTypeObject *type = Py_TYPE(origin_data);
     npy_intp dims1[NPY_MAXDIMS] = {0}; // grad shape
@@ -51,8 +67,10 @@ void check_shape(PyArrayObject *grad, PyObject *origin_data, PyObject **out)
     }
     else
     {
+        PyObject_Print(origin_data, stdout, 0);
         nd2 = 0;
     }
+
     if (nd1 == nd2)
     {
         if (shape_is_equal(dims1, dims2, &nd1))
@@ -82,6 +100,11 @@ void check_shape(PyArrayObject *grad, PyObject *origin_data, PyObject **out)
             PyArray_Dims shape = {new_dims, nd1};                          // new shape with keep dims
             PyObject *result = PyArray_Newshape(grad, &shape, NPY_CORDER); // reshape to original shape
             Py_DECREF(grad);
+            if (!vaild_shape((PyArrayObject *)result, (PyArrayObject *)origin_data, error_msg))
+            {
+                *out = NULL;
+                return;
+            }
             *out = (PyObject *)result;
             return;
         }
@@ -113,21 +136,6 @@ void check_shape(PyArrayObject *grad, PyObject *origin_data, PyObject **out)
     }
 }
 
-int vaild_shape(PyArrayObject *grad, PyArrayObject *a, const char *error_msg)
-{
-    PyArrayObject_fields *fields = (PyArrayObject_fields *)grad;
-    PyArrayObject_fields *fields2 = (PyArrayObject_fields *)a;
-    for (uint8_t i = 0; i < fields->nd; i++)
-    {
-        if (fields->dimensions[i] != fields2->dimensions[i])
-        {
-            PyErr_SetString(PyExc_ValueError, error_msg);
-            return 0;
-        }
-    }
-    return 1;
-}
-
 void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
     if (!vaild_shape((PyArrayObject *)grad, (PyArrayObject *)self->data, "grad shape not equal to previous output shape"))
@@ -136,9 +144,11 @@ void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
         *out2 = NULL;
         return;
     }
-    PyObject *grad1 = (PyObject *)self->data;
     PyArrayObject *tmp = (PyArrayObject *)grad;
     PyObject *grad2 = PyArray_Copy(tmp);
+    *out1 = grad;
+    Py_INCREF(grad);
+    *out2 = grad2;
 };
 
 void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
@@ -168,8 +178,8 @@ void mul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
 
     PyObject *grad1 = PyNumber_Multiply(grad, tmp2->data);
     PyObject *grad2 = PyNumber_Multiply(grad, tmp1->data);
-    check_shape((PyArrayObject *)grad1, tmp1->data, out1);
-    check_shape((PyArrayObject *)grad2, tmp2->data, out2);
+    check_shape((PyArrayObject *)grad1, tmp1->data, out1, "grad1 shape not equal to previous data shape in mulbackward");
+    check_shape((PyArrayObject *)grad2, tmp2->data, out2, "grad2 shape not equal to previous data shape in mulbackward");
 };
 
 void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
@@ -187,8 +197,8 @@ void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
     PyObject *midle2 = PyNumber_Negative(tmp1->data);
     PyObject *tmp = PyNumber_TrueDivide(midle2, midle);
     PyObject *grad2 = PyNumber_Multiply(grad, tmp);
-    check_shape((PyArrayObject *)grad1, tmp1->data, out1);
-    check_shape((PyArrayObject *)grad2, tmp2->data, out2);
+    check_shape((PyArrayObject *)grad1, tmp1->data, out1, "grad1 shape not equal to previous data shape in divbackward");
+    check_shape((PyArrayObject *)grad2, tmp2->data, out2, "grad2 shape not equal to previous data shape in divbackward");
 };
 
 void matmul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
@@ -241,8 +251,8 @@ void matmul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject 
     PyObject *grad1 = PyNumber_MatrixMultiply(grad, transposed1);
     PyObject *grad2 = PyNumber_MatrixMultiply(transposed2, grad);
     free(dims);
-    check_shape((PyArrayObject *)grad1, tmp3->data, out1);
-    check_shape((PyArrayObject *)grad2, tmp1->y, out2);
+    check_shape((PyArrayObject *)grad1, tmp3->data, out1, "grad1 shape not equal to previous data shape in matmulbackward");
+    check_shape((PyArrayObject *)grad2, tmp1->data, out2, "grad2 shape not equal to previous data shape in matmulbackward");
 };
 
 void negative_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
@@ -254,6 +264,6 @@ void negative_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObjec
 
     PyObject_Print(grad1, stdout, 0);
     PyObject_Print(grad2, stdout, 0);
-    check_shape((PyArrayObject *)grad1, tmp1->data, out1);
-    check_shape((PyArrayObject *)grad2, tmp2->data, out2);
+    check_shape((PyArrayObject *)grad1, tmp1->data, out1, "grad1 shape not equal to previous data shape in negativebackward");
+    check_shape((PyArrayObject *)grad2, tmp2->data, out2, "grad2 shape not equal to previous data shape in negativebackward");
 };
