@@ -5,64 +5,52 @@ import timeit
 import statistics
 
 import torch
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from tensor import Tensor
-from torch import tensor
+
 
 def C_Tensor_addition(arr):
-    a = Tensor(arr)
-    p = a + a
+    p = arr + arr
 
 
 def torch_Tensor_addition(arr):
-    a = tensor(arr)
-    p = a + a
+    p = arr + arr
 
 
 def C_Tensor_subtraction(arr):
-    a = Tensor(arr)
-    p = a - a
+    p = arr - arr
 
 
 def torch_Tensor_subtraction(arr):
-    a = tensor(arr)
-    p = a - a
+    p = arr - arr
 
 
 def C_Tensor_division(arr):
-    a = Tensor(arr)
-    p = a / a
+    p = arr / arr
 
 
 def torch_Tensor_division(arr):
-    a = tensor(arr)
-    p = a / a
+    p = arr / arr
 
 
 def C_Tensor_matmul(arr):
-    a = Tensor(arr)
-    p = a @ a
+    p = arr @ arr
 
 
 def torch_Tensor_matmul(arr):
-    a = tensor(arr)
-    p = a @ a
+    p = arr @ arr
 
 
 def C_Tensor_mul(arr):
-    a = Tensor(arr)
-    p = a * a
+    p = arr * arr
 
 
 def torch_Tensor_mul(arr):
-    a = tensor(arr)
-    p = a * a
+    p = arr * arr
 
 
-
-array = np.array([1, 2, 3])
-ten = torch.Tensor([1, 2, 3])
+array = Tensor([1, 2, 3])
+ten = torch.tensor([1, 2, 3])
 stmt_code = """
 result = C_Tensor_addition(array)
 """

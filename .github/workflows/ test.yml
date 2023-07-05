@@ -24,4 +24,6 @@ jobs:
         run: pytest test/
 
       - name: Run benchmarks
-        run: python test/benchmark/object_creation_benchmark.py
+        run: |
+          python test/benchmark/object_creation_benchmark.py
+          python test/benchmark/torch_comparision_benchmark.py

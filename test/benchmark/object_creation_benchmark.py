@@ -12,7 +12,7 @@ from tensor import Tensor
 
 class MyTensor:
     def __init__(self, data, require_grad=False):
-        self.data = data
+        self.data = np.asarray(data)
         self.x = None
         self.y = None
         self.has_conv = 0
@@ -52,9 +52,7 @@ def torch_Tensor(arr):
     torch.tensor(arr, requires_grad=True)
 
 
-array = np.array([1., 2., 3.])
-tensor = torch.Tensor([1., 2., 3.])
-
+array = [1., 2., 3.]
 stmt_code = """
 result = C_Tensor(array)
 """
@@ -64,7 +62,7 @@ result = Python_Tensor(array)
 """
 
 stmt_code3 = """
-result = torch_Tensor(tensor)
+result = torch_Tensor(array)
 """
 
 print("Creating Objects")
