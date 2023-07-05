@@ -98,3 +98,4 @@ def test_C_Tensor_mul_backward(array, array2, grad):
     assert np.allclose(autograd_grad_operands1.grad, torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {autograd_grad_operands1.grad}"
 
+

@@ -3,6 +3,9 @@ import os
 import sys
 import timeit
 import statistics
+
+import torch
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from tensor import Tensor
 
@@ -45,13 +48,23 @@ def Python_Tensor(arr):
     MyTensor(arr, True)
 
 
-array = np.array([1, 2, 3])
+def torch_Tensor(arr):
+    torch.tensor(arr, requires_grad=True)
+
+
+array = np.array([1., 2., 3.])
+tensor = torch.Tensor([1., 2., 3.])
+
 stmt_code = """
 result = C_Tensor(array)
 """
 
 stmt_code2 = """
 result = Python_Tensor(array)
+"""
+
+stmt_code3 = """
+result = torch_Tensor(tensor)
 """
 
 print("Creating Objects")
@@ -61,8 +74,11 @@ print("stdev:", statistics.stdev(time))
 time2 = [timeit.timeit(stmt_code2, globals=globals(), number=1000000) for _ in range(10)]
 print(''.join(format(i, ".5f") + " s\t\t" for i in time2), end="")
 print("stdev:", statistics.stdev(time2))
+time3 = [timeit.timeit(stmt_code3, globals=globals(), number=1000000) for _ in range(10)]
+print(''.join(format(i, ".5f") + " s\t\t" for i in time3), end="")
 mean = statistics.mean(time)
 mean2 = statistics.mean(time2)
-print("\nDiff:", (mean2 - mean)/mean * 100, "%")
-
+mean3 = statistics.mean(time3)
+print("\nDiff with python class:", (mean2 - mean)/mean * 100, "%")
+print("\nDiff with torch tensor:", (mean3 - mean)/mean * 100, "%")
 

@@ -9,7 +9,7 @@
 typedef struct
 {
     PyObject_HEAD
-    PyObject *data;     /* ndarray */
+        PyObject *data; /* ndarray */
     PyObject *x;        /* Tensor */
     PyObject *y;        /* Tensor|scalar */
     int has_conv;
@@ -114,19 +114,21 @@ void init_map();
 void (*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **);
 
 Dict *get_address(const char *key);
+void free_dict(void);
 
 typedef struct
 {
     PyObject *node;
     PyObject *ndarray;
+    
 } Tuple;
-
 typedef struct
 {
     unsigned long len;
     unsigned long max_len;
     long long index;
     Tuple *array;
+
 } Stack;
 Stack *createStack(unsigned long capacity);
 int isFull(Stack *stack);

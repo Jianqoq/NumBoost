@@ -39,8 +39,6 @@ new_Tensor(PyTypeObject *type, Tensor *tensor, Tensor *tensor2, PyObject *data,
     }
     else
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
 }
@@ -83,8 +81,6 @@ new_Tensor_scalar(PyTypeObject *type, Tensor *self, PyObject *data, PyObject *y,
     }
     else
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
 }
@@ -125,8 +121,6 @@ new_Tensor_x(PyTypeObject *type, Tensor *self, PyObject *data, int has_conv, uin
     }
     else
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
 }
@@ -154,8 +148,6 @@ Tensor__new__(PyTypeObject *type, PyObject *data)
     }
     else
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
 }
@@ -170,8 +162,6 @@ tensor_add(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Add(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -187,8 +177,6 @@ tensor_add(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -215,8 +203,6 @@ tensor_iadd(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceAdd(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         if (tmp->require_grad)
@@ -231,8 +217,6 @@ tensor_iadd(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceAdd(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -251,8 +235,6 @@ tensor_mul(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Multiply(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -268,8 +250,6 @@ tensor_mul(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -296,8 +276,6 @@ tensor_imul(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceMultiply(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         if (tmp->require_grad)
@@ -312,8 +290,6 @@ tensor_imul(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceMultiply(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -332,8 +308,6 @@ tensor_div(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_TrueDivide(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -349,8 +323,6 @@ tensor_div(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -377,8 +349,6 @@ tensor_idiv(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceTrueDivide(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         if (tmp->require_grad)
@@ -393,8 +363,6 @@ tensor_idiv(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceTrueDivide(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -415,8 +383,6 @@ tensor_inegative(Tensor *self)
         PyNumber_InPlaceMultiply(self->data, PyLong_FromLong(-1));
     if (numpy_result == NULL)
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
     Tensor_SetData(self, numpy_result);
@@ -441,8 +407,6 @@ tensor_sub(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Subtract(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -458,8 +422,6 @@ tensor_sub(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -486,8 +448,6 @@ tensor_isub(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceSubtract(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         if (tmp->require_grad)
@@ -502,8 +462,6 @@ tensor_isub(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceSubtract(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -522,8 +480,6 @@ tensor_pow(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Power(self->data, temp->data, Py_None);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -537,8 +493,6 @@ tensor_pow(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Power(self->data, other, Py_None);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -565,8 +519,6 @@ tensor_ipow(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlacePower(self->data, tmp->data, Py_None);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         if (tmp->require_grad)
@@ -581,8 +533,6 @@ tensor_ipow(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlacePower(self->data, other, Py_None);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -597,8 +547,6 @@ tensor_matmul(Tensor *self, Tensor *other)
     PyObject *numpy_result = PyNumber_MatrixMultiply(self->data, other->data);
     if (numpy_result == NULL)
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
     Tensor *new_tensor = new_Tensor(
@@ -620,8 +568,6 @@ tensor_imatmul(Tensor *self, Tensor *other)
         PyNumber_InPlaceMatrixMultiply(self->data, other->data);
     if (numpy_result == NULL)
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
     if (other->require_grad)
@@ -648,8 +594,6 @@ tensor_absolute(Tensor *self)
     PyObject *numpy_result = PyNumber_Absolute(self->data);
     if (numpy_result == NULL)
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
     Tensor *new_tensor = new_Tensor_x(
@@ -670,8 +614,6 @@ tensor_invert(Tensor *self)
     PyObject *numpy_result = PyNumber_Invert(self->data);
     if (numpy_result == NULL)
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
     Tensor *new_tensor = new_Tensor_x(
@@ -696,8 +638,6 @@ tensor_lshift(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Lshift(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -713,8 +653,6 @@ tensor_lshift(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -739,20 +677,8 @@ tensor_ilshift(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_InPlaceLshift(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
-        // if (self->require_grad)
-        // {
-        //     PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a left variable");
-        //     return NULL;
-        // }
-        // else if (tmp->require_grad)
-        // {
-        //     Tensor_SetX(self, (PyObject *)other);
-        //     self->grad_fn = "InplaceLshiftBackward";
-        // }
         Py_INCREF(self);
         Tensor_SetData(self, numpy_result);
         return (PyObject *)self;
@@ -762,16 +688,8 @@ tensor_ilshift(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_InPlaceLshift(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
-        // if (self->require_grad)
-        // {
-        //     PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true on a left variable");
-        //     return NULL;
-        // }
-        // self->grad_fn = "";
         Py_INCREF(self);
         Tensor_SetData(self, numpy_result);
         return (PyObject *)self;
@@ -793,8 +711,6 @@ tensor_rshift(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Rshift(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -810,8 +726,6 @@ tensor_rshift(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -836,20 +750,8 @@ tensor_irshift(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_InPlaceRshift(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
-        // if (self->require_grad)
-        // {
-        //     PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true");
-        //     return NULL;
-        // }
-        // else if (tmp->require_grad)
-        // {
-        //     Tensor_SetX(self, (PyObject *)other);
-        //     self->grad_fn = "InplaceRshiftBackward";
-        // }
         Py_INCREF(self);
         Tensor_SetData(self, numpy_result);
         return (PyObject *)self;
@@ -859,16 +761,8 @@ tensor_irshift(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_InPlaceRshift(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
-        // if (self->require_grad)
-        // {
-        //     PyErr_SetString(PyExc_RuntimeError, "Inplace operation can't set require_grad to true");
-        //     return NULL;
-        // }
-        // self->grad_fn = "";
         Py_INCREF(self);
         Tensor_SetData(self, numpy_result);
         return (PyObject *)self;
@@ -890,14 +784,12 @@ tensor_and(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_And(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
             &Tensor_type, self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
-            "AndBackward", self->graph, self->axis, self->dim,
+            "", self->graph, self->axis, self->dim,
             self->base);
         return (PyObject *)new_tensor;
     }
@@ -907,13 +799,11 @@ tensor_and(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
             &Tensor_type, self, numpy_result, other,
-            self->has_conv, self->vars, self->require_grad, "AndBackward",
+            self->has_conv, self->vars, self->require_grad, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
     }
@@ -934,14 +824,12 @@ tensor_xor(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Xor(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
             &Tensor_type, self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
-            "XorBackward", self->graph, self->axis, self->dim,
+            "", self->graph, self->axis, self->dim,
             self->base);
         return (PyObject *)new_tensor;
     }
@@ -951,8 +839,6 @@ tensor_xor(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -978,14 +864,12 @@ tensor_or(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Or(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
             &Tensor_type, self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
-            "OrBackward", self->graph, self->axis, self->dim,
+            "", self->graph, self->axis, self->dim,
             self->base);
         return (PyObject *)new_tensor;
     }
@@ -995,8 +879,6 @@ tensor_or(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -1019,8 +901,6 @@ tensor_int(Tensor *self)
     long long *data = (long long *)PyArray_DATA((PyArrayObject *)numpy_result);
     if (numpy_result == NULL || data == NULL)
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
     return PyLong_FromLongLong(data[0]);
@@ -1038,8 +918,6 @@ tensor_float(Tensor *self)
     double *data = (double *)PyArray_DATA((PyArrayObject *)numpy_result);
     if (numpy_result == NULL || data == NULL)
     {
-        PyErr_Print();
-        PyErr_Clear();
         return NULL;
     }
     return PyFloat_FromDouble(data[0]);
@@ -1060,8 +938,6 @@ tensor_remainder(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Remainder(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -1077,8 +953,6 @@ tensor_remainder(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -1105,8 +979,6 @@ tensor_iand(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceAnd(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -1115,8 +987,6 @@ tensor_iand(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceAnd(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -1142,8 +1012,6 @@ tensor_ior(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceOr(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -1152,8 +1020,6 @@ tensor_ior(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceOr(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -1179,8 +1045,6 @@ tensor_ixor(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceXor(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor_SetY(self, (PyObject *)tmp);
@@ -1190,8 +1054,6 @@ tensor_ixor(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceXor(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor_SetY(self, other);
@@ -1218,8 +1080,6 @@ tensor_divmod(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_Divmod(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -1235,8 +1095,6 @@ tensor_divmod(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
@@ -1263,8 +1121,6 @@ tensor_iremainder(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceRemainder(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor_SetY(self, (PyObject *)tmp);
@@ -1274,18 +1130,11 @@ tensor_iremainder(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceRemainder(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor_SetY(self, other);
     }
-    if (self->require_grad)
-    {
-        self->grad_fn = "InplaceRemainderBackward";
-    }
     Tensor_SetX(self, self->data);
-    // Tensor_SetData(self, numpy_result);
     Py_INCREF(self);
     return (PyObject *)self;
 }
@@ -1305,8 +1154,6 @@ tensor_floordiv(Tensor *self, PyObject *other)
         PyObject *numpy_result = PyNumber_FloorDivide(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
@@ -1322,13 +1169,11 @@ tensor_floordiv(Tensor *self, PyObject *other)
 
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
             &Tensor_type, self, numpy_result, other,
-            self->has_conv, self->vars, self->require_grad, "FloorDivideBackward",
+            self->has_conv, self->vars, self->require_grad, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
     }
@@ -1350,8 +1195,6 @@ tensor_ifloordiv(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceFloorDivide(self->data, tmp->data);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }
@@ -1360,8 +1203,6 @@ tensor_ifloordiv(Tensor *self, PyObject *other)
         numpy_result = PyNumber_InPlaceFloorDivide(self->data, other);
         if (numpy_result == NULL)
         {
-            PyErr_Print();
-            PyErr_Clear();
             return NULL;
         }
     }

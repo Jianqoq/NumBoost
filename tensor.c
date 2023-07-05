@@ -53,8 +53,8 @@ get_address(const char *key)
     return NULL;
 }
 
-static void
-free_dict()
+void
+free_dict(void)
 {
     Dict *entry, *tmp;
     HASH_ITER(hh, dict, entry, tmp)
@@ -163,6 +163,7 @@ __str__(Tensor *self)
     }
     PyObject *representation = PyUnicode_FromString((const char *)dest);
     free(dest);
+    free(result);
     Py_DECREF(py_str);
     return representation;
 }
@@ -213,11 +214,6 @@ Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     Py_VISIT(self->base);
     Py_VISIT(self->grad);
     return 0;
-}
-
-void cleanup_function(void)
-{
-    free_dict();
 }
 
 static PyMemberDef
@@ -301,6 +297,7 @@ _Generic_backward(PyObject *self, PyObject *args)
             if (PyErr_Occurred())
             {
                 PyErr_SetString(PyExc_RuntimeError, "grad_fn_name is NULL");
+                free_dict();
                 return NULL;
             }
             continue;
@@ -321,6 +318,7 @@ _Generic_backward(PyObject *self, PyObject *args)
                 if (grad == NULL)
                 {
                     PyErr_SetString(PyExc_RuntimeError, "can't get grad attribute");
+                    free_dict();
                     return NULL;
                 }
                 PyObject *new_grad = PyNumber_Add(grad, tuple.ndarray);
@@ -328,6 +326,7 @@ _Generic_backward(PyObject *self, PyObject *args)
                 if (tmp == NULL)
                 {
                     PyErr_SetString(PyExc_RuntimeError, "can't get grad attribute");
+                    free_dict();
                     return NULL;
                 }
                 Py_DECREF(tmp);
@@ -341,6 +340,7 @@ _Generic_backward(PyObject *self, PyObject *args)
         get_method(grad_fn)((Tensor *)tuple.node, tuple.ndarray, &current_grad1, &current_grad2);
         if (current_grad1 == NULL || current_grad2 == NULL)
         {
+            free_dict();
             return NULL;
         }
         PyObject *x = PyObject_GetAttrString(tuple.node, "x");
@@ -355,6 +355,7 @@ _Generic_backward(PyObject *self, PyObject *args)
         if (grad_fn_name == NULL)
         {
             PyErr_SetString(PyExc_RuntimeError, "grad_fn_name is NULL");
+            free_dict();
             return NULL;
         }
         grad_fn = PyUnicode_AsUTF8(grad_fn_name);
@@ -426,6 +427,6 @@ PyInit_tensor(void)
         Py_DECREF(m);
         return NULL;
     };
-    Py_AtExit(cleanup_function);
+    Py_AtExit(free_dict);
     return m;
 }

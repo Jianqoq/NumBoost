@@ -209,8 +209,6 @@ void matmul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject 
         *out2 = NULL;
         return;
     }
-    PyArrayObject *ga = (PyArrayObject *)grad;
-    PyArrayObject *a = (PyArrayObject *)self->data;
     PyObject *transposed1 = NULL;
     PyObject *transposed2 = NULL;
     Tensor *tmp1 = (Tensor *)self->y;
