@@ -1,6 +1,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #include "operators.h"
+#include <numpy/arrayobject.h>
 extern PyTypeObject Tensor_type;
 
 Tensor *

@@ -1,6 +1,5 @@
 #include <Python.h>
 #include "tensor.h"
-#include <numpy/arrayobject.h>
 
 #ifndef TENSOR_CLASS
 #define TENSOR_CLASS
