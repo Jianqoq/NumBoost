@@ -5,4 +5,4 @@ This is legacy code.
 Goals
 1. Use new algo to save memory when doing backward calculation.
 2. Integrate Tensorflow XLA.
-3. Support GPU.
+3. Mix with dynamic and static computation graph
