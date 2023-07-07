@@ -1,7 +1,6 @@
 #define NO_IMPORT_ARRAY
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
-#include "numpy/arrayobject.h"
-#include "tensor.h"
+#include "operators.h"
 
 Tensor *
 new_Tensor(PyTypeObject *type, Tensor *tensor, Tensor *tensor2, PyObject *data,
@@ -116,6 +115,44 @@ new_Tensor_x(PyTypeObject *type, Tensor *self, PyObject *data, int has_conv, uin
         Tensor_SetDim(tensor, dim);
         Tensor_SetAxis_without_init_value(tensor, axis);
         Tensor_SetBase_without_init_value(tensor, base);
+        Tensor_SetGrad_without_init_value(tensor, Py_None);
+        return tensor;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+Tensor *
+__new_Tensor(PyTypeObject *type, Tensor *self, PyObject *array, const char *grad_fn)
+{
+    Tensor *tensor;
+    tensor = (Tensor *)type->tp_alloc(type, 0);
+    if (tensor != NULL)
+    {
+        Tensor_SetData_startwone_without_init(tensor, array);
+        if (self->require_grad)
+        {
+            Tensor_SetX_without_init_value(tensor, (PyObject *)self);
+            Tensor_SetY_without_init_value(tensor, Py_None);
+            Tensor_SetRequireGrad(tensor, true);
+            Tensor_SetGradFn(tensor, grad_fn);
+            Tensor_SetVars(tensor, self->vars + 1);
+        }
+        else
+        {
+            Tensor_SetX_without_init_value(tensor, Py_None);
+            Tensor_SetY_without_init_value(tensor, Py_None);
+            Tensor_SetRequireGrad(tensor, false);
+            Tensor_SetGradFn(tensor, "");
+            Tensor_SetVars(tensor, 0);
+        }
+        Tensor_SetHasConv(tensor, self->has_conv);
+        Tensor_SetGraph_without_init_value(tensor, self->graph);
+        Tensor_SetDim(tensor, self->dim);
+        Tensor_SetAxis_without_init_value(tensor, self->axis);
+        Tensor_SetBase_without_init_value(tensor, self->base);
         Tensor_SetGrad_without_init_value(tensor, Py_None);
         return tensor;
     }

@@ -1,0 +1,57 @@
+
+#include <Python.h>
+#include "numpy/arrayobject.h"
+
+typedef struct
+{
+    PyObject* sin;
+    PyObject* cos;
+    PyObject* tan;
+    PyObject* asin;
+    PyObject* acos;
+    PyObject* atan;
+    PyObject* sinh;
+    PyObject* cosh;
+    PyObject* tanh;
+    PyObject* asinh;
+    PyObject* acosh;
+    PyObject* atanh;
+    PyObject* arcsin;
+    PyObject* arccos;
+    PyObject* arctan;
+    PyObject* arcsinh;
+    PyObject* arccosh;
+    PyObject* arctanh;
+    PyObject* absolute;
+    PyObject* exp;
+    PyObject* log;
+    PyObject* log10;
+    PyObject* log1P;
+    PyObject* sqrt;
+    PyObject* square;
+    PyObject* abs;
+    PyObject* sign;
+    PyObject* ceil;
+    PyObject* floor;
+    PyObject* round;
+    PyObject* trunc;
+    PyObject* add;
+    PyObject* multiply;
+    PyObject* subtract;
+    PyObject* divide;
+    PyObject* power;
+    PyObject* sum;
+    PyObject* mean;
+    PyObject* max;
+    PyObject* min;
+    PyObject* argmax;
+    PyObject* argmin;
+    PyObject* dot;
+    PyObject* matmul;
+    PyObject* transpose;
+    PyObject* reshape;
+    PyObject* tensordot;
+    PyObject* concatenate;
+} np_method;
+
+np_method *NP_METHOD;

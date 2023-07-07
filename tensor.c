@@ -2,6 +2,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #include "numpy/arrayobject.h"
 #include "tensor.h"
+#include "methods.h"
 
 static Dict *dict = NULL;
 
@@ -53,8 +54,7 @@ get_address(const char *key)
     return NULL;
 }
 
-void
-free_dict(void)
+void free_dict(void)
 {
     Dict *entry, *tmp;
     HASH_ITER(hh, dict, entry, tmp)
