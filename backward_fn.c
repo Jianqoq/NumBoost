@@ -1,7 +1,9 @@
-#define NO_IMPORT_ARRAY
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
-#include "numpy/arrayobject.h"
+#define NO_IMPORT_ARRAY
+#include <numpy/arrayobject.h>
 #include "tensor.h"
+
+extern PyTypeObject Tensor_type;
 
 static bool shape_is_equal(npy_intp *dims1, npy_intp *dims2, int *nd)
 {

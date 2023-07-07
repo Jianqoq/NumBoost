@@ -1,9 +1,10 @@
-#define PY_SSIZE_T_CLEAN
 #define PY_ARRAY_UNIQUE_SYMBOL core_c
-#include "numpy/arrayobject.h"
+#define NO_IMPORT_ARRAY
+#include <numpy/arrayobject.h>
 #include "numpy/ndarraytypes.h"
+#include "tensor.h"
 #include "core.h"
-#include "methods.h"
+
 extern np_method *NP_METHOD;
 extern PyTypeObject Tensor_type;
 

@@ -16,7 +16,7 @@ mymodule = Extension('tensor',
                      define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')])
 
 mymodule2 = Extension('core',
-                     sources=['methods.c', 'core.c', 'operators.c', 'backward_fn.c', 'stack.c', 'set_Tensor_properties.c', 'tensor.c'],
+                     sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c', 'set_Tensor_properties.c','methods.c', 'core.c'],
                      include_dirs=[numpy.get_include()],
                      language='c',
                      extra_compile_args=args,

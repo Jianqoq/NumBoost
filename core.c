@@ -1,7 +1,8 @@
-#define PY_SSIZE_T_CLEAN
 #define PY_ARRAY_UNIQUE_SYMBOL core_c
+#define PY_SSIZE_T_CLEAN
+#include "tensor.h"
+#include <numpy/arrayobject.h>
 #include "core.h"
-#include "methods.h"
 
 np_method *NP_METHOD = NULL;
 
@@ -29,8 +30,7 @@ static PyMethodDef methods[] = {
     {"log", (PyCFunction)_log, METH_O, "Method docstring"},
     {"exp", (PyCFunction)_exp, METH_O, "Method docstring"},
     {"sqrt", (PyCFunction)_sqrt, METH_FASTCALL, "Method docstring"},
-    {NULL}
-};
+    {NULL}};
 
 static PyModuleDef
     custommodule = {
@@ -55,7 +55,29 @@ PyInit_core(void)
         PyErr_Print();
         return NULL;
     }
-
+    PyObject *set_printoptions = PyObject_GetAttrString(module, "set_printoptions");
+    PyObject *kwargs = PyDict_New();
+    PyObject *precision = PyLong_FromLong(3);
+    if (kwargs == NULL || precision == NULL)
+    {
+        Py_XDECREF(kwargs);
+        Py_XDECREF(precision);
+        free_dict();
+        Py_DECREF(module);
+        return NULL;
+    }
+    if (PyDict_SetItemString(kwargs, "precision", precision) != 0)
+    {
+        PyObject *result = PyObject_Call(set_printoptions, PyTuple_New(0), kwargs);
+        if (result == NULL)
+        {
+            Py_XDECREF(kwargs);
+            Py_XDECREF(precision);
+            free_dict();
+            Py_DECREF(module);
+            return NULL;
+        }
+    }
     NP_METHOD->sin = PyObject_GetAttrString(module, "sin");
     NP_METHOD->cos = PyObject_GetAttrString(module, "cos");
     NP_METHOD->tan = PyObject_GetAttrString(module, "tan");
