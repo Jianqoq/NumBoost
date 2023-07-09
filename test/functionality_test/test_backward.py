@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from src.tensor import Tensor
 import src.core as core
 
+
 @pytest.mark.parametrize("array, array2, grad", [(np.array([1., 2., 3.]), np.array([5., 7., 8.]), np.array([10., 9., 5.])),])
 def test_C_Tensor_addition_backward(array, array2, grad):
     autograd_grad_operands1 = Tensor(array, True)
