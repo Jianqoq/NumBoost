@@ -5,6 +5,9 @@
 #include "core.h"
 
 np_method *NP_METHOD = NULL;
+Array_Shape *ARRAY_SHAPE = NULL;
+Power_Dict *POWER_DICT = NULL;
+Log_Dict *LOG_DICT = NULL;
 
 static PyMethodDef methods[] = {
     {"reshape", (PyCFunction)reshape, METH_FASTCALL, "Method docstring"},
@@ -14,22 +17,25 @@ static PyMethodDef methods[] = {
     {"sum", (PyCFunction)_sum, METH_FASTCALL, "Method docstring"},
     {"max", (PyCFunction)_max, METH_FASTCALL, "Method docstring"},
     {"min", (PyCFunction)_min, METH_FASTCALL, "Method docstring"},
-    {"sin", (PyCFunction)_sin, METH_O, "Method docstring"},
-    {"cos", (PyCFunction)_cos, METH_O, "Method docstring"},
-    {"tan", (PyCFunction)_tan, METH_O, "Method docstring"},
-    {"arcsin", (PyCFunction)_asin, METH_O, "Method docstring"},
-    {"arccos", (PyCFunction)_acos, METH_O, "Method docstring"},
-    {"arctan", (PyCFunction)_atan, METH_O, "Method docstring"},
-    {"arcsinh", (PyCFunction)_asinh, METH_O, "Method docstring"},
-    {"arccosh", (PyCFunction)_acosh, METH_O, "Method docstring"},
-    {"arctanh", (PyCFunction)_atanh, METH_O, "Method docstring"},
-    {"sinh", (PyCFunction)_sinh, METH_O, "Method docstring"},
-    {"cosh", (PyCFunction)_cosh, METH_O, "Method docstring"},
-    {"tanh", (PyCFunction)_tanh, METH_O, "Method docstring"},
-    {"log10", (PyCFunction)_log10, METH_O, "Method docstring"},
-    {"log", (PyCFunction)_log, METH_O, "Method docstring"},
-    {"exp", (PyCFunction)_exp, METH_O, "Method docstring"},
+    {"sin", (PyCFunction)_sin, METH_FASTCALL, "Method docstring"},
+    {"cos", (PyCFunction)_cos, METH_FASTCALL, "Method docstring"},
+    {"tan", (PyCFunction)_tan, METH_FASTCALL, "Method docstring"},
+    {"arcsin", (PyCFunction)_asin, METH_FASTCALL, "Method docstring"},
+    {"arccos", (PyCFunction)_acos, METH_FASTCALL, "Method docstring"},
+    {"arctan", (PyCFunction)_atan, METH_FASTCALL, "Method docstring"},
+    {"arcsinh", (PyCFunction)_asinh, METH_FASTCALL, "Method docstring"},
+    {"arccosh", (PyCFunction)_acosh, METH_FASTCALL, "Method docstring"},
+    {"arctanh", (PyCFunction)_atanh, METH_FASTCALL, "Method docstring"},
+    {"sinh", (PyCFunction)_sinh, METH_FASTCALL, "Method docstring"},
+    {"cosh", (PyCFunction)_cosh, METH_FASTCALL, "Method docstring"},
+    {"tanh", (PyCFunction)_tanh, METH_FASTCALL, "Method docstring"},
+    {"log10", (PyCFunction)_log10, METH_FASTCALL, "Method docstring"},
+    {"log", (PyCFunction)_log, METH_FASTCALL, "Method docstring"},
+    {"exp", (PyCFunction)_exp, METH_FASTCALL, "Method docstring"},
     {"sqrt", (PyCFunction)_sqrt, METH_FASTCALL, "Method docstring"},
+    {"abs", (PyCFunction)_abs, METH_FASTCALL, "Method docstring"},
+    {"power", (PyCFunction)_pow, METH_FASTCALL, "Method docstring"},
+    {"mean", (PyCFunction)_mean, METH_FASTCALL, "Method docstring"},
     {NULL}};
 
 static PyModuleDef
@@ -46,7 +52,11 @@ PyInit_core(void)
 {
     import_array();
     Py_Initialize();
+    init_map();
     NP_METHOD = malloc(sizeof(np_method));
+    ARRAY_SHAPE = NULL;
+    POWER_DICT = NULL;
+    LOG_DICT = NULL;
     PyObject *m;
     PyObject *module = PyImport_ImportModule("numpy");
     if (module == NULL)
@@ -55,29 +65,7 @@ PyInit_core(void)
         PyErr_Print();
         return NULL;
     }
-    PyObject *set_printoptions = PyObject_GetAttrString(module, "set_printoptions");
-    PyObject *kwargs = PyDict_New();
-    PyObject *precision = PyLong_FromLong(3);
-    if (kwargs == NULL || precision == NULL)
-    {
-        Py_XDECREF(kwargs);
-        Py_XDECREF(precision);
-        free_dict();
-        Py_DECREF(module);
-        return NULL;
-    }
-    if (PyDict_SetItemString(kwargs, "precision", precision) != 0)
-    {
-        PyObject *result = PyObject_Call(set_printoptions, PyTuple_New(0), kwargs);
-        if (result == NULL)
-        {
-            Py_XDECREF(kwargs);
-            Py_XDECREF(precision);
-            free_dict();
-            Py_DECREF(module);
-            return NULL;
-        }
-    }
+    
     NP_METHOD->sin = PyObject_GetAttrString(module, "sin");
     NP_METHOD->cos = PyObject_GetAttrString(module, "cos");
     NP_METHOD->tan = PyObject_GetAttrString(module, "tan");
@@ -94,7 +82,8 @@ PyInit_core(void)
     NP_METHOD->log = PyObject_GetAttrString(module, "log");
     NP_METHOD->log10 = PyObject_GetAttrString(module, "log10");
     NP_METHOD->sqrt = PyObject_GetAttrString(module, "sqrt");
-    // NP_METHOD->absolute = PyObject_GetAttrString(module, "absolute");
+    NP_METHOD->abs = PyObject_GetAttrString(module, "abs");
+    NP_METHOD->power = PyObject_GetAttrString(module, "power");
     // NP_METHOD->add = PyObject_GetAttrString(module, "add");
     // NP_METHOD->subtract = PyObject_GetAttrString(module, "subtract");
     // NP_METHOD->multiply = PyObject_GetAttrString(module, "multiply");
@@ -107,6 +96,10 @@ PyInit_core(void)
     // NP_METHOD->tensordot = PyObject_GetAttrString(module, "tensordot");
     // NP_METHOD->concatenate = PyObject_GetAttrString(module, "concatenate");
 
+
+    if (PyType_Ready(&Tensor_type) < 0)
+        return NULL;
+    Py_INCREF(&Tensor_type);
     m = PyModule_Create(&custommodule);
     if (m == NULL)
         return NULL;

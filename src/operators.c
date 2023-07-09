@@ -1,16 +1,60 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #include "operators.h"
+#include "structmember.h"
 #include <numpy/arrayobject.h>
-extern PyTypeObject Tensor_type;
+#include "set_Tensor_properties.h"
+#include <Python.h>
 
 Tensor *
-new_Tensor(PyTypeObject *type, Tensor *tensor, Tensor *tensor2, PyObject *data,
+__new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y, const char *grad_fn)
+{
+    PyTypeObject *Tensor_Type = &Tensor_type;
+    Tensor *self = (Tensor *)Tensor_Type->tp_alloc(Tensor_Type, 0);
+    if (self != NULL)
+    {
+        if (tensor->require_grad)
+        {
+            Tensor_SetGradFn(self, grad_fn);
+            Tensor_SetRequireGrad(self, true);
+            Tensor_SetVars(self, tensor->vars);
+            Tensor_SetX_without_init_value(self, (PyObject*)tensor);
+            if (to_y != NULL)
+                Tensor_SetY_without_init_value(self, to_y);
+            else
+                Tensor_SetY_without_init_value(self, Py_None);
+        }
+        else
+        {
+            Tensor_SetX_without_init_value(self, Py_None);
+            Tensor_SetY_without_init_value(self, Py_None);
+            Tensor_SetGradFn(self, "");
+            Tensor_SetRequireGrad(self, false);
+            Tensor_SetVars(self, 0);
+        }
+        Tensor_SetData_startwone_without_init(self, array);
+        Tensor_SetHasConv(self, tensor->has_conv);
+        Tensor_SetGraph_without_init_value(self, tensor->graph);
+        Tensor_SetDim(self, tensor->dim);
+        Tensor_SetAxis_without_init_value(self, tensor->axis);
+        Tensor_SetBase_without_init_value(self, tensor->base);
+        Tensor_SetGrad_without_init_value(self, Py_None);
+        return self;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+Tensor *
+new_Tensor(Tensor *tensor, Tensor *tensor2, PyObject *data,
            PyObject *x, PyObject *y, int has_conv, uint64_t vars, bool require_grad,
            const char *grad_fn, PyObject *graph, PyObject *axis, int dim,
            PyObject *base)
-{
-    Tensor *self = (Tensor *)type->tp_alloc(type, 0);
+{   
+    PyTypeObject *Tensor_Type = &Tensor_type;
+    Tensor *self = (Tensor *)Tensor_Type->tp_alloc(Tensor_Type, 0);
     if (self != NULL)
     {
         if (tensor->require_grad || tensor2->require_grad)
@@ -45,12 +89,13 @@ new_Tensor(PyTypeObject *type, Tensor *tensor, Tensor *tensor2, PyObject *data,
 }
 
 Tensor *
-new_Tensor_scalar(PyTypeObject *type, Tensor *self, PyObject *data, PyObject *y, int has_conv, uint64_t vars,
+new_Tensor_scalar(Tensor *self, PyObject *data, PyObject *y, int has_conv, uint64_t vars,
                   bool require_grad, const char *grad_fn, PyObject *graph,
                   PyObject *axis, int dim, PyObject *base)
 {
     Tensor *tensor;
-    tensor = (Tensor *)type->tp_alloc(type, 0);
+    PyTypeObject *Tensor_Type = &Tensor_type;
+    tensor = (Tensor *)Tensor_Type->tp_alloc(Tensor_Type, 0);
     if (tensor != NULL)
     {
         Tensor_SetData_startwone_without_init(tensor, data);
@@ -78,6 +123,7 @@ new_Tensor_scalar(PyTypeObject *type, Tensor *self, PyObject *data, PyObject *y,
         Tensor_SetAxis_without_init_value(tensor, axis);
         Tensor_SetBase_without_init_value(tensor, base);
         Tensor_SetGrad_without_init_value(tensor, Py_None);
+        PyObject_Print(PyObject_GetAttrString((PyObject *)tensor, "data"), stdout, 0);
         return tensor;
     }
     else
@@ -87,12 +133,13 @@ new_Tensor_scalar(PyTypeObject *type, Tensor *self, PyObject *data, PyObject *y,
 }
 
 Tensor *
-new_Tensor_x(PyTypeObject *type, Tensor *self, PyObject *data, int has_conv, uint64_t vars,
+new_Tensor_x(Tensor *self, PyObject *data, int has_conv, uint64_t vars,
              bool require_grad, const char *grad_fn, PyObject *graph,
              PyObject *axis, int dim, PyObject *base)
 {
     Tensor *tensor;
-    tensor = (Tensor *)type->tp_alloc(type, 0);
+    PyTypeObject *Tensor_Type = &Tensor_type;
+    tensor = (Tensor *)Tensor_Type->tp_alloc(Tensor_Type, 0);
     if (tensor != NULL)
     {
         Tensor_SetData_startwone_without_init(tensor, data);
@@ -117,44 +164,6 @@ new_Tensor_x(PyTypeObject *type, Tensor *self, PyObject *data, int has_conv, uin
         Tensor_SetDim(tensor, dim);
         Tensor_SetAxis_without_init_value(tensor, axis);
         Tensor_SetBase_without_init_value(tensor, base);
-        Tensor_SetGrad_without_init_value(tensor, Py_None);
-        return tensor;
-    }
-    else
-    {
-        return NULL;
-    }
-}
-
-Tensor *
-__new_Tensor(PyTypeObject *type, Tensor *self, PyObject *array, const char *grad_fn)
-{
-    Tensor *tensor;
-    tensor = (Tensor *)type->tp_alloc(type, 0);
-    if (tensor != NULL)
-    {
-        Tensor_SetData_startwone_without_init(tensor, array);
-        if (self->require_grad)
-        {
-            Tensor_SetX_without_init_value(tensor, (PyObject *)self);
-            Tensor_SetY_without_init_value(tensor, Py_None);
-            Tensor_SetRequireGrad(tensor, true);
-            Tensor_SetGradFn(tensor, grad_fn);
-            Tensor_SetVars(tensor, self->vars + 1);
-        }
-        else
-        {
-            Tensor_SetX_without_init_value(tensor, Py_None);
-            Tensor_SetY_without_init_value(tensor, Py_None);
-            Tensor_SetRequireGrad(tensor, false);
-            Tensor_SetGradFn(tensor, "");
-            Tensor_SetVars(tensor, 0);
-        }
-        Tensor_SetHasConv(tensor, self->has_conv);
-        Tensor_SetGraph_without_init_value(tensor, self->graph);
-        Tensor_SetDim(tensor, self->dim);
-        Tensor_SetAxis_without_init_value(tensor, self->axis);
-        Tensor_SetBase_without_init_value(tensor, self->base);
         Tensor_SetGrad_without_init_value(tensor, Py_None);
         return tensor;
     }
@@ -191,7 +200,7 @@ Tensor__new__(PyTypeObject *type, PyObject *data)
     }
 }
 
-PyObject *
+Tensor *
 tensor_add(Tensor *self, PyObject *other)
 {
     Tensor *tmp;
@@ -203,26 +212,23 @@ tensor_add(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+        Tensor *new_tensor = new_Tensor(self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "AddBackward", self->graph, self->axis, self->dim,
             self->base);
-        return (PyObject *)new_tensor;
+        return new_tensor;
     }
     else
     {
         PyObject *numpy_result = PyNumber_Add(self->data, other);
-
         if (numpy_result == NULL)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+        Tensor *new_tensor = new_Tensor_scalar(self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "AddBackward",
             self->graph, self->axis, self->dim, self->base);
-        return (PyObject *)new_tensor;
+        return new_tensor;
     }
 }
 
@@ -276,8 +282,7 @@ tensor_mul(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+        Tensor *new_tensor = new_Tensor(self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "MulBackward", self->graph, self->axis, self->dim,
             self->base);
@@ -291,8 +296,7 @@ tensor_mul(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+        Tensor *new_tensor = new_Tensor_scalar(self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "MulBackward",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -349,8 +353,7 @@ tensor_div(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+        Tensor *new_tensor = new_Tensor(self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "DivBackward", self->graph, self->axis, self->dim,
             self->base);
@@ -364,8 +367,7 @@ tensor_div(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+        Tensor *new_tensor = new_Tensor_scalar(self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "DivBackward",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -448,8 +450,7 @@ tensor_sub(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+        Tensor *new_tensor = new_Tensor(self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "SubBackward", self->graph, self->axis, self->dim,
             self->base);
@@ -463,8 +464,7 @@ tensor_sub(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+        Tensor *new_tensor = new_Tensor_scalar(self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "SubBackward",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -521,8 +521,7 @@ tensor_pow(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, temp, numpy_result, self->data, temp->data,
+        Tensor *new_tensor = new_Tensor(self, temp, numpy_result, self->data, temp->data,
             self->has_conv, self->vars, self->require_grad, "PowBackward",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -534,8 +533,7 @@ tensor_pow(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+        Tensor *new_tensor = new_Tensor_scalar(self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "PowBackward",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -588,8 +586,7 @@ tensor_matmul(Tensor *self, Tensor *other)
     {
         return NULL;
     }
-    Tensor *new_tensor = new_Tensor(
-        &Tensor_type, self, other, numpy_result, self->data, other->data,
+    Tensor *new_tensor = new_Tensor(self, other, numpy_result, self->data, other->data,
         self->has_conv, self->vars, self->require_grad, "MatMulBackward",
         self->graph, self->axis, self->dim, self->base);
     return (PyObject *)new_tensor;
@@ -635,8 +632,7 @@ tensor_absolute(Tensor *self)
     {
         return NULL;
     }
-    Tensor *new_tensor = new_Tensor_x(
-        &Tensor_type, self, numpy_result,
+    Tensor *new_tensor = new_Tensor_x(self, numpy_result,
         self->has_conv, self->vars, self->require_grad, "AbsoluteBackward",
         self->graph, self->axis, self->dim, self->base);
     return (PyObject *)new_tensor;
@@ -655,8 +651,7 @@ tensor_invert(Tensor *self)
     {
         return NULL;
     }
-    Tensor *new_tensor = new_Tensor_x(
-        &Tensor_type, self, numpy_result,
+    Tensor *new_tensor = new_Tensor_x(self, numpy_result,
         self->has_conv, self->vars, self->require_grad, "",
         self->graph, self->axis, self->dim, self->base);
     return (PyObject *)new_tensor;
@@ -679,8 +674,7 @@ tensor_lshift(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+        Tensor *new_tensor = new_Tensor(self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, false,
             "", self->graph, self->axis, self->dim,
             self->base);
@@ -694,8 +688,7 @@ tensor_lshift(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+        Tensor *new_tensor = new_Tensor_scalar(self, numpy_result, other,
             self->has_conv, self->vars, false, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -752,8 +745,7 @@ tensor_rshift(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+        Tensor *new_tensor = new_Tensor(self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, false,
             "", self->graph, self->axis, self->dim,
             self->base);
@@ -767,8 +759,7 @@ tensor_rshift(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+        Tensor *new_tensor = new_Tensor_scalar(self, numpy_result, other,
             self->has_conv, self->vars, false, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -825,8 +816,7 @@ tensor_and(Tensor *self, PyObject *other)
         {
             return NULL;
         }
-        Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+        Tensor *new_tensor = new_Tensor(self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "", self->graph, self->axis, self->dim,
             self->base);
@@ -841,7 +831,7 @@ tensor_and(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+            self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -866,7 +856,7 @@ tensor_xor(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+            self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "", self->graph, self->axis, self->dim,
             self->base);
@@ -881,7 +871,7 @@ tensor_xor(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+            self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "XorBackward",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -906,7 +896,7 @@ tensor_or(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+            self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "", self->graph, self->axis, self->dim,
             self->base);
@@ -921,7 +911,7 @@ tensor_or(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+            self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "OrBackward",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -980,7 +970,7 @@ tensor_remainder(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+            self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "", self->graph, self->axis, self->dim,
             self->base);
@@ -995,7 +985,7 @@ tensor_remainder(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+            self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -1122,7 +1112,7 @@ tensor_divmod(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+            self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "", self->graph, self->axis, self->dim,
             self->base);
@@ -1137,7 +1127,7 @@ tensor_divmod(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+            self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;
@@ -1196,7 +1186,7 @@ tensor_floordiv(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor(
-            &Tensor_type, self, tmp, numpy_result, self->data,
+            self, tmp, numpy_result, self->data,
             tmp->data, self->has_conv, self->vars, self->require_grad,
             "", self->graph, self->axis, self->dim,
             self->base);
@@ -1211,7 +1201,7 @@ tensor_floordiv(Tensor *self, PyObject *other)
             return NULL;
         }
         Tensor *new_tensor = new_Tensor_scalar(
-            &Tensor_type, self, numpy_result, other,
+            self, numpy_result, other,
             self->has_conv, self->vars, self->require_grad, "",
             self->graph, self->axis, self->dim, self->base);
         return (PyObject *)new_tensor;

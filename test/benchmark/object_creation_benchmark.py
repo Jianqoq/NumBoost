@@ -11,6 +11,10 @@ from tensor import Tensor
 
 
 class MyTensor:
+    __slots__ = ("data", "x", "y", "has_conv", "vars",
+                 "require_grad", "grad_fn", "graph",
+                 "axis", "grad", "dim", "base")
+
     def __init__(self, data, require_grad=False):
         self.data = np.asarray(data)
         self.x = None

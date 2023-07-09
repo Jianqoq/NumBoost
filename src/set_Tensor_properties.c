@@ -1,5 +1,4 @@
-
-#include "tensor.h"
+#include "set_Tensor_properties.h"
 
 void Tensor_SetData(Tensor *self, PyObject *data)
 {
@@ -288,6 +287,7 @@ void Tensor_SetAxis_startwone(Tensor *self, PyObject *axis)
 void Tensor_SetData_startwone_without_init(Tensor *self, PyObject *data)
 {
     self->data = data;
+    Py_INCREF(data);
     if (self->data == NULL)
     {
         Py_DECREF(self);
@@ -299,6 +299,7 @@ void Tensor_SetData_startwone_without_init(Tensor *self, PyObject *data)
 void Tensor_SetX_startwone_without_init(Tensor *self, PyObject *x)
 {
     self->x = x;
+    Py_INCREF(x);
     if (self->x == NULL)
     {
         Py_DECREF(self);
@@ -310,6 +311,7 @@ void Tensor_SetX_startwone_without_init(Tensor *self, PyObject *x)
 void Tensor_SetY_startwone_without_init(Tensor *self, PyObject *y)
 {
     self->y = y;
+    Py_INCREF(y);
     if (self->y == NULL)
     {
         Py_DECREF(self);
@@ -321,6 +323,7 @@ void Tensor_SetY_startwone_without_init(Tensor *self, PyObject *y)
 void Tensor_SetGrad_startwone_without_init(Tensor *self, PyObject *grad)
 {
     self->grad = grad;
+    Py_INCREF(grad);
     if (self->grad == NULL)
     {
         Py_DECREF(self);
@@ -332,6 +335,7 @@ void Tensor_SetGrad_startwone_without_init(Tensor *self, PyObject *grad)
 void Tensor_SetGraph_startwone_without_init(Tensor *self, PyObject *graph)
 {
     self->graph = graph;
+    Py_INCREF(graph);
     if (self->graph == NULL)
     {
         Py_DECREF(self);
@@ -343,6 +347,7 @@ void Tensor_SetGraph_startwone_without_init(Tensor *self, PyObject *graph)
 void Tensor_SetBase_startwone_without_init(Tensor *self, PyObject *base)
 {
     self->base = base;
+    Py_INCREF(base);
     if (self->base == NULL)
     {
         Py_DECREF(self);
@@ -354,6 +359,7 @@ void Tensor_SetBase_startwone_without_init(Tensor *self, PyObject *base)
 void Tensor_SetAxis_startwone_without_init(Tensor *self, PyObject *axis)
 {
     self->axis = axis;
+    Py_INCREF(axis);
     if (self->axis == NULL)
     {
         Py_DECREF(self);

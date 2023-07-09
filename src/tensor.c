@@ -5,6 +5,9 @@
 #include <string.h>
 #include "structmember.h"
 #include "tensor.h"
+#include "operators.h"
+#include "set_Tensor_properties.h"
+
 static Dict *dict = NULL;
 
 PyObject *
@@ -14,7 +17,8 @@ RunTimeError(PyObject *self, const char *message)
     return NULL;
 }
 
-void INCREF_TENSOR(Tensor *self)
+void 
+INCREF_TENSOR(Tensor *self)
 {
     Py_INCREF(self->data);
     Py_INCREF(self->x);
@@ -24,7 +28,8 @@ void INCREF_TENSOR(Tensor *self)
     Py_INCREF(self->base);
 }
 
-void add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
+void 
+add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
 {
     Dict *entry = (Dict *)malloc(sizeof(Dict));
     entry->key = key;
@@ -32,7 +37,8 @@ void add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **
     HASH_ADD_STR(dict, key, entry);
 }
 
-void (*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
+void 
+(*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
 {
     Dict *entry;
     HASH_FIND_STR(dict, key, entry);
@@ -71,12 +77,21 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Tensor *self = (Tensor *)PyObject_GC_New(Tensor, type);
     if (self != NULL)
     {
-        Tensor_SetData_without_init_value(self, Py_None);
+        static char *kwlist[] = {"data", "requires_grad", NULL};
+        PyObject *data = NULL, *cache = NULL;
+
+        if (!PyArg_ParseTupleAndKeywords(
+                args, kwds, "O|p", kwlist, &data, &self->require_grad))
+            return NULL;
+        if (data)
+            cache = PyArray_FromAny(data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
+        else
+            return NULL;
+        Tensor_SetData_without_init_value(self, cache);
         Tensor_SetX_without_init_value(self, Py_None);
         Tensor_SetY_without_init_value(self, Py_None);
         Tensor_SetHasConv(self, 0);
         Tensor_SetVars(self, 1);
-        Tensor_SetRequireGrad(self, false);
         Tensor_SetGradFn(self, "");
         Tensor_SetGrad_without_init_value(self, Py_None);
         Tensor_SetGraph_without_init_value(self, Py_None);
@@ -84,27 +99,8 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Tensor_SetBase_without_init_value(self, Py_None);
         Tensor_SetDim(self, 1);
     }
-    return (PyObject *)self;
-}
-
-static int
-__init__(Tensor *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"data", "requires_grad", NULL};
-    PyObject *data = NULL, *cache = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(
-            args, kwds, "O|p", kwlist, &data, &self->require_grad))
-        return -1;
-
-    if (data)
-    {
-        cache = PyArray_FromAny(data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
-        Tensor_SetData(self, cache);
-    }
-
     PyObject_GC_Track(self);
-    return 0;
+    return (PyObject *)self;
 }
 
 PyObject *
@@ -217,7 +213,7 @@ Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     return 0;
 }
 
-static PyMemberDef
+PyMemberDef
     properties[] = {
         {"data", T_OBJECT, offsetof(Tensor, data), 0, "data"},
         {"x", T_OBJECT, offsetof(Tensor, x), 0, "x"},
@@ -339,7 +335,7 @@ _Generic_backward(PyObject *self, PyObject *args)
         }
         grad_fn = PyUnicode_AsUTF8(grad_fn_name);
         get_method(grad_fn)((Tensor *)tuple.node, tuple.ndarray, &current_grad1, &current_grad2);
-        if (current_grad1 == NULL || current_grad2 == NULL)
+        if (current_grad1 == NULL && current_grad2 == NULL)
         {
             free_dict();
             return NULL;
@@ -352,16 +348,22 @@ _Generic_backward(PyObject *self, PyObject *args)
             Tuple tuple2 = {x, current_grad1};
             push(stack, tuple2);
         }
-        grad_fn_name = PyObject_GetAttrString(y, "grad_fn");
-        if (grad_fn_name == NULL)
+        if (y != Py_None)
         {
-            PyErr_SetString(PyExc_RuntimeError, "grad_fn_name is NULL");
-            free_dict();
-            return NULL;
+            grad_fn_name = PyObject_GetAttrString(y, "grad_fn");
+            if (grad_fn_name == NULL)
+            {
+                PyErr_SetString(PyExc_RuntimeError, "grad_fn_name is NULL in y");
+                free_dict();
+                return NULL;
+            }
+            grad_fn = PyUnicode_AsUTF8(grad_fn_name);
+            if (current_grad2 != NULL)
+            {
+                Tuple tuple2 = {y, current_grad2};
+                push(stack, tuple2);
+            }
         }
-        grad_fn = PyUnicode_AsUTF8(grad_fn_name);
-        Tuple tuple2 = {y, current_grad2};
-        push(stack, tuple2);
     }
     return PyUnicode_FromString(grad_fn);
 };
@@ -386,8 +388,7 @@ PyTypeObject
         .tp_basicsize = sizeof(Tensor),
         .tp_itemsize = 0,
         .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-        .tp_new = __new__,
-        .tp_init = (initproc)__init__,
+        .tp_new = (newfunc)__new__,
         .tp_members = properties,
         .tp_dealloc = (destructor)Tensor_dealloc,
         .tp_alloc = PyType_GenericAlloc,
@@ -407,6 +408,25 @@ void init_map()
     add_entry("DivBackward", div_backward_fn);
     add_entry("MatMulBackward", matmul_backward_fn);
     add_entry("NegativeBackward", negative_backward_fn);
+    add_entry("PowBackward", power_backward_fn);
+    add_entry("TanhBackward", tanh_backward_fn);
+    add_entry("SqrtBackward", sqrt_backward_fn);
+    add_entry("ExpBackward", exp_backward_fn);
+    add_entry("LogBackward", log_backward_fn);
+    add_entry("SinBackward", sin_backward_fn);
+    add_entry("CosBackward", cos_backward_fn);
+    add_entry("TanBackward", tan_backward_fn);
+    add_entry("SinhBackward", sinh_backward_fn);
+    add_entry("CoshBackward", cosh_backward_fn);
+    add_entry("ArcSinBackward", arcsin_backward_fn);
+    add_entry("ArcCosBackward", arccos_backward_fn);
+    add_entry("ArcTanBackward", arctan_backward_fn);
+    add_entry("ArcSinhBackward", arcsinh_backward_fn);
+    add_entry("ArcCoshBackward", arccosh_backward_fn);
+    add_entry("ArcTanhBackward", arctanh_backward_fn);
+    add_entry("Log10Backward", log10_backward_fn);
+    add_entry("SqrtBackward", sqrt_backward_fn);
+    add_entry("ReshapeBackward", reshape_backward_fn);
 }
 
 PyMODINIT_FUNC
@@ -421,7 +441,6 @@ PyInit_tensor(void)
     m = PyModule_Create(&custommodule);
     if (m == NULL)
         return NULL;
-    Py_INCREF(&Tensor_type);
     if (PyModule_AddObject(m, "Tensor", (PyObject *)&Tensor_type))
     {
         Py_DECREF(&Tensor_type);
