@@ -31,13 +31,3 @@ jobs:
           python test/benchmark/object_creation_benchmark.py
           python test/benchmark/torch_comparision_benchmark.py
 
-      - name: Rollback
-        if: failure()
-        run: |
-          git config --global user.email ljj1849532909@gmail.com
-          git config --global user.name Jianqoq
-          git revert HEAD
-          git push origin HEAD
-        env:
-          GH_TOKEN: ${{ secrets.AUTOGRAD }}
-
