@@ -39,4 +39,4 @@ jobs:
           git revert HEAD --no-edit
           git push
         env:
-          GH_TOKEN: ${{ secrets.autograd-C }}
+          GH_TOKEN: ${{ secrets.AUTOGRAD }}
