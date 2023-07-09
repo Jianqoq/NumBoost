@@ -34,7 +34,7 @@ jobs:
       - name: Rollback
         if: failure()
         run: |
-          git config --global ljj1849532909.com
-          git config --global Jianqoq
+          git config --global user.name ljj1849532909.com
+          git config --global user.name Jianqoq
           git revert HEAD --no-edit
           git push
