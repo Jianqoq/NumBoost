@@ -65,6 +65,7 @@ typedef struct
 
 } Stack;
 Stack *createStack(unsigned long capacity);
+void freeStack(Stack *stack);
 int isFull(Stack *stack);
 int isEmpty(Stack *stack);
 PyObject *push(Stack *stack, Tuple item);

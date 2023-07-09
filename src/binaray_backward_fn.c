@@ -256,12 +256,8 @@ void matmul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject 
 void negative_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
     Tensor *tmp1 = (Tensor *)self->x;
-    Tensor *tmp2 = (Tensor *)self->y;
-    PyObject *grad1 = PyNumber_Multiply(grad, tmp2->data);
+    PyObject *grad1 = PyNumber_Multiply(grad, self->y);
     PyObject *grad2 = PyNumber_Multiply(grad, tmp1->data);
-
-    PyObject_Print(grad1, stdout, 0);
-    PyObject_Print(grad2, stdout, 0);
     check_shape((PyArrayObject *)grad1, tmp1->data, out1, "grad1 shape not equal to previous data shape in negativebackward");
-    check_shape((PyArrayObject *)grad2, tmp2->data, out2, "grad2 shape not equal to previous data shape in negativebackward");
+    *out2 = NULL;
 };

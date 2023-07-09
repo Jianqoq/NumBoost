@@ -13,6 +13,12 @@ Stack *createStack(unsigned long capacity)
     return stack;
 }
 
+void freeStack(Stack *stack)
+{
+    free(stack->array);
+    free(stack);
+}
+
 // Stack is full when top is equal to the last index
 int isFull(Stack *stack)
 {

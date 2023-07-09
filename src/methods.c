@@ -155,7 +155,6 @@ inline static PyObject *Generic_function_internal(PyObject *func, PyObject *args
     }
     if (result == NULL)
     {
-        printf("Error in Generic_function_internal\n");
         return NULL;
     }
     return result;

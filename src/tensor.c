@@ -10,15 +10,7 @@
 
 static Dict *dict = NULL;
 
-PyObject *
-RunTimeError(PyObject *self, const char *message)
-{
-    PyErr_SetString(PyExc_RuntimeError, message);
-    return NULL;
-}
-
-void 
-INCREF_TENSOR(Tensor *self)
+void INCREF_TENSOR(Tensor *self)
 {
     Py_INCREF(self->data);
     Py_INCREF(self->x);
@@ -28,8 +20,7 @@ INCREF_TENSOR(Tensor *self)
     Py_INCREF(self->base);
 }
 
-void 
-add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
+void add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
 {
     Dict *entry = (Dict *)malloc(sizeof(Dict));
     entry->key = key;
@@ -37,8 +28,7 @@ add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyO
     HASH_ADD_STR(dict, key, entry);
 }
 
-void 
-(*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
+void (*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject **)
 {
     Dict *entry;
     HASH_FIND_STR(dict, key, entry);
@@ -88,17 +78,19 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
             cache = PyArray_FromAny(data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
         else
             return NULL;
+        PyObject *zero = PyLong_FromLong(0);
         Tensor_SetData_without_init_value(self, cache);
         Tensor_SetX_without_init_value(self, Py_None);
         Tensor_SetY_without_init_value(self, Py_None);
         Tensor_SetHasConv(self, 0);
         Tensor_SetVars(self, 1);
         Tensor_SetGradFn(self, "");
-        Tensor_SetGrad_without_init_value(self, Py_None);
+        Tensor_SetGrad_without_init_value(self, zero);
         Tensor_SetGraph_without_init_value(self, Py_None);
         Tensor_SetAxis_without_init_value(self, Py_None);
         Tensor_SetBase_without_init_value(self, Py_None);
         Tensor_SetDim(self, 1);
+        Py_DECREF(zero);
     }
     PyObject_GC_Track(self);
     return (PyObject *)self;
@@ -276,11 +268,13 @@ _Generic_backward(PyObject *self, PyObject *args)
     PyObject *current_grad1 = NULL;
     PyObject *current_grad2 = NULL;
     PyObject *grad = NULL;
+    Tensor *tensor = NULL;
     const char *grad_fn = NULL;
     if (!PyArg_ParseTuple(args, "O", &grad))
     {
         return NULL;
     }
+    Py_INCREF(grad); // Avoid grad reference count to be 0, current grad ref == 2
     grad_fn = PyUnicode_AsUTF8(PyObject_GetAttrString(self, "grad_fn"));
     unsigned long depth = PyLong_AsUnsignedLong(PyObject_GetAttrString(self, "depth"));
     Stack *stack = createStack(depth);
@@ -295,78 +289,55 @@ _Generic_backward(PyObject *self, PyObject *args)
             if (PyErr_Occurred())
             {
                 PyErr_SetString(PyExc_RuntimeError, "grad_fn_name is NULL");
-                free_dict();
                 return NULL;
             }
             continue;
         }
-        else if (grad_fn_name == PyUnicode_FromString(""))
+        else
         {
-            PyObject *g = PyObject_GetAttrString(tuple.node, "grad");
-            if (Py_IsNone(g))
+            tensor = (Tensor *)tuple.node;
+            grad_fn = tensor->grad_fn;
+            if (!strcmp(grad_fn, ""))
             {
-                Py_DECREF(g);
-                Py_INCREF(tuple.ndarray);
-                PyObject_SetAttrString(tuple.node, "grad", tuple.ndarray);
-                continue;
-            }
-            else
-            {
-                PyObject *grad = PyObject_GetAttrString(tuple.node, "grad");
-                if (grad == NULL)
+                if (tensor == NULL)
                 {
-                    PyErr_SetString(PyExc_RuntimeError, "can't get grad attribute");
+                    PyErr_SetString(PyExc_RuntimeError, "can't convert object from stack to Tensor");
                     free_dict();
                     return NULL;
                 }
-                PyObject *new_grad = PyNumber_Add(grad, tuple.ndarray);
-                PyObject *tmp = PyObject_GetAttrString(tuple.node, "grad");
-                if (tmp == NULL)
-                {
-                    PyErr_SetString(PyExc_RuntimeError, "can't get grad attribute");
-                    free_dict();
-                    return NULL;
-                }
-                Py_DECREF(tmp);
-                Py_INCREF(new_grad);
-                PyObject_SetAttrString(tuple.node, "grad", new_grad);
+                PyObject *new_grad = PyNumber_Add(tensor->grad, tuple.ndarray);
+                Py_DECREF(tensor->grad);
+                tensor->grad = new_grad;
                 continue;
             }
-            PyObject_SetAttrString(tuple.node, "grad", tuple.ndarray);
         }
-        grad_fn = PyUnicode_AsUTF8(grad_fn_name);
-        get_method(grad_fn)((Tensor *)tuple.node, tuple.ndarray, &current_grad1, &current_grad2);
+        get_method(grad_fn)(tensor, tuple.ndarray, &current_grad1, &current_grad2);
         if (current_grad1 == NULL && current_grad2 == NULL)
         {
             free_dict();
             return NULL;
         }
-        PyObject *x = PyObject_GetAttrString(tuple.node, "x");
-        PyObject *y = PyObject_GetAttrString(tuple.node, "y");
-        if (tuple.node != x)
+        Tensor *tensor_x = (Tensor *)tensor->x;
+        if (tensor_x != tensor)
         {
-            grad_fn = PyUnicode_AsUTF8(PyObject_GetAttrString(x, "grad_fn"));
-            Tuple tuple2 = {x, current_grad1};
+            grad_fn = tensor_x->grad_fn;
+            Tuple tuple2 = {tensor->x, current_grad1};
             push(stack, tuple2);
         }
-        if (y != Py_None)
+        if (Py_IS_TYPE(tensor->y, &Tensor_type))
         {
-            grad_fn_name = PyObject_GetAttrString(y, "grad_fn");
-            if (grad_fn_name == NULL)
+            bool require_grad = ((Tensor *)tensor->y)->require_grad;
+            if (current_grad2 != NULL && require_grad)
             {
-                PyErr_SetString(PyExc_RuntimeError, "grad_fn_name is NULL in y");
-                free_dict();
-                return NULL;
-            }
-            grad_fn = PyUnicode_AsUTF8(grad_fn_name);
-            if (current_grad2 != NULL)
-            {
-                Tuple tuple2 = {y, current_grad2};
+                Tuple tuple2 = {tensor->y, current_grad2};
                 push(stack, tuple2);
             }
         }
+        Py_DECREF(tuple.ndarray);
     }
-    return PyUnicode_FromString(grad_fn);
+    freeStack(stack);
+    Py_INCREF(Py_None);
+    return Py_None;
 };
 
 static PyMethodDef Tensor_methods[] = {
@@ -378,7 +349,7 @@ static PyModuleDef
     custommodule = {
         PyModuleDef_HEAD_INIT,
         .m_name = "tensor",
-        .m_doc = "Example module that creates an extension type.",
+        .m_doc = "Tensor is a numpy wrapper which supports autograd",
         .m_size = -1,
 };
 
@@ -428,6 +399,7 @@ void init_map()
     add_entry("Log10Backward", log10_backward_fn);
     add_entry("SqrtBackward", sqrt_backward_fn);
     add_entry("ReshapeBackward", reshape_backward_fn);
+    add_entry("Log10Backward", log10_backward_fn);
 }
 
 PyMODINIT_FUNC
@@ -448,6 +420,5 @@ PyInit_tensor(void)
         Py_DECREF(m);
         return NULL;
     };
-    Py_AtExit(free_dict);
     return m;
 }
