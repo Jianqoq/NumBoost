@@ -38,3 +38,5 @@ jobs:
           git config --global user.name Jianqoq
           git revert HEAD --no-edit
           git push
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
