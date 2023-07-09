@@ -35,6 +35,6 @@ jobs:
         if: failure()
         run: |
           git revert HEAD --no-edit
-          git config --global user.email "you@example.com"
-          git config --global user.name "Your Name"
+          git config --global ljj1849532909.com
+          git config --global Jianqoq
           git push

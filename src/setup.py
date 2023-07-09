@@ -9,14 +9,14 @@ else:
     args = ['-O3']
 
 mymodule = Extension('tensor',
-                     sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c', 'set_Tensor_properties.c', 'methods.c', 'core.c'],
+                     sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c', 'set_Tensor_properties.c', 'methods.c', 'core.c', 'binaray_backward_fn.c'],
                      include_dirs=[numpy.get_include()],
                      language='c',
                      extra_compile_args=args,
                      define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')])
 
 mymodule2 = Extension('core',
-                     sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c', 'set_Tensor_properties.c','methods.c', 'core.c'],
+                     sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c', 'set_Tensor_properties.c','methods.c', 'core.c', 'binaray_backward_fn.c'],
                      include_dirs=[numpy.get_include()],
                      language='c',
                      extra_compile_args=args,

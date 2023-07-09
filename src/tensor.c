@@ -75,6 +75,7 @@ static PyObject *
 __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     Tensor *self = (Tensor *)PyObject_GC_New(Tensor, type);
+    self->require_grad = false;
     if (self != NULL)
     {
         static char *kwlist[] = {"data", "requires_grad", NULL};
