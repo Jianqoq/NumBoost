@@ -7,7 +7,7 @@ import statistics
 import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from tensor import Tensor
+from src.tensor import Tensor
 
 
 class MyTensor:

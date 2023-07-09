@@ -30,3 +30,11 @@ jobs:
         run: |
           python test/benchmark/object_creation_benchmark.py
           python test/benchmark/torch_comparision_benchmark.py
+
+      - name: Rollback
+        if: failure()
+        run: |
+          git revert HEAD --no-edit
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          git push
