@@ -1,0 +1,43 @@
+name: Python Package using Conda
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11.4
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: compile tensor module
+        run: |
+          cd src
+          python setup.py build_ext
+          cd ..
+
+      - name: Run tests
+        run: pytest test/
+
+      - name: Run benchmarks
+        run: |
+          python test/benchmark/object_creation_benchmark.py
+          python test/benchmark/torch_comparision_benchmark.py
+
+      - name: Rollback
+        if: failure()
+        run: |
+          git config --global user.email ljj1849532909@gmail.com
+          git config --global user.name Jianqoq
+          git revert
+          git push
+        env:
+          GH_TOKEN: ${{ secrets.AUTOGRAD }}
+
