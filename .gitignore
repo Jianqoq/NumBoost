@@ -1,9 +1,0 @@
-_C.code-workspace
-.vscode/c_cpp_properties.json
-.vscode/launch.json
-.vscode/settings.json
-build/temp.win-amd64-cpython-310/Release/tensor.cp310-win_amd64.lib
-build/temp.win-amd64-cpython-310/Release/tensor.obj
-/.pytest_cache/
-/.vscode/
-/build/
