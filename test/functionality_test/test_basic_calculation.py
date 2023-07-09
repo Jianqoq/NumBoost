@@ -49,8 +49,9 @@ def test_C_Tensor_negative(array):
 @pytest.mark.parametrize("array", [np.array([1, 2, 3])])
 def test_C_Tensor_negative(array):
     p = Tensor(array)
+    i = array.copy()
     l = -p
-    o = -array
+    o = -i
     assert np.allclose(o, l.data), f"correct: {o} | got: {l.data}"
 
 

@@ -9,11 +9,15 @@ void power_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **
 {
     Tensor *tmp1 = (Tensor *)self->x;
     PyObject *power = get_power(self);
-    PyObject *sub = PyNumber_Subtract(power, PyLong_FromLong(1));
+    PyObject *one = PyLong_FromLong(1);
+    PyObject *sub = PyNumber_Subtract(power, one);
     PyObject *tmp = PyNumber_Power(tmp1->data, sub, Py_None);
-    PyObject *grad2 = PyNumber_Multiply(power, PyNumber_Multiply(grad, tmp));
+    PyObject *mul = PyNumber_Multiply(grad, tmp);
+    PyObject *grad2 = PyNumber_Multiply(power, mul);
     Py_DECREF(tmp);
     Py_DECREF(sub);
+    Py_DECREF(one);
+    Py_DECREF(mul);
     *out = grad2;
     *null = NULL;
 };
@@ -31,8 +35,10 @@ void cos_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **nu
 {
     Tensor *tmp1 = (Tensor *)self->x;
     PyObject *sin = _sin_internal(tmp1->data, NULL);
-    *out = PyNumber_Multiply(PyNumber_Negative(grad), sin);
+    PyObject *neg = PyNumber_Negative(grad);
+    *out = PyNumber_Multiply(neg, sin);
     Py_DECREF(sin);
+    Py_DECREF(neg);
     *null = NULL;
 };
 
@@ -40,10 +46,14 @@ void tan_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **nu
 {
     Tensor *tmp1 = (Tensor *)self->x;
     PyObject *cos = _cos_internal(tmp1->data, NULL);
-
-    PyObject *sec = PyNumber_TrueDivide(PyLong_FromLong(1), cos);
-    *out = PyNumber_Multiply(grad, PyNumber_Multiply(sec, sec));
+    PyObject *one = PyLong_FromLong(1);
+    PyObject *sec = PyNumber_TrueDivide(one, cos);
+    PyObject *mul = PyNumber_Multiply(sec, sec);
+    *out = PyNumber_Multiply(grad, mul);
     Py_DECREF(sec);
+    Py_DECREF(cos);
+    Py_DECREF(one);
+    Py_DECREF(mul);
     *null = NULL;
 };
 
@@ -56,7 +66,7 @@ void arcsin_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject *
     PyObject *sub = PyNumber_Subtract(one, square);
     PyObject *power = PyNumber_Power(sub, point_5, Py_None);
     PyObject *divide = PyNumber_TrueDivide(one, power);
-    PyObject * result = PyNumber_Multiply(grad, divide);
+    PyObject *result = PyNumber_Multiply(grad, divide);
     *out = result;
     *null = NULL;
     Py_DECREF(square);
@@ -77,7 +87,7 @@ void arccos_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject *
     PyObject *power = PyNumber_Power(sub, point_5, Py_None);
     PyObject *negative_one = PyLong_FromLong(-1);
     PyObject *divide = PyNumber_TrueDivide(negative_one, power);
-    PyObject * result = PyNumber_Multiply(grad, divide);
+    PyObject *result = PyNumber_Multiply(grad, divide);
     *out = result;
     *null = NULL;
     Py_DECREF(square);
@@ -96,7 +106,7 @@ void arctan_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject *
     PyObject *one = PyLong_FromLong(1);
     PyObject *add = PyNumber_Add(one, square);
     PyObject *divide = PyNumber_TrueDivide(one, add);
-    PyObject * result = PyNumber_Multiply(grad, divide);
+    PyObject *result = PyNumber_Multiply(grad, divide);
     *out = result;
     *null = NULL;
     Py_DECREF(square);
@@ -109,7 +119,7 @@ void sinh_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **n
 {
     Tensor *tmp1 = (Tensor *)self->x;
     PyObject *cosh = _cosh_internal(tmp1->data, NULL);
-    PyObject * result = PyNumber_Multiply(grad, cosh);
+    PyObject *result = PyNumber_Multiply(grad, cosh);
     *out = result;
     *null = NULL;
     Py_DECREF(cosh);
@@ -119,7 +129,7 @@ void cosh_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **n
 {
     Tensor *tmp1 = (Tensor *)self->x;
     PyObject *sinh = _sinh_internal(tmp1->data, NULL);
-    PyObject * result = PyNumber_Multiply(grad, sinh);
+    PyObject *result = PyNumber_Multiply(grad, sinh);
     *out = result;
     *null = NULL;
     Py_DECREF(sinh);
@@ -130,7 +140,7 @@ void tanh_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **n
     PyObject *self_val_square = PyNumber_Multiply(self->data, self->data);
     PyObject *one = PyFloat_FromDouble(1.0);
     PyObject *sub = PyNumber_Subtract(one, self_val_square);
-    PyObject * result = PyNumber_Multiply(grad, sub);
+    PyObject *result = PyNumber_Multiply(grad, sub);
     *out = result;
     *null = NULL;
     Py_DECREF(self_val_square);
@@ -146,7 +156,7 @@ void arcsinh_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject 
     PyObject *tmp = PyNumber_Add(one, square);
     PyObject *point_5 = PyFloat_FromDouble(0.5);
     PyNumber_InPlacePower(tmp, point_5, Py_None);
-    PyObject * result = PyNumber_TrueDivide(grad, tmp);
+    PyObject *result = PyNumber_TrueDivide(grad, tmp);
     *out = result;
     *null = NULL;
     Py_DECREF(square);
@@ -163,7 +173,7 @@ void arccosh_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject 
     PyObject *tmp = PyNumber_Subtract(square, one);
     PyObject *point_5 = PyFloat_FromDouble(0.5);
     PyNumber_InPlacePower(tmp, point_5, Py_None);
-    PyObject * result = PyNumber_TrueDivide(grad, tmp);
+    PyObject *result = PyNumber_TrueDivide(grad, tmp);
     *out = result;
     *null = NULL;
     Py_DECREF(tmp);
@@ -190,7 +200,7 @@ void exp_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **nu
 {
     Tensor *tmp1 = (Tensor *)self->x;
     PyObject *exp = _exp_internal(tmp1->data, NULL);
-    PyObject * result = PyNumber_Multiply(grad, exp);
+    PyObject *result = PyNumber_Multiply(grad, exp);
     Py_DECREF(exp);
     *out = result;
     *null = NULL;
@@ -199,18 +209,23 @@ void exp_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **nu
 void log_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
 {
     Tensor *tmp1 = (Tensor *)self->x;
-    PyObject * result = PyNumber_TrueDivide(grad, tmp1->data);
+    PyObject *result = PyNumber_TrueDivide(grad, tmp1->data);
     *out = result;
     *null = NULL;
 };
 
-void log10_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null) // not implemaent yet
+void log10_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
 {
     Tensor *tmp1 = (Tensor *)self->x;
-    PyNumber_InPlacePower(tmp1->data, PyNumber_Subtract(self->y, PyLong_FromLong(1)), Py_None);
-    PyObject *grad2 = PyNumber_Multiply(self->y, PyNumber_Multiply(grad, tmp1->data));
+    PyObject *ten = PyLong_FromLong(10);
+    PyObject *ln = _log_internal(ten, NULL);
+    PyObject *mul = PyNumber_Multiply(tmp1->data, ln);
+    PyObject *grad2 = PyNumber_TrueDivide(grad, mul);
     *out = grad2;
     *null = NULL;
+    Py_DECREF(ten);
+    Py_DECREF(ln);
+    Py_DECREF(mul);
 };
 
 void sqrt_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
@@ -250,8 +265,7 @@ void reshape_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject 
     npy_intp *get = get_array_shape(self);
     int len = *get_shape_len(self);
     PyArray_Dims prev_shape = {get, len};
-    PyObject * result = PyArray_Newshape((PyArrayObject*)grad, &prev_shape, NPY_CORDER);
-    free(get);
+    PyObject *result = PyArray_Newshape((PyArrayObject *)grad, &prev_shape, NPY_CORDER);
     *out = result;
     *null = NULL;
 };

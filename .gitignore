@@ -1,0 +1,4 @@
+/src/tensor.cp310-win_amd64.pyd
+/src/core.cp310-win_amd64.pyd
+/src/core.cpython-310-x86_64-linux-gnu.so
+/src/tensor.cpython-310-x86_64-linux-gnu.so

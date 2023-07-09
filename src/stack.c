@@ -3,7 +3,7 @@
 #include "tensor.h"
 
 // Function to create a stack of given capacity.
-Stack *createStack(unsigned long capacity)
+Stack *createStack(unsigned long long capacity)
 {
     Stack *stack = (Stack *)malloc(sizeof(Stack));
     stack->len = 0;
@@ -11,6 +11,12 @@ Stack *createStack(unsigned long capacity)
     stack->array = (Tuple *)malloc(capacity * sizeof(Tuple));
     stack->max_len = capacity;
     return stack;
+}
+
+void freeStack(Stack *stack)
+{
+    free(stack->array);
+    free(stack);
 }
 
 // Stack is full when top is equal to the last index
