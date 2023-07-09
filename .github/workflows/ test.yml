@@ -37,6 +37,6 @@ jobs:
           git config --global user.email ljj1849532909@gmail.com
           git config --global user.name Jianqoq
           git revert HEAD --no-edit
-          git push https://${GH_TOKEN}@github.com/Jianqoq/Autograd-C.git HEAD:main
+          git push
         env:
           GH_TOKEN: ${{ secrets.AUTOGRAD }}
