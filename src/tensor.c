@@ -275,8 +275,9 @@ _Generic_backward(PyObject *self, PyObject *args)
         return NULL;
     }
     Py_INCREF(grad); // Avoid grad reference count to be 0, current grad ref == 2
-    grad_fn = PyUnicode_AsUTF8(PyObject_GetAttrString(self, "grad_fn"));
-    unsigned long depth = PyLong_AsUnsignedLong(PyObject_GetAttrString(self, "depth"));
+    Tensor *self_tensor = (Tensor *)self;
+    grad_fn = self_tensor->grad_fn;
+    unsigned long long depth = self_tensor->vars;
     Stack *stack = createStack(depth);
     Tuple tuple = {self, grad};
     push(stack, tuple);

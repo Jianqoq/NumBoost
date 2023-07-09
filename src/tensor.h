@@ -58,13 +58,13 @@ typedef struct
 } Tuple;
 typedef struct
 {
-    unsigned long len;
-    unsigned long max_len;
-    long long index;
+    unsigned long long len;
+    unsigned long long max_len;
+    unsigned long long index;
     Tuple *array;
 
 } Stack;
-Stack *createStack(unsigned long capacity);
+Stack *createStack(unsigned long long capacity);
 void freeStack(Stack *stack);
 int isFull(Stack *stack);
 int isEmpty(Stack *stack);
