@@ -36,7 +36,7 @@ jobs:
         run: |
           git config --global user.email ljj1849532909@gmail.com
           git config --global user.name Jianqoq
-          git reset --hard HEAD^
+          git revert HEAD --no-edit
           git push origin HEAD
         env:
           GH_TOKEN: ${{ secrets.AUTOGRAD }}
