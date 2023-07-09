@@ -15,11 +15,31 @@ def test_C_Tensor_addition(array):
 
 
 @pytest.mark.parametrize("array", [np.array([1, 2, 3])])
+def test_C_Tensor_inplace_addition(array):
+    p = Tensor(array)
+    o = array.copy()
+    p += p
+    o += o
+    p.backward(np.array([1, 2, 3]))
+    assert np.allclose(o, p.data), f"correct: {o} | got: {p.data}"
+
+
+@pytest.mark.parametrize("array", [np.array([1, 2, 3])])
 def test_C_Tensor_subtraction(array):
     p = Tensor(array)
     l = p - p
     o = array - array
     assert np.allclose(o, l.data), f"correct: {o} | got: {l.data}"
+
+
+@pytest.mark.parametrize("array", [np.array([1, 2, 3])])
+def test_C_Tensor_inplace_addition(array):
+    p = Tensor(array)
+    o = array.copy()
+    p -= p
+    o -= o
+    p.backward(np.array([1, 2, 3]))
+    assert np.allclose(o, p.data), f"correct: {o} | got: {p.data}"
 
 
 @pytest.mark.parametrize("array", [np.array([1, 2, 3])])
