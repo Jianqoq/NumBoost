@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Iterable, List, Tuple
 
 from numpy import ndarray
 
@@ -9,14 +9,14 @@ class Tensor:
     data: ndarray
     depth: int
     dim: int
-    grad: str
-    grad_fn: Any
+    grad: ndarray
+    grad_fn: str
     graph: Any
     has_conv: int
     require_grad: bool
     x: Tensor
     y: Any
-    def __init__(self, *args, **kwargs) -> None: ...
+    def __init__(self, data: Iterable[List|Tuple|ndarray], requires_grad=False) -> None: ...
     def backward(self, grad: Tensor|ndarray) -> None: ...
     def __abs__(self) -> Tensor: ...
     def __add__(self, other) -> Tensor: ...
