@@ -1,4 +1,4 @@
-#include "Tensor.h"
+#include "tensor.h"
 
 void Tensor_SetData(Tensor *self, PyObject *data);
 void Tensor_SetX(Tensor *self, PyObject *x);
