@@ -35,6 +35,7 @@ jobs:
           env | sort
           echo "MKLROOT=/mkl-C/mkl/latest" >> $GITHUB_ENV
           source /mkl-C/mkl/latest/env/vars.sh
+          env | sort
 
       - name: compile tensor module
         run: |
