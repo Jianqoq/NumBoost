@@ -6,17 +6,17 @@ import platform
 if platform.system() == 'Windows':
     args = ['/Ox', '/openmp']
 else:
-    args = ['-O3', '-fopenmp']
+    args = ['-O3', '-fopenmp', '-I/mkl-C/mkl/latest/include']
 
 mymodule = Extension('tensor',
                      sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
                               'set_Tensor_properties.c', 'methods.c', 'core.c', 'binaray_backward_fn.c'],
                      include_dirs=[
                          numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include'],
-                     library_dirs=[
-                         'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
-                         r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64'],  # 添加这一行
-                     libraries=['mkl_rt'],  # 添加这一行
+                     # library_dirs=[
+                     #     'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
+                     #     r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64'],  # 添加这一行
+                     # libraries=['mkl_rt'],  # 添加这一行
                      language='c',
                      extra_compile_args=args,
                      define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')])
@@ -26,10 +26,10 @@ mymodule2 = Extension('core',
                                'set_Tensor_properties.c', 'methods.c', 'core.c', 'binaray_backward_fn.c'],
                       include_dirs=[
                           numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include'],
-                      library_dirs=[
-                          'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
-                          r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64'],  # 添加这一行
-                      libraries=['mkl_rt'],  # 添加这一行
+                      # library_dirs=[
+                      #     'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
+                      #     r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64'],  # 添加这一行
+                      # libraries=['mkl_rt'],  # 添加这一行
                       language='c',
                       extra_compile_args=args,
                       define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')])
