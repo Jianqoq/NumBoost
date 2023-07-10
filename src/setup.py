@@ -6,7 +6,7 @@ import platform
 if platform.system() == 'Windows':
     args = ['/Ox']
 else:
-    args = ['-O3']
+    args = ['-g']
 
 mymodule = Extension('tensor',
                      sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c', 'set_Tensor_properties.c', 'methods.c', 'core.c', 'binaray_backward_fn.c'],

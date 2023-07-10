@@ -32,15 +32,13 @@ __new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y, const char *grad_f
             Tensor_SetRequireGrad(self, false);
             Tensor_SetVars(self, 0);
         }
-        PyObject *zero = PyLong_FromLong(0);
-        Tensor_SetData_startwone_without_init(self, array);
+        self->data = array;
         Tensor_SetHasConv(self, tensor->has_conv);
         Tensor_SetGraph_without_init_value(self, tensor->graph);
         Tensor_SetDim(self, tensor->dim);
         Tensor_SetAxis_without_init_value(self, tensor->axis);
         Tensor_SetBase_without_init_value(self, tensor->base);
-        Tensor_SetGrad_without_init_value(self, zero);
-        Py_DECREF(zero);
+        self->grad = PyLong_FromLong(0);
         return self;
     }
     else
