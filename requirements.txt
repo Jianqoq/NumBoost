@@ -1,4 +1,4 @@
-torch==2.0.1+cpu
+torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 numpy
 pytest
 pytest-benchmark
