@@ -17,7 +17,8 @@ mymodule = Extension('tensor',
                          'mkl-C/mkl/latest/include'],
                      library_dirs=[
                          'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
-                         r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64'
+                         r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64',
+                         r'/mkl-C/mkl/latest/lib/intel64'
                      ],
                      libraries=['mkl_rt'],
                      language='c',
@@ -32,7 +33,8 @@ mymodule2 = Extension('core',
                           'mkl-C/mkl/latest/include'],
                       library_dirs=[
                           'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
-                          r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64'
+                          r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64',
+                          r'/mkl-C/mkl/latest/lib/intel64'
                       ],
                       libraries=['mkl_rt'],
                       language='c',
