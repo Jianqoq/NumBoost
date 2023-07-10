@@ -12,7 +12,8 @@ mymodule = Extension('tensor',
                      sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
                               'set_Tensor_properties.c', 'methods.c', 'core.c', 'binaray_backward_fn.c'],
                      include_dirs=[
-                         numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include'],
+                         numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',
+                         'mkl-C/mkl/latest/include'],
                      # library_dirs=[
                      #     'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
                      #     r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64'],  # 添加这一行
@@ -25,7 +26,8 @@ mymodule2 = Extension('core',
                       sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
                                'set_Tensor_properties.c', 'methods.c', 'core.c', 'binaray_backward_fn.c'],
                       include_dirs=[
-                          numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include'],
+                          numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',
+                      'mkl-C/mkl/latest/include'],
                       # library_dirs=[
                       #     'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
                       #     r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64'],  # 添加这一行
