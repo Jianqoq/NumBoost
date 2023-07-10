@@ -34,6 +34,7 @@ jobs:
           sudo sh ./l_onemkl_p_2023.1.0.46342_offline.sh -a -s --eula accept --install-dir /mkl-C/
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mkl-C/mkl/2023.1.0/lib/intel64
           source /mkl-C/mkl/latest/env/vars.sh
+          env | sort
 
       - name: compile tensor module
         run: |
