@@ -276,6 +276,11 @@ _Generic_backward(PyObject *self, PyObject *args)
     }
     Py_INCREF(grad); // Avoid grad reference count to be 0, current grad ref == 2
     Tensor *self_tensor = (Tensor *)self;
+    if (!self_tensor->require_grad) {
+        Py_DECREF(grad);
+        PyErr_SetString(PyExc_RuntimeError, "Tensor require_grad is False");
+        return NULL;
+    }
     grad_fn = self_tensor->grad_fn;
     unsigned long long depth = self_tensor->vars;
     Stack *stack = createStack(depth);
@@ -341,8 +346,76 @@ _Generic_backward(PyObject *self, PyObject *args)
     return Py_None;
 };
 
+
+static Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    size_t nargs = PyVectorcall_NARGS(nargsf);
+    PyArrayObject *array;
+    int order = 0;
+    if (PyUnicode_Check(args[nargs - 1])) {
+        PyObject *order_obj = args[nargs - 1];
+        if (PyUnicode_CompareWithASCIIString(order_obj, "C") == 0) {
+            order = NPY_CORDER;
+        } else if (PyUnicode_CompareWithASCIIString(order_obj, "F") == 0) {
+            order = NPY_FORTRANORDER;
+        } else {
+            PyErr_SetString(PyExc_ValueError, "order must be 'C' or 'F'");
+            return NULL;
+        }
+        nargs -= 1;
+    }
+    Tensor *tensor = self;
+    int length = (int)nargs;
+    npy_intp dims[NPY_MAXDIMS] = {0};
+    for (uint8_t i = 0; i < length; i++)
+    {
+        dims[i] = PyLong_AsLongLong(args[i]);
+    }
+    PyArray_Dims shape = {dims, length};
+    array = (PyArrayObject *)tensor->data;
+    PyObject *result = PyArray_Newshape(array, &shape, order);
+    if (result != tensor->data) {
+        tensor->data = result;
+        Py_DECREF(array);
+    }
+    if (result == NULL)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Error in reshape");
+        return NULL;
+    }
+    return self;
+}
+
+
+static Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyArrayObject *array = (PyArrayObject *)self->data;
+    npy_intp *dims = malloc(sizeof(npy_intp) * nargs);
+    for (Py_ssize_t i = 0; i < nargs; i++)
+    {
+        dims[i] = PyLong_AsLong(args[i]);
+    }
+    PyArray_Dims shape = {dims, (int)nargs};
+    PyObject *result = PyArray_Transpose(array, &shape);
+    if (result != NULL && result != self->data) {
+        self->data = result;
+        Py_DECREF(array);
+    }
+    else {
+        free(dims);
+        return NULL;
+    }
+    free(dims);
+    return self;
+}
+
+
 static PyMethodDef Tensor_methods[] = {
-    {"backward", (PyCFunction)_Generic_backward, METH_VARARGS, "Method docstring"},
+    {"backward", (PyCFunction)_Generic_backward, METH_VARARGS, "Backward method"},
+    {"reshape", (PyCFunction)self_reshape, METH_FASTCALL, "Method docstring"},
+    {"transpose", (PyCFunction)self_transpose, METH_FASTCALL, "Method docstring"},
+    {"permute", (PyCFunction)self_transpose, METH_FASTCALL, "Method docstring"},
     {NULL} /* Sentinel */
 };
 

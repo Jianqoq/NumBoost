@@ -26,6 +26,7 @@ void sin_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **nu
 {
     Tensor *tmp1 = (Tensor *)self->x;
     PyObject *cos = _cos_internal(tmp1->data, NULL);
+    PyObject_Print(cos, stdout, 0);
     *out = PyNumber_Multiply(grad, cos);
     Py_DECREF(cos);
     *null = NULL;
@@ -217,7 +218,9 @@ void log_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **nu
 void log10_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
 {
     Tensor *tmp1 = (Tensor *)self->x;
-    PyObject *ten = PyLong_FromLong(10);
+    npy_intp dims[1] = {1};
+    double data[1] = {10.0}; 
+    PyObject *ten = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, data);
     PyObject *ln = _log_internal(ten, NULL);
     PyObject *mul = PyNumber_Multiply(tmp1->data, ln);
     PyObject *grad2 = PyNumber_TrueDivide(grad, mul);
