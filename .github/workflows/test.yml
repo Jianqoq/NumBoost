@@ -15,7 +15,12 @@ jobs:
           python-version: 3.11.4
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/cd17b7fe-500e-4305-a89b-bd5b42bfd9f8/l_onemkl_p_2023.1.0.46342_offline.sh
+          sudo apt-get install -y ncurses-term
+          sudo sh ./l_onemkl_p_2023.1.0.46342_offline.sh -a -s --eula accept --install-dir /mlk-C/
+          source /mkl-C/mkl/latest/env/vars.sh
 
       - name: compile tensor module
         run: |

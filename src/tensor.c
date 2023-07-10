@@ -1,6 +1,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define PY_SSIZE_T_CLEAN
 #include "numpy/arrayobject.h"
+#include "omp.h"
 #include <stdlib.h>
 #include <string.h>
 #include "structmember.h"
@@ -479,6 +480,7 @@ void init_map()
 PyMODINIT_FUNC
 PyInit_tensor(void)
 {
+    omp_set_num_threads(16);
     import_array();
     init_map();
     PyObject *m;

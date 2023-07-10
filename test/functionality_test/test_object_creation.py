@@ -2,6 +2,10 @@ import numpy as np
 import os
 import sys
 import pytest
+import os
+import platform
+if platform.system() == 'Windows':
+    os.add_dll_directory(r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from src.tensor import Tensor
 

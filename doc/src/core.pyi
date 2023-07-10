@@ -1,28 +1,62 @@
-from typing import Any
+from typing import Tuple, Iterable
 
-def abs(*args, **kwargs) -> Any: ...
-def arccos(*args, **kwargs) -> Any: ...
-def arccosh(*args, **kwargs) -> Any: ...
-def arcsin(*args, **kwargs) -> Any: ...
-def arcsinh(*args, **kwargs) -> Any: ...
-def arctan(*args, **kwargs) -> Any: ...
-def arctanh(*args, **kwargs) -> Any: ...
-def argmax(*args, **kwargs) -> Any: ...
-def argmin(*args, **kwargs) -> Any: ...
-def cos(*args, **kwargs) -> Any: ...
-def cosh(*args, **kwargs) -> Any: ...
-def exp(*args, **kwargs) -> Any: ...
-def log(*args, **kwargs) -> Any: ...
-def log10(*args, **kwargs) -> Any: ...
-def max(*args, **kwargs) -> Any: ...
-def mean(*args, **kwargs) -> Any: ...
-def min(*args, **kwargs) -> Any: ...
-def power(*args, **kwargs) -> Any: ...
-def reshape(*args, **kwargs) -> Any: ...
-def sin(*args, **kwargs) -> Any: ...
-def sinh(*args, **kwargs) -> Any: ...
-def sqrt(*args, **kwargs) -> Any: ...
-def sum(*args, **kwargs) -> Any: ...
-def tan(*args, **kwargs) -> Any: ...
-def tanh(*args, **kwargs) -> Any: ...
-def transpose(*args, **kwargs) -> Any: ...
+import numpy as np
+
+from tensor import Tensor
+
+def abs(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def arccos(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def arccosh(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def arcsin(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def arcsinh(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def arctan(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def arctanh(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def argmax(a: Tensor, axis:int, keepdims=False, out: Tensor|None=None) -> Tensor:
+    pass
+def argmin(a: Tensor, axis:int, keepdims=False, out: Tensor|None=None) -> Tensor:
+    pass
+def cos(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def cosh(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def exp(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def log(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def log10(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def max(a: Tensor, axis:int, keepdims=False, out: Tensor|None=None) -> Tensor:
+    pass
+def mean(a: Tensor, axis:int, out: Tensor|None=None, dtype: np.dtype = None, keepdims=False) -> Tensor:
+    pass
+def min(a: Tensor, axis:int, keepdims=False, out: Tensor|None=None) -> Tensor:
+    pass
+def power(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def reshape(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def sin(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def sinh(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def sqrt(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def sum(a: Tensor,
+        axis: None | int | Iterable | tuple[int] = None,
+        dtype: object | None = None,
+        out: Tensor | None = None,
+        keepdims: bool | None = None) -> Tensor:
+    pass
+def tan(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def tanh(a: Tensor, out: Tensor|None=None) -> Tensor:
+    pass
+def transpose(a: Tensor, axis: Tuple) -> Tensor:
+    pass

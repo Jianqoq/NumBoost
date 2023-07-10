@@ -65,7 +65,7 @@ PyInit_core(void)
         PyErr_Print();
         return NULL;
     }
-    
+
     NP_METHOD->sin = PyObject_GetAttrString(module, "sin");
     NP_METHOD->cos = PyObject_GetAttrString(module, "cos");
     NP_METHOD->tan = PyObject_GetAttrString(module, "tan");
@@ -95,7 +95,6 @@ PyInit_core(void)
     NP_METHOD->reshape = PyObject_GetAttrString(module, "reshape");
     // NP_METHOD->tensordot = PyObject_GetAttrString(module, "tensordot");
     // NP_METHOD->concatenate = PyObject_GetAttrString(module, "concatenate");
-
 
     if (PyType_Ready(&Tensor_type) < 0)
         return NULL;
