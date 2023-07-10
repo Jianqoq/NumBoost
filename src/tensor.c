@@ -351,9 +351,6 @@ static Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf, 
 {
     size_t nargs = PyVectorcall_NARGS(nargsf);
     PyArrayObject *array;
-    npy_intp *pre_shape = NULL;
-    npy_intp *pre_shape2 = malloc(sizeof(npy_intp) * NPY_MAXDIMS);
-    bool isNULL = kwnames == NULL;
     int order = 0;
     if (PyUnicode_Check(args[nargs - 1])) {
         PyObject *order_obj = args[nargs - 1];

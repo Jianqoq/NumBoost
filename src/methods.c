@@ -1160,7 +1160,7 @@ Tensor *_abs(PyObject *self, PyObject *const *args, size_t nargsf)
 
 Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf)
 {
-    PyObject *result;
+    PyObject *result = NULL;
     Tensor *tensor = NULL;
     PyObject *power = NULL;
     if (nargsf == 2)
