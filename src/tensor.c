@@ -93,7 +93,6 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Tensor_SetBase_without_init_value(self, Py_None);
         Tensor_SetDim(self, 1);
         Py_DECREF(zero);
-        Py_DECREF(data);
     }
     PyObject_GC_Track(self);
     return (PyObject *)self;
