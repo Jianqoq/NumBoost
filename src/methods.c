@@ -109,7 +109,12 @@ int *get_shape_len(Tensor *key)
     return &s->len;
 }
 
-inline static Tensor *Generic_function_new_float(float (*func)(float), Tensor *self, PyArrayObject *array, Tensor *out, const char *grad_fn)
+inline static Tensor *Generic_function_new_float(void (*vect_func)(const int, const float *, float *),
+                                                 float (*func)(float),
+                                                 Tensor *self,
+                                                 PyArrayObject *array,
+                                                 Tensor *out,
+                                                 const char *grad_fn)
 {
     npy_intp ndims = PyArray_NDIM(array);
     npy_intp *shape = PyArray_SHAPE(array);
@@ -123,7 +128,7 @@ inline static Tensor *Generic_function_new_float(float (*func)(float), Tensor *s
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_FLOAT, 0);
         float *data2 = (float *)PyArray_DATA(array2);
         const float *data = (const float *)PyArray_DATA(array);
-        vsSin((const int)size, data, data2); // need benchmark to see if needed to release GIL
+        vect_func((const int)size, data, data2); // need benchmark to see if needed to release GIL
         return __new_Tensor(self, (PyObject *)array2, NULL, self->require_grad ? grad_fn : "");
     }
     else
@@ -131,7 +136,7 @@ inline static Tensor *Generic_function_new_float(float (*func)(float), Tensor *s
         long long i;
 
         npy_float *data = (npy_float *)PyArray_DATA((PyArrayObject *)out->data); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-#pragma omp parallel for // need benchmark to see if needed to release GIL
+#pragma omp parallel for                                                         // need benchmark to see if needed to release GIL
         for (i = 0; i < size; i++)
         {
             data[i] = func(data[i]);
@@ -142,7 +147,12 @@ inline static Tensor *Generic_function_new_float(float (*func)(float), Tensor *s
     }
 }
 
-inline static Tensor *Generic_function_new_double(double (*func)(double), Tensor *self, PyArrayObject *array, Tensor *out, const char *grad_fn)
+inline static Tensor *Generic_function_new_double(void (*vect_func)(const int, const double *, double *),
+                                                  double (*func)(double),
+                                                  Tensor *self,
+                                                  PyArrayObject *array,
+                                                  Tensor *out,
+                                                  const char *grad_fn)
 {
     npy_intp ndims = PyArray_NDIM(array);
     npy_intp *shape = PyArray_SHAPE(array);
@@ -156,7 +166,7 @@ inline static Tensor *Generic_function_new_double(double (*func)(double), Tensor
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_DOUBLE, 0);
         double *data2 = (double *)PyArray_DATA(array2);
         const double *data = (const double *)PyArray_DATA(array);
-        vdSin((const int)size, data, data2); // need benchmark to see if needed to release GIL
+        vect_func((const int)size, data, data2); // need benchmark to see if needed to release GIL
         return __new_Tensor(self, (PyObject *)array2, NULL, self->require_grad ? grad_fn : "");
     }
     else
@@ -230,7 +240,10 @@ inline static PyObject *Generic_function_internal(PyObject *func, PyObject *args
     return result;
 }
 
-inline static PyObject *Generic_function_new_float_internal(float (*func)(float), PyArrayObject *array, PyObject *out)
+inline static PyObject *Generic_function_new_float_internal(void (*vect_func)(const int, const float *, float *),
+                                                            float (*func)(float),
+                                                            PyArrayObject *array,
+                                                            PyObject *out)
 {
     npy_intp ndims = PyArray_NDIM(array);
     npy_intp *shape = PyArray_SHAPE(array);
@@ -244,14 +257,14 @@ inline static PyObject *Generic_function_new_float_internal(float (*func)(float)
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_FLOAT, 0);
         float *data2 = (float *)PyArray_DATA(array2);
         const float *data = (const float *)PyArray_DATA(array);
-        vsSin((const int)size, data, data2); // need benchmark to see if needed to release GIL
+        vect_func((const int)size, data, data2); // need benchmark to see if needed to release GIL
         return (PyObject *)array2;
     }
     else
     {
         npy_intp i;
         npy_float *data = (npy_float *)PyArray_DATA((PyArrayObject *)out); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-#pragma omp parallel for // need benchmark to see if needed to release GIL
+#pragma omp parallel for                                                   // need benchmark to see if needed to release GIL
         for (i = 0; i < size; i++)
         {
             data[i] = func(data[i]);
@@ -261,7 +274,9 @@ inline static PyObject *Generic_function_new_float_internal(float (*func)(float)
     }
 }
 
-inline static PyObject *Generic_function_new_double_internal(double (*func)(double), PyArrayObject *array, PyObject *out)
+inline static PyObject *Generic_function_new_double_internal(void (*vect_func)(const int, const double *, double *),
+                                                             double (*func)(double),
+                                                             PyArrayObject *array, PyObject *out)
 {
     npy_intp ndims = PyArray_NDIM(array);
     npy_intp *shape = PyArray_SHAPE(array);
@@ -275,7 +290,7 @@ inline static PyObject *Generic_function_new_double_internal(double (*func)(doub
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_DOUBLE, 0);
         double *data2 = (double *)PyArray_DATA(array2);
         const double *data = (const double *)PyArray_DATA(array);
-        vdSin((const int)size, data, data2);
+        vect_func((const int)size, data, data2);
         PyObject *ret = (PyObject *)array2;
         return ret;
     }
@@ -760,11 +775,11 @@ Tensor *_sin(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(sinf, tensor, array, out, "SinBackward");
+        return Generic_function_new_float(vsSin, sinf, tensor, array, out, "SinBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(sin, tensor, array, out, "SinBackward");
+        return Generic_function_new_double(vdSin, sin, tensor, array, out, "SinBackward");
     }
     else
     {
@@ -781,11 +796,11 @@ Tensor *_cos(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(cosf, tensor, array, out, "CosBackward");
+        return Generic_function_new_float(vsCos, cosf, tensor, array, out, "CosBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(cos, tensor, array, out, "CosBackward");
+        return Generic_function_new_double(vdCos, cos, tensor, array, out, "CosBackward");
     }
     else
     {
@@ -802,11 +817,11 @@ Tensor *_tan(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(tanf, tensor, array, out, "TanBackward");
+        return Generic_function_new_float(vsTan, tanf, tensor, array, out, "TanBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(tan, tensor, array, out, "TanBackward");
+        return Generic_function_new_double(vdTan, tan, tensor, array, out, "TanBackward");
     }
     else
     {
@@ -823,11 +838,11 @@ Tensor *_asin(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(asinf, tensor, array, out, "ArcSinBackward");
+        return Generic_function_new_float(vsAsin, asinf, tensor, array, out, "ArcSinBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(asin, tensor, array, out, "ArcSinBackward");
+        return Generic_function_new_double(vdAsin, asin, tensor, array, out, "ArcSinBackward");
     }
     else
     {
@@ -844,11 +859,11 @@ Tensor *_acos(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(acosf, tensor, array, out, "ArcCosBackward");
+        return Generic_function_new_float(vsAcos, acosf, tensor, array, out, "ArcCosBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(acos, tensor, array, out, "ArcCosBackward");
+        return Generic_function_new_double(vdAcos, acos, tensor, array, out, "ArcCosBackward");
     }
     else
     {
@@ -865,11 +880,11 @@ Tensor *_atan(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(atanf, tensor, array, out, "ArcTanBackward");
+        return Generic_function_new_float(vsAtan, atanf, tensor, array, out, "ArcTanBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(atan, tensor, array, out, "ArcTanBackward");
+        return Generic_function_new_double(vdAtan, atan, tensor, array, out, "ArcTanBackward");
     }
     else
     {
@@ -886,11 +901,11 @@ Tensor *_sinh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(sinhf, tensor, array, out, "SinhBackward");
+        return Generic_function_new_float(vsSinh, sinhf, tensor, array, out, "SinhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(sinh, tensor, array, out, "SinhBackward");
+        return Generic_function_new_double(vdSinh, sinh, tensor, array, out, "SinhBackward");
     }
     else
     {
@@ -907,11 +922,11 @@ Tensor *_cosh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(coshf, tensor, array, out, "CoshBackward");
+        return Generic_function_new_float(vsCosh, coshf, tensor, array, out, "CoshBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(cosh, tensor, array, out, "CoshBackward");
+        return Generic_function_new_double(vdCosh, cosh, tensor, array, out, "CoshBackward");
     }
     else
     {
@@ -928,11 +943,11 @@ Tensor *_exp(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(expf, tensor, array, out, "ExpBackward");
+        return Generic_function_new_float(vsExp, expf, tensor, array, out, "ExpBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(exp, tensor, array, out, "ExpBackward");
+        return Generic_function_new_double(vdExp, exp, tensor, array, out, "ExpBackward");
     }
     else
     {
@@ -949,11 +964,11 @@ Tensor *_log10(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(log10f, tensor, array, out, "Log10Backward");
+        return Generic_function_new_float(vsLog10, log10f, tensor, array, out, "Log10Backward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(log10, tensor, array, out, "Log10Backward");
+        return Generic_function_new_double(vdLog10, log10, tensor, array, out, "Log10Backward");
     }
     else
     {
@@ -970,11 +985,11 @@ Tensor *_log(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(logf, tensor, array, out, "LogBackward");
+        return Generic_function_new_float(vsLn, logf, tensor, array, out, "LogBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(log, tensor, array, out, "LogBackward");
+        return Generic_function_new_double(vdLn, log, tensor, array, out, "LogBackward");
     }
     else
     {
@@ -991,11 +1006,11 @@ Tensor *_tanh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(tanhf, tensor, array, out, "TanhBackward");
+        return Generic_function_new_float(vsTanh, tanhf, tensor, array, out, "TanhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(tanh, tensor, array, out, "TanhBackward");
+        return Generic_function_new_double(vdTanh, tanh, tensor, array, out, "TanhBackward");
     }
     else
     {
@@ -1012,11 +1027,11 @@ Tensor *_asinh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(asinhf, tensor, array, out, "ArcSinhBackward");
+        return Generic_function_new_float(vsAsinh, asinhf, tensor, array, out, "ArcSinhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(asinh, tensor, array, out, "ArcSinhBackward");
+        return Generic_function_new_double(vdAsinh, asinh, tensor, array, out, "ArcSinhBackward");
     }
     else
     {
@@ -1033,11 +1048,11 @@ Tensor *_acosh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(acoshf, tensor, array, out, "ArcCoshBackward");
+        return Generic_function_new_float(vsAcosh, acoshf, tensor, array, out, "ArcCoshBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(acosh, tensor, array, out, "ArcCoshBackward");
+        return Generic_function_new_double(vdAcosh, acosh, tensor, array, out, "ArcCoshBackward");
     }
     else
     {
@@ -1054,11 +1069,11 @@ Tensor *_atanh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(atanhf, tensor, array, out, "ArcTanhBackward");
+        return Generic_function_new_float(vsTanh, atanhf, tensor, array, out, "ArcTanhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(atanh, tensor, array, out, "ArcTanhBackward");
+        return Generic_function_new_double(vdTanh, atanh, tensor, array, out, "ArcTanhBackward");
     }
     else
     {
@@ -1075,11 +1090,11 @@ Tensor *_sqrt(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(sqrtf, tensor, array, out, "SqrtBackward");
+        return Generic_function_new_float(vsSqrt, sqrtf, tensor, array, out, "SqrtBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(sqrt, tensor, array, out, "SqrtBackward");
+        return Generic_function_new_double(vdSqrt, sqrt, tensor, array, out, "SqrtBackward");
     }
     else
     {
@@ -1096,11 +1111,11 @@ Tensor *_arcsinh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(asinhf, tensor, array, out, "ArcSinhBackward");
+        return Generic_function_new_float(vsAsinh, asinhf, tensor, array, out, "ArcSinhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(asinh, tensor, array, out, "ArcSinhBackward");
+        return Generic_function_new_double(vdAsinh, asinh, tensor, array, out, "ArcSinhBackward");
     }
     else
     {
@@ -1117,11 +1132,11 @@ Tensor *_arccosh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(acoshf, tensor, array, out, "ArcCoshBackward");
+        return Generic_function_new_float(vsAcosh, acoshf, tensor, array, out, "ArcCoshBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(acosh, tensor, array, out, "ArcCoshBackward");
+        return Generic_function_new_double(vdAcosh, acosh, tensor, array, out, "ArcCoshBackward");
     }
     else
     {
@@ -1138,11 +1153,11 @@ Tensor *_arctanh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(atanhf, tensor, array, out, "ArcTanhBackward");
+        return Generic_function_new_float(vsAtanh, atanhf, tensor, array, out, "ArcTanhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(atanh, tensor, array, out, "ArcTanhBackward");
+        return Generic_function_new_double(vdAtanh, atanh, tensor, array, out, "ArcTanhBackward");
     }
     else
     {
@@ -1207,17 +1222,21 @@ Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf)
     return to_return;
 }
 
-static inline PyObject *internal_npy_cal_oneArgs(float (*func1)(float), double (*func2)(double), PyObject *args, PyObject *out)
+static inline PyObject *internal_npy_cal_oneArgs(void (*vect_func1)(const int, const double *, double *),
+                                                 void (*vect_func2)(const int, const float *, float *),
+                                                 float (*func1)(float), double (*func2)(double),
+                                                 PyObject *args,
+                                                 PyObject *out)
 {
     PyArrayObject *array = (PyArrayObject *)args;
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float_internal(func1, array, out);
+        return Generic_function_new_float_internal(vect_func2, func1, array, out);
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double_internal(func2, array, out);
+        return Generic_function_new_double_internal(vect_func1, func2, array, out);
     }
     else
     {
@@ -1228,97 +1247,82 @@ static inline PyObject *internal_npy_cal_oneArgs(float (*func1)(float), double (
 
 PyObject *_sin_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(sinf, sin, args, out);
+    return internal_npy_cal_oneArgs(vdSin, vsSin, sinf, sin, args, out);
 }
 
 PyObject *_cos_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(cosf, cos, args, out);
+    return internal_npy_cal_oneArgs(vdCos, vsCos, cosf, cos, args, out);
 }
 
 PyObject *_tan_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(tanf, tan, args, out);
+    return internal_npy_cal_oneArgs(vdTan, vsTan, tanf, tan, args, out);
 }
 
 PyObject *_asin_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(asinf, asin, args, out);
+    return internal_npy_cal_oneArgs(vdAsin, vsAsin, asinf, asin, args, out);
 }
 
 PyObject *_acos_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(acosf, acos, args, out);
+    return internal_npy_cal_oneArgs(vdAcos, vsAcos, acosf, acos, args, out);
 }
 
 PyObject *_atan_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(atanf, atan, args, out);
+    return internal_npy_cal_oneArgs(vdAtan, vsAtan, atanf, atan, args, out);
 }
 
 PyObject *_sinh_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(sinhf, sinh, args, out);
+    return internal_npy_cal_oneArgs(vdSinh, vsSinh, sinhf, sinh, args, out);
 }
 
 PyObject *_cosh_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(coshf, cosh, args, out);
+    return internal_npy_cal_oneArgs(vdCosh, vsCosh, coshf, cosh, args, out);
 }
 
 PyObject *_exp_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(expf, exp, args, out);
+    return internal_npy_cal_oneArgs(vdExp, vsExp, expf, exp, args, out);
 }
 
 PyObject *_log10_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(log10f, log10, args, out);
+    return internal_npy_cal_oneArgs(vdLog10, vsLog10, log10f, log10, args, out);
 }
 
 PyObject *_log_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(logf, log, args, out);
+    return internal_npy_cal_oneArgs(vdLn, vsLn, logf, log, args, out);
 }
 
 PyObject *_tanh_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(tanhf, tanh, args, out);
+    return internal_npy_cal_oneArgs(vdTanh, vsTanh, tanhf, tanh, args, out);
 }
 
 PyObject *_asinh_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(asinhf, asinh, args, out);
+    return internal_npy_cal_oneArgs(vdAsinh, vsAsinh, asinhf, asinh, args, out);
 }
 
 PyObject *_acosh_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(acoshf, acosh, args, out);
+    return internal_npy_cal_oneArgs(vdAcosh, vsAcosh, acoshf, acosh, args, out);
 }
 
 PyObject *_atanh_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(atanhf, atanh, args, out);
+    return internal_npy_cal_oneArgs(vdAtanh, vsAtanh, atanhf, atanh, args, out);
 }
 
 PyObject *_sqrt_internal(PyObject *args, PyObject *out)
 {
-    return internal_npy_cal_oneArgs(sqrtf, sqrt, args, out);
-}
-
-PyObject *_arcsinh_internal(PyObject *args, PyObject *out)
-{
-    return internal_npy_cal_oneArgs(asinhf, asinh, args, out);
-}
-
-PyObject *_arccosh_internal(PyObject *args, PyObject *out)
-{
-    return internal_npy_cal_oneArgs(acoshf, acosh, args, out);
-}
-
-PyObject *_arctanh_internal(PyObject *args, PyObject *out)
-{
-    return internal_npy_cal_oneArgs(atanhf, atanh, args, out);
+    return internal_npy_cal_oneArgs(vdSqrt, vsSqrt, sqrtf, sqrt, args, out);
 }
 
 PyObject *_abs_internal(PyObject *args, PyObject *out)
