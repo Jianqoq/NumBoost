@@ -5,9 +5,6 @@ import os
 import platform
 if platform.system() == 'Windows':
     os.add_dll_directory(r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
-else:
-    existing_ld_library_path = os.environ.get('LD_LIBRARY_PATH', '')
-    os.environ['LD_LIBRARY_PATH'] = f"{existing_ld_library_path}:/mkl-C/mkl/2023.1.0/lib/intel64"
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from src.tensor import Tensor
