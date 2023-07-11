@@ -123,11 +123,7 @@ inline static Tensor *Generic_function_new_float(float (*func)(float), Tensor *s
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_FLOAT, 0);
         float *data2 = (float *)PyArray_DATA(array2);
         const float *data = (const float *)PyArray_DATA(array);
-        vsSin((const int)size, data, data2);
-        for (npy_intp i = 0; i < size; i++)
-        {
-            data2[i] = func(data[i]);
-        }
+        vsSin((const int)size, data, data2); // need benchmark to see if needed to release GIL
         return __new_Tensor(self, (PyObject *)array2, NULL, self->require_grad ? grad_fn : "");
     }
     else
@@ -135,7 +131,7 @@ inline static Tensor *Generic_function_new_float(float (*func)(float), Tensor *s
         long long i;
 
         npy_float *data = (npy_float *)PyArray_DATA((PyArrayObject *)out->data); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-#pragma omp parallel for
+#pragma omp parallel for // need benchmark to see if needed to release GIL
         for (i = 0; i < size; i++)
         {
             data[i] = func(data[i]);
@@ -160,7 +156,7 @@ inline static Tensor *Generic_function_new_double(double (*func)(double), Tensor
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_DOUBLE, 0);
         double *data2 = (double *)PyArray_DATA(array2);
         const double *data = (const double *)PyArray_DATA(array);
-        vdSin((const int)size, data, data2);
+        vdSin((const int)size, data, data2); // need benchmark to see if needed to release GIL
         return __new_Tensor(self, (PyObject *)array2, NULL, self->require_grad ? grad_fn : "");
     }
     else
@@ -246,18 +242,17 @@ inline static PyObject *Generic_function_new_float_internal(float (*func)(float)
     if (out == NULL)
     {
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_FLOAT, 0);
-        npy_float *data2 = (npy_float *)PyArray_DATA(array2);
-        npy_float *data = (npy_float *)PyArray_DATA(array);
-        for (npy_intp i = 0; i < size; i++)
-        {
-            data2[i] = func(data[i]);
-        }
+        float *data2 = (float *)PyArray_DATA(array2);
+        const float *data = (const float *)PyArray_DATA(array);
+        vsSin((const int)size, data, data2); // need benchmark to see if needed to release GIL
         return (PyObject *)array2;
     }
     else
     {
+        npy_intp i;
         npy_float *data = (npy_float *)PyArray_DATA((PyArrayObject *)out); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-        for (npy_intp i = 0; i < size; i++)
+#pragma omp parallel for // need benchmark to see if needed to release GIL
+        for (i = 0; i < size; i++)
         {
             data[i] = func(data[i]);
         }
@@ -279,18 +274,17 @@ inline static PyObject *Generic_function_new_double_internal(double (*func)(doub
     {
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_DOUBLE, 0);
         double *data2 = (double *)PyArray_DATA(array2);
-        double *data = (double *)PyArray_DATA(array);
-        for (npy_intp i = 0; i < size; i++)
-        {
-            data2[i] = func(data[i]);
-        }
+        const double *data = (const double *)PyArray_DATA(array);
+        vdSin((const int)size, data, data2);
         PyObject *ret = (PyObject *)array2;
         return ret;
     }
     else
     {
+        long long i;
         npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject *)out); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-        for (npy_intp i = 0; i < size; i++)
+#pragma omp parallel for
+        for (i = 0; i < size; i++)
         {
             data[i] = func(data[i]);
         }

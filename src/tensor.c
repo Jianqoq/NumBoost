@@ -80,6 +80,7 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
         else
             return NULL;
         PyObject *zero = PyLong_FromLong(0);
+        self->data = cache;
         Tensor_SetData_without_init_value(self, cache);
         Tensor_SetX_without_init_value(self, Py_None);
         Tensor_SetY_without_init_value(self, Py_None);
@@ -92,6 +93,7 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Tensor_SetBase_without_init_value(self, Py_None);
         Tensor_SetDim(self, 1);
         Py_DECREF(zero);
+        Py_DECREF(data);
     }
     PyObject_GC_Track(self);
     return (PyObject *)self;
@@ -315,10 +317,14 @@ _Generic_backward(PyObject *self, PyObject *args)
                 PyObject *new_grad = PyNumber_Add(tensor->grad, tuple.ndarray);
                 Py_DECREF(tensor->grad);
                 tensor->grad = new_grad;
+                Py_DECREF(tuple.ndarray);
                 continue;
             }
         }
         get_method(grad_fn)(tensor, tuple.ndarray, &current_grad1, &current_grad2);
+        
+        if (current_grad1 != NULL)
+        if (current_grad2 != NULL)
         if (current_grad1 == NULL && current_grad2 == NULL)
         {
             free_dict();
@@ -343,6 +349,7 @@ _Generic_backward(PyObject *self, PyObject *args)
         Py_DECREF(tuple.ndarray);
     }
     freeStack(stack);
+
     Py_INCREF(Py_None);
     return Py_None;
 };

@@ -7,8 +7,7 @@ if platform.system() == 'Windows':
     args = ['/Ox', '/openmp']
     extra_link_args = []
 else:
-    args = ['-O3', '-fopenmp', '-I/mkl-C/mkl/latest/include']
-    extra_link_args = ['-lmkl_rt']
+    args = ['-O3', '-fopenmp']
 
 mymodule = Extension('tensor',
                      sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
@@ -23,8 +22,6 @@ mymodule = Extension('tensor',
                      ],
                      libraries=['mkl_rt'],
                      language='c',
-                     extra_compile_args=args,
-extra_link_args = extra_link_args,
                      define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')])
 
 mymodule2 = Extension('core',
@@ -40,7 +37,6 @@ mymodule2 = Extension('core',
                       ],
                       libraries=['mkl_rt'],
                       language='c',
-extra_link_args = extra_link_args,
                       extra_compile_args=args,
                       define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')])
 
