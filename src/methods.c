@@ -1,6 +1,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL core_c
 #define NO_IMPORT_ARRAY
 #include <omp.h>
+#include "mkl_vml_functions.h"
 #include <numpy/npy_math.h>
 #include <numpy/arrayobject.h>
 #include <math.h>
@@ -120,8 +121,9 @@ inline static Tensor *Generic_function_new_float(float (*func)(float), Tensor *s
     if (out == NULL)
     {
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_FLOAT, 0);
-        npy_float *data2 = (npy_float *)PyArray_DATA(array2);
-        npy_float *data = (npy_float *)PyArray_DATA(array);
+        float *data2 = (float *)PyArray_DATA(array2);
+        const float *data = (const float *)PyArray_DATA(array);
+        vsSin((const int)size, data, data2);
         for (npy_intp i = 0; i < size; i++)
         {
             data2[i] = func(data[i]);
@@ -130,8 +132,11 @@ inline static Tensor *Generic_function_new_float(float (*func)(float), Tensor *s
     }
     else
     {
-        npy_float *data = (npy_float *)PyArray_DATA((PyArrayObject*)out->data); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-        for (npy_intp i = 0; i < size; i++)
+        long long i;
+
+        npy_float *data = (npy_float *)PyArray_DATA((PyArrayObject *)out->data); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
+#pragma omp parallel for
+        for (i = 0; i < size; i++)
         {
             data[i] = func(data[i]);
         }
@@ -154,17 +159,16 @@ inline static Tensor *Generic_function_new_double(double (*func)(double), Tensor
     {
         PyArrayObject *array2 = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_DOUBLE, 0);
         double *data2 = (double *)PyArray_DATA(array2);
-        double *data = (double *)PyArray_DATA(array);
-        for (npy_intp i = 0; i < size; i++)
-        {
-            data2[i] = func(data[i]);
-        }
+        const double *data = (const double *)PyArray_DATA(array);
+        vdSin((const int)size, data, data2);
         return __new_Tensor(self, (PyObject *)array2, NULL, self->require_grad ? grad_fn : "");
     }
     else
     {
-        npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject*)out->data); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-        for (npy_intp i = 0; i < size; i++)
+        long long i;
+        double *data = (double *)PyArray_DATA((PyArrayObject *)out->data); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
+#pragma omp parallel for
+        for (i = 0; i < size; i++)
         {
             data[i] = func(data[i]);
         }
@@ -248,11 +252,11 @@ inline static PyObject *Generic_function_new_float_internal(float (*func)(float)
         {
             data2[i] = func(data[i]);
         }
-        return (PyObject*)array2;
+        return (PyObject *)array2;
     }
     else
     {
-        npy_float *data = (npy_float *)PyArray_DATA((PyArrayObject*)out); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
+        npy_float *data = (npy_float *)PyArray_DATA((PyArrayObject *)out); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
         for (npy_intp i = 0; i < size; i++)
         {
             data[i] = func(data[i]);
@@ -280,12 +284,12 @@ inline static PyObject *Generic_function_new_double_internal(double (*func)(doub
         {
             data2[i] = func(data[i]);
         }
-        PyObject *ret = (PyObject*)array2;
+        PyObject *ret = (PyObject *)array2;
         return ret;
     }
     else
     {
-        npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject*)out); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
+        npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject *)out); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
         for (npy_intp i = 0; i < size; i++)
         {
             data[i] = func(data[i]);
@@ -993,11 +997,11 @@ Tensor *_tanh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(tanhf, tensor, array, out,"TanhBackward");
+        return Generic_function_new_float(tanhf, tensor, array, out, "TanhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(tanh, tensor, array, out,"TanhBackward");
+        return Generic_function_new_double(tanh, tensor, array, out, "TanhBackward");
     }
     else
     {
@@ -1014,11 +1018,11 @@ Tensor *_asinh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(asinhf, tensor, array, out,"ArcSinhBackward");
+        return Generic_function_new_float(asinhf, tensor, array, out, "ArcSinhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(asinh, tensor, array, out,"ArcSinhBackward");
+        return Generic_function_new_double(asinh, tensor, array, out, "ArcSinhBackward");
     }
     else
     {
@@ -1035,11 +1039,11 @@ Tensor *_acosh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(acoshf, tensor, array, out,"ArcCoshBackward");
+        return Generic_function_new_float(acoshf, tensor, array, out, "ArcCoshBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(acosh, tensor, array, out,"ArcCoshBackward");
+        return Generic_function_new_double(acosh, tensor, array, out, "ArcCoshBackward");
     }
     else
     {
@@ -1056,11 +1060,11 @@ Tensor *_atanh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(atanhf, tensor, array, out,"ArcTanhBackward");
+        return Generic_function_new_float(atanhf, tensor, array, out, "ArcTanhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(atanh, tensor, array, out,"ArcTanhBackward");
+        return Generic_function_new_double(atanh, tensor, array, out, "ArcTanhBackward");
     }
     else
     {
@@ -1077,11 +1081,11 @@ Tensor *_sqrt(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(sqrtf, tensor, array, out,"SqrtBackward");
+        return Generic_function_new_float(sqrtf, tensor, array, out, "SqrtBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(sqrt, tensor, array, out,"SqrtBackward");
+        return Generic_function_new_double(sqrt, tensor, array, out, "SqrtBackward");
     }
     else
     {
@@ -1098,11 +1102,11 @@ Tensor *_arcsinh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(asinhf, tensor, array, out,"ArcSinhBackward");
+        return Generic_function_new_float(asinhf, tensor, array, out, "ArcSinhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(asinh, tensor, array, out,"ArcSinhBackward");
+        return Generic_function_new_double(asinh, tensor, array, out, "ArcSinhBackward");
     }
     else
     {
@@ -1119,11 +1123,11 @@ Tensor *_arccosh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(acoshf, tensor, array, out,"ArcCoshBackward");
+        return Generic_function_new_float(acoshf, tensor, array, out, "ArcCoshBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(acosh, tensor, array, out,"ArcCoshBackward");
+        return Generic_function_new_double(acosh, tensor, array, out, "ArcCoshBackward");
     }
     else
     {
@@ -1140,11 +1144,11 @@ Tensor *_arctanh(PyObject *self, PyObject *const *args, size_t nargsf)
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {
-        return Generic_function_new_float(atanhf, tensor, array, out,"ArcTanhBackward");
+        return Generic_function_new_float(atanhf, tensor, array, out, "ArcTanhBackward");
     }
     else if (typenum == NPY_DOUBLE)
     {
-        return Generic_function_new_double(atanh, tensor, array, out,"ArcTanhBackward");
+        return Generic_function_new_double(atanh, tensor, array, out, "ArcTanhBackward");
     }
     else
     {
@@ -1209,8 +1213,8 @@ Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf)
     return to_return;
 }
 
-
-static inline PyObject *internal_npy_cal_oneArgs(float(*func1)(float), double(*func2)(double), PyObject *args, PyObject *out){
+static inline PyObject *internal_npy_cal_oneArgs(float (*func1)(float), double (*func2)(double), PyObject *args, PyObject *out)
+{
     PyArrayObject *array = (PyArrayObject *)args;
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
@@ -1227,7 +1231,6 @@ static inline PyObject *internal_npy_cal_oneArgs(float(*func1)(float), double(*f
         return NULL;
     }
 }
-
 
 PyObject *_sin_internal(PyObject *args, PyObject *out)
 {

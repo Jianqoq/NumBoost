@@ -14,8 +14,26 @@ jobs:
         with:
           python-version: 3.11.4
 
-      - name: Install dependencies
+      - name: Cache pip
+        id: cache-pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: pip install -r requirements.txt
+
+      - name: Install mkl
+        run: |
+          wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/cd17b7fe-500e-4305-a89b-bd5b42bfd9f8/l_onemkl_p_2023.1.0.46342_offline.sh
+          sudo apt-get install -y ncurses-term
+          sudo sh ./l_onemkl_p_2023.1.0.46342_offline.sh -a -s --eula accept --install-dir /mkl-C/
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mkl-C/mkl/2023.1.0/lib/intel64
+          source /mkl-C/mkl/latest/env/vars.sh
 
       - name: compile tensor module
         run: |
@@ -25,9 +43,15 @@ jobs:
 
       - name: Run tests
         run: pytest test/
+        env:
+          pythonLocation: /opt/hostedtoolcache/Python/3.11.4/x64
+          LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.4/x64/lib:/mkl-C/mkl/2023.1.0/lib/intel64
 
       - name: Run benchmarks
         run: |
           python test/benchmark/object_creation_benchmark.py
           python test/benchmark/torch_comparision_benchmark.py
+        env:
+          pythonLocation: /opt/hostedtoolcache/Python/3.11.4/x64
+          LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.4/x64/lib:/mkl-C/mkl/2023.1.0/lib/intel64
 

@@ -1,4 +1,7 @@
 torch
+torchvision
+torchaudio
+-f https://download.pytorch.org/whl/cpu
 numpy
 pytest
 pytest-benchmark
