@@ -3,7 +3,7 @@
 #include "tensor.h"
 #include "pcg_basic.h"
 
-Tensor *random(PyObject *self, PyObject *const *args, size_t nargsf);
+Tensor *random_(PyObject *self, PyObject *const *args, size_t nargsf);
 // Tensor *randn(Tensor *t, float mean, float std);
 // Tensor *random_bernoulli(Tensor *t, float p);
 // Tensor *randint(Tensor *t, float median, float sigma);    

@@ -1,13 +1,12 @@
 #define PY_ARRAY_UNIQUE_SYMBOL random_c
 #define PY_SSIZE_T_CLEAN
-#include "random.h"
+#include "random_.h"
 #include <time.h>
 #include <Python.h>
 #include <numpy/arrayobject.h>
 #include "numpy/ndarraytypes.h"
 #include "operators.h"
 #include "omp.h"
-#include <windows.h>
 
 RNG_POOL *rng_pool;
 
@@ -17,7 +16,7 @@ inline double generate_random_double()
     return (double)pcg32_random_r(&rng_pool[omp_get_thread_num()].rng) / uint32_max;
 }
 
-Tensor *random(PyObject *self, PyObject *const *args, size_t nargsf)
+Tensor *random_(PyObject *self, PyObject *const *args, size_t nargsf)
 {
     npy_intp *shape = malloc(nargsf * sizeof(npy_intp));
     double uint32_max = 4294967295.0;
@@ -83,7 +82,7 @@ static void create_rng_pool()
 }
 
 static PyMethodDef methods[] = {
-    {"random", (PyCFunction)random, METH_FASTCALL, "Method docstring"},
+    {"random", (PyCFunction)random_, METH_FASTCALL, "Method docstring"},
     {NULL}};
 
 static PyModuleDef

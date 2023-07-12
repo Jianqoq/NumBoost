@@ -48,7 +48,7 @@ mymodule2 = Extension('core',
 mymodule3 = Extension('rand',
                       sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
                                'set_Tensor_properties.c', 'methods.c', 'core.c', 'binaray_backward_fn.c',
-                               'random.c', 'pcg_basic.c'],
+                               'random_.c', 'pcg_basic.c'],
                       include_dirs=[
                           numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',
                           'mkl-C/mkl/latest/include'],
