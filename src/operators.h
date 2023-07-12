@@ -15,6 +15,8 @@ new_Tensor_scalar(Tensor *self, PyObject *data, PyObject *y, const char *grad_fn
 Tensor *
 new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn);
 
+Tensor *
+Tensor__new__(PyTypeObject *type, PyObject *data);
 
 Tensor *tensor_add(Tensor *self, PyObject *other);
 Tensor *tensor_iadd(Tensor *self, PyObject *other);

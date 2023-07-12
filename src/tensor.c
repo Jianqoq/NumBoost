@@ -101,14 +101,13 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
 PyObject *
 __str__(Tensor *self)
 {
-    char *result;
+    char *result, *dest, *prefix = "Tensor(";
     PyObject *py_str = PyObject_Str(self->data);
     char require_grad[6];
     sprintf(require_grad, "%s", self->require_grad ? "true" : "false");
     const char *str = PyUnicode_AsUTF8(py_str);
     uint64_t str_len = strlen(str);
     uint64_t count = 0;
-    char *prefix = "Tensor(";
     uint64_t length = strlen((const char *)prefix);
     for (uint64_t i = 0; i < str_len; i++)
         if (str[i] == '\n')
@@ -134,24 +133,46 @@ __str__(Tensor *self)
         count++;
     }
     result[index++] = '\0';
-    const char *string_array[] = {(const char *)prefix,
-                                  (const char *)result,
-                                  ", requires_grad=",
-                                  (const char *)require_grad,
-                                  ", backward=",
-                                  "<", self->grad_fn,
-                                  ">", ")\n"};
-    uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
-    uint64_t string_total_len = 1;
-    for (uint64_t i = 0; i < string_array_len; i++)
+    if (!strcmp(self->grad_fn, ""))
     {
-        string_total_len += strlen(string_array[i]);
+        const char *string_array[] = {(const char *)prefix,
+                                      (const char *)result,
+                                      ", requires_grad=",
+                                      (const char *)require_grad, ")\n"};
+        uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
+        uint64_t string_total_len = 1;
+        for (uint64_t i = 0; i < string_array_len; i++)
+        {
+            string_total_len += strlen(string_array[i]);
+        }
+        dest = (char *)malloc(string_total_len * sizeof(char));
+        dest[0] = '\0';
+        for (uint64_t i = 0; i < string_array_len; i++)
+        {
+            strcat(dest, string_array[i]);
+        }
     }
-    char *dest = (char *)malloc(string_total_len * sizeof(char));
-    dest[0] = '\0';
-    for (uint64_t i = 0; i < string_array_len; i++)
+    else
     {
-        strcat(dest, string_array[i]);
+        const char *string_array[] = {(const char *)prefix,
+                                      (const char *)result,
+                                      ", requires_grad=",
+                                      (const char *)require_grad,
+                                      ", backward=",
+                                      "<", self->grad_fn,
+                                      ">", ")\n"};
+        uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
+        uint64_t string_total_len = 1;
+        for (uint64_t i = 0; i < string_array_len; i++)
+        {
+            string_total_len += strlen(string_array[i]);
+        }
+        dest = (char *)malloc(string_total_len * sizeof(char));
+        dest[0] = '\0';
+        for (uint64_t i = 0; i < string_array_len; i++)
+        {
+            strcat(dest, string_array[i]);
+        }
     }
     PyObject *representation = PyUnicode_FromString((const char *)dest);
     free(dest);
@@ -278,7 +299,8 @@ _Generic_backward(PyObject *self, PyObject *args)
     }
     Py_INCREF(grad); // Avoid grad reference count to be 0, current grad ref == 2
     Tensor *self_tensor = (Tensor *)self;
-    if (!self_tensor->require_grad) {
+    if (!self_tensor->require_grad)
+    {
         Py_DECREF(grad);
         PyErr_SetString(PyExc_RuntimeError, "Tensor require_grad is False");
         return NULL;
@@ -321,14 +343,14 @@ _Generic_backward(PyObject *self, PyObject *args)
             }
         }
         get_method(grad_fn)(tensor, tuple.ndarray, &current_grad1, &current_grad2);
-        
+
         if (current_grad1 != NULL)
-        if (current_grad2 != NULL)
-        if (current_grad1 == NULL && current_grad2 == NULL)
-        {
-            free_dict();
-            return NULL;
-        }
+            if (current_grad2 != NULL)
+                if (current_grad1 == NULL && current_grad2 == NULL)
+                {
+                    free_dict();
+                    return NULL;
+                }
         Tensor *tensor_x = (Tensor *)tensor->x;
         if (tensor_x != tensor)
         {
@@ -353,19 +375,24 @@ _Generic_backward(PyObject *self, PyObject *args)
     return Py_None;
 };
 
-
 static Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
     size_t nargs = PyVectorcall_NARGS(nargsf);
     PyArrayObject *array;
     int order = 0;
-    if (PyUnicode_Check(args[nargs - 1])) {
+    if (PyUnicode_Check(args[nargs - 1]))
+    {
         PyObject *order_obj = args[nargs - 1];
-        if (PyUnicode_CompareWithASCIIString(order_obj, "C") == 0) {
+        if (PyUnicode_CompareWithASCIIString(order_obj, "C") == 0)
+        {
             order = NPY_CORDER;
-        } else if (PyUnicode_CompareWithASCIIString(order_obj, "F") == 0) {
+        }
+        else if (PyUnicode_CompareWithASCIIString(order_obj, "F") == 0)
+        {
             order = NPY_FORTRANORDER;
-        } else {
+        }
+        else
+        {
             PyErr_SetString(PyExc_ValueError, "order must be 'C' or 'F'");
             return NULL;
         }
@@ -381,7 +408,8 @@ static Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf, 
     PyArray_Dims shape = {dims, length};
     array = (PyArrayObject *)tensor->data;
     PyObject *result = PyArray_Newshape(array, &shape, order);
-    if (result != tensor->data) {
+    if (result != tensor->data)
+    {
         tensor->data = result;
         Py_DECREF(array);
     }
@@ -392,7 +420,6 @@ static Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf, 
     }
     return self;
 }
-
 
 static Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
@@ -405,18 +432,19 @@ static Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf
     }
     PyArray_Dims shape = {dims, (int)nargs};
     PyObject *result = PyArray_Transpose(array, &shape);
-    if (result != NULL && result != self->data) {
+    if (result != NULL && result != self->data)
+    {
         self->data = result;
         Py_DECREF(array);
     }
-    else {
+    else
+    {
         free(dims);
         return NULL;
     }
     free(dims);
     return self;
 }
-
 
 static PyMethodDef Tensor_methods[] = {
     {"backward", (PyCFunction)_Generic_backward, METH_VARARGS, "Backward method"},
