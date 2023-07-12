@@ -9,7 +9,7 @@ NumBoost currently offers seamless compatibility with NumPy, making it an easy d
 Furthermore, we're pushing boundaries by integrating more than 80% of NumPy functionalities, and we are in the process of incorporating TensorFlow's XLA for GPU acceleration. This project is also driven by the goal of creating our custom CUDA bindings for even better performance.
 
 ## **Future Plans**
-We aim to make NumBoost the go-to library for high-performance machine learning and deep learning. To achieve this, we are working on providing a wealth of high-performance functions and state-of-the-art layers that will put the most advanced machine learning techniques at your fingertips.
+We aim to make NumBoost the go-to library for high-performance numeric calculation lib and may include machine learning and deep learning stuff. To achieve this, we are working on providing a wealth of high-performance functions and state-of-the-art layers that will put the most advanced machine learning techniques at your fingertips.
 
 ## **Contribution**
 As a growing project, we appreciate all the help we can get. Whether it's implementing a new feature, writing tests, or improving our documentation, every contribution brings us one step closer to our goal. Please feel free to check the issues page or contact the team if you're interested in contributing.
