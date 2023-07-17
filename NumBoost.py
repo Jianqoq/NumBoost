@@ -21,15 +21,13 @@ def jit(fun: Callable,
     def wrapper(*args):
         """Wrapper for jax.jit to support NumBoost.Tensor"""
         if fun not in cache:
-            call = cache[fun] = jax.jit(fun, in_shardings, out_shardings,
-                                        static_argnums, static_argnames,
-                                        donate_argnums, keep_unused, device,
-                                        backend, inline, abstracted_axes)
-        else:
-            call = cache[fun]
+            cache[fun] = jax.jit(fun, in_shardings, out_shardings,
+                                 static_argnums, static_argnames,
+                                 donate_argnums, keep_unused, device,
+                                 backend, inline, abstracted_axes)
         set_track(1)
         args = [arg.data if isinstance(arg, Tensor) else arg for arg in args]
-        result = call(*args)
+        result = cache[fun](*args)
         set_track(0)
         return result
     return wrapper
