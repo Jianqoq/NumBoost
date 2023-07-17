@@ -2,6 +2,8 @@ torch
 torchvision
 torchaudio
 -f https://download.pytorch.org/whl/cpu
+jax
+jaxlib
 numpy
 pytest
 pytest-benchmark
