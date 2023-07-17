@@ -1,4 +1,8 @@
+#define PY_ARRAY_UNIQUE_SYMBOL tensor_c
+#define PY_SSIZE_T_CLEAN
+#define NO_IMPORT_ARRAY
 #include "set_Tensor_properties.h"
+
 
 void Tensor_SetData(Tensor *self, PyObject *data)
 {
@@ -65,12 +69,12 @@ void Tensor_SetGraph(Tensor *self, PyObject *graph)
         PyErr_Clear();
     }
 }
-void Tensor_SetBase(Tensor *self, PyObject *base)
+void Tensor_SetDtype(Tensor *self, PyArray_Descr *dtype)
 {
-    Py_INCREF(base);
-    Py_DECREF(self->base);
-    self->base = base;
-    if (self->base == NULL)
+    Py_INCREF(dtype);
+    Py_DECREF(self->dtype);
+    self->dtype = dtype;
+    if (self->dtype == NULL)
     {
         Py_DECREF(self);
         PyErr_SetString(PyExc_RuntimeError, "Unable to allocate memory for Tensor object");
@@ -172,11 +176,11 @@ void Tensor_SetGraph_without_init_value(Tensor *self, PyObject *graph)
         PyErr_Clear();
     }
 }
-void Tensor_SetBase_without_init_value(Tensor *self, PyObject *base)
+void Tensor_SetDtype_without_init_value(Tensor *self, PyArray_Descr *dtype)
 {
-    Py_INCREF(base);
-    self->base = base;
-    if (self->base == NULL)
+    Py_INCREF(dtype);
+    self->dtype = dtype;
+    if (self->dtype == NULL)
     {
         Py_DECREF(self);
         PyErr_SetString(PyExc_RuntimeError, "Unable to allocate memory for Tensor object");
@@ -258,11 +262,11 @@ void Tensor_SetGraph_startwone(Tensor *self, PyObject *graph)
         PyErr_Clear();
     }
 }
-void Tensor_SetBase_startwone(Tensor *self, PyObject *base)
+void Tensor_SetDtype_startwone(Tensor *self, PyArray_Descr *dtype)
 {
-    Py_DECREF(self->base);
-    self->base = base;
-    if (self->base == NULL)
+    Py_DECREF(self->dtype);
+    self->dtype = dtype;
+    if (self->dtype == NULL)
     {
         Py_DECREF(self);
         PyErr_SetString(PyExc_RuntimeError, "Unable to allocate memory for Tensor object");
@@ -344,11 +348,11 @@ void Tensor_SetGraph_startwone_without_init(Tensor *self, PyObject *graph)
         PyErr_Clear();
     }
 }
-void Tensor_SetBase_startwone_without_init(Tensor *self, PyObject *base)
+void Tensor_SetDtype_startwone_without_init(Tensor *self, PyArray_Descr *dtype)
 {
-    self->base = base;
-    Py_INCREF(base);
-    if (self->base == NULL)
+    self->dtype = dtype;
+    Py_INCREF(dtype);
+    if (self->dtype == NULL)
     {
         Py_DECREF(self);
         PyErr_SetString(PyExc_RuntimeError, "Unable to allocate memory for Tensor object");

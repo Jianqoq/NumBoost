@@ -1,5 +1,6 @@
-#define PY_ARRAY_UNIQUE_SYMBOL core_c
+#define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
+#include "import_methods.h"
 #include <omp.h>
 #include "mkl_vml_functions.h"
 #include <numpy/npy_math.h>
@@ -8,7 +9,6 @@
 #include "numpy/ndarraytypes.h"
 #include "set_Tensor_properties.h"
 #include "tensor.h"
-#include "core.h"
 #include "operators.h"
 extern np_method *NP_METHOD;
 extern Array_Shape *ARRAY_SHAPE;
@@ -129,7 +129,7 @@ inline static Tensor *Generic_function_new_float(void (*vect_func)(const int, co
         float *data2 = (float *)PyArray_DATA(array2);
         const float *data = (const float *)PyArray_DATA(array);
         vect_func((const int)size, data, data2); // need benchmark to see if needed to release GIL
-        return __new_Tensor(self, (PyObject *)array2, NULL, self->require_grad ? grad_fn : "");
+        return (Tensor *)__new_Tensor(self, (PyObject *)array2, NULL, self->require_grad ? grad_fn : "");
     }
     else
     {
@@ -167,7 +167,7 @@ inline static Tensor *Generic_function_new_double(void (*vect_func)(const int, c
         double *data2 = (double *)PyArray_DATA(array2);
         const double *data = (const double *)PyArray_DATA(array);
         vect_func((const int)size, data, data2); // need benchmark to see if needed to release GIL
-        return __new_Tensor(self, (PyObject *)array2, NULL, self->require_grad ? grad_fn : "");
+        return (Tensor *)__new_Tensor(self, (PyObject *)array2, NULL, self->require_grad ? grad_fn : "");
     }
     else
     {
@@ -218,7 +218,7 @@ inline static Tensor *Generic_function(PyObject *func, const char *grad_fn, PyOb
     }
     if (!tensor->require_grad)
         grad_fn = "";
-    Tensor *to_return = __new_Tensor(tensor, result, NULL, grad_fn);
+    Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, grad_fn);
     return to_return;
 }
 
@@ -353,7 +353,7 @@ Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *
         else
             pre_shape2[i] = 0;
     }
-    Tensor *to_return = __new_Tensor(tensor, result, NULL, grad_fn);
+    Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, grad_fn);
     if (pre_shape != NULL)
     {
         store_array_shape(to_return, pre_shape2, ndim);
@@ -467,7 +467,7 @@ Tensor *_sum(PyObject *self, PyObject *const *args, size_t nargsf)
     {
         return NULL;
     }
-    Tensor *to_return = __new_Tensor(tensor, result, NULL, "");
+    Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
     return to_return;
 }
 
@@ -534,7 +534,7 @@ Tensor *_max(PyObject *self, PyObject *const *args, size_t nargsf)
     {
         return NULL;
     }
-    Tensor *to_return = __new_Tensor(tensor, result, NULL, "");
+    Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
     return to_return;
 }
 
@@ -588,7 +588,7 @@ Tensor *_min(PyObject *self, PyObject *const *args, size_t nargsf)
     {
         return NULL;
     }
-    Tensor *to_return = __new_Tensor(tensor, result, NULL, "");
+    Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
     return to_return;
 }
 
@@ -655,7 +655,7 @@ Tensor *_mean(PyObject *self, PyObject *const *args, size_t nargsf)
     {
         return NULL;
     }
-    Tensor *to_return = __new_Tensor(tensor, result, NULL, "");
+    Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
     return to_return;
 }
 
@@ -709,7 +709,7 @@ Tensor *_argmax_wrapper(PyObject *self, PyObject *const *args, size_t nargsf)
     {
         return NULL;
     }
-    Tensor *to_return = __new_Tensor(tensor, result, NULL, "");
+    Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
     return to_return;
 }
 
@@ -763,7 +763,7 @@ Tensor *_argmin_wrapper(PyObject *self, PyObject *const *args, size_t nargsf)
     {
         return NULL;
     }
-    Tensor *to_return = __new_Tensor(tensor, result, NULL, "");
+    Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
     return to_return;
 }
 
@@ -1216,7 +1216,7 @@ Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf)
         PyErr_SetString(PyExc_TypeError, "pow expected at least 2 arguments, got 0");
         return NULL;
     }
-    Tensor *to_return = __new_Tensor(tensor, result, NULL, "PowBackward");
+    Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "PowBackward");
     Py_INCREF(power);
     store_power(to_return, power);
     return to_return;

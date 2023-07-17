@@ -10,6 +10,13 @@
 #include "set_Tensor_properties.h"
 
 static Dict *dict = NULL;
+XLA_OPS *xla_ops = NULL;
+long TRACK = 0;
+np_method *NP_METHOD = NULL;
+Array_Shape *ARRAY_SHAPE = NULL;
+Power_Dict *POWER_DICT = NULL;
+Log_Dict *LOG_DICT = NULL;
+jnp_method *JNP_METHOD = NULL;
 
 void INCREF_TENSOR(Tensor *self)
 {
@@ -18,7 +25,7 @@ void INCREF_TENSOR(Tensor *self)
     Py_INCREF(self->y);
     Py_INCREF(self->graph);
     Py_INCREF(self->axis);
-    Py_INCREF(self->base);
+    Py_INCREF(self->dtype);
 }
 
 void add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
@@ -62,26 +69,42 @@ void free_dict(void)
     }
 }
 
+PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf)
+{
+    TRACK = PyLong_AsLong(args[0]);
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyObject *
 __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"data", "requires_grad", NULL};
+    PyObject *data = NULL, *cache = NULL;
+    bool require_grad = false;
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwds, "O|p", kwlist, &data, &require_grad))
+        return NULL;
+    if (data)
+    {
+        if (!TRACK)
+        {
+            cache = PyArray_FromAny(data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
+        }
+        else
+        {
+            PyObject *jaxarray = PyObject_CallOneArg(JNP_METHOD->array, data);
+            return jaxarray;
+        }
+    }
+    else
+        return NULL;
     Tensor *self = (Tensor *)PyObject_GC_New(Tensor, type);
-    self->require_grad = false;
+    self->require_grad = require_grad;
     if (self != NULL)
     {
-        static char *kwlist[] = {"data", "requires_grad", NULL};
-        PyObject *data = NULL, *cache = NULL;
-
-        if (!PyArg_ParseTupleAndKeywords(
-                args, kwds, "O|p", kwlist, &data, &self->require_grad))
-            return NULL;
-        if (data)
-            cache = PyArray_FromAny(data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
-        else
-            return NULL;
         PyObject *zero = PyLong_FromLong(0);
         self->data = cache;
-        Tensor_SetData_without_init_value(self, cache);
         Tensor_SetX_without_init_value(self, Py_None);
         Tensor_SetY_without_init_value(self, Py_None);
         Tensor_SetHasConv(self, 0);
@@ -90,7 +113,7 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Tensor_SetGrad_without_init_value(self, zero);
         Tensor_SetGraph_without_init_value(self, Py_None);
         Tensor_SetAxis_without_init_value(self, Py_None);
-        Tensor_SetBase_without_init_value(self, Py_None);
+        Tensor_SetDtype_without_init_value(self, PyArray_DESCR((PyArrayObject *)cache));
         Tensor_SetDim(self, 1);
         Py_DECREF(zero);
     }
@@ -196,7 +219,7 @@ Tensor_dealloc(Tensor *self)
     Py_CLEAR(self->y);
     Py_CLEAR(self->axis);
     Py_CLEAR(self->graph);
-    Py_CLEAR(self->base);
+    Py_CLEAR(self->dtype);
     Py_CLEAR(self->grad);
     PyObject_GC_Del(self);
 }
@@ -210,7 +233,7 @@ Tensor_clear(Tensor *self)
     Py_CLEAR(self->y);
     Py_CLEAR(self->axis);
     Py_CLEAR(self->graph);
-    Py_CLEAR(self->base);
+    Py_CLEAR(self->dtype);
     Py_CLEAR(self->grad);
     PyObject_GC_Track(self);
     return 0;
@@ -224,7 +247,7 @@ Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     Py_VISIT(self->y);
     Py_VISIT(self->axis);
     Py_VISIT(self->graph);
-    Py_VISIT(self->base);
+    Py_VISIT(self->dtype);
     Py_VISIT(self->grad);
     return 0;
 }
@@ -242,7 +265,7 @@ PyMemberDef
         {"graph", T_OBJECT, offsetof(Tensor, graph), 0, "graph"},
         {"axis", T_OBJECT, offsetof(Tensor, axis), 0, "axis"},
         {"dim", T_INT, offsetof(Tensor, dim), 0, "dim"},
-        {"base", T_OBJECT, offsetof(Tensor, base), 0, "base"},
+        {"dtype", T_OBJECT_EX, offsetof(Tensor, dtype), 0, "base"},
         {"grad", T_OBJECT, offsetof(Tensor, grad), 0, "grad"},
         {NULL}};
 
@@ -454,21 +477,51 @@ static PyMethodDef Tensor_methods[] = {
     {NULL} /* Sentinel */
 };
 
-static PyModuleDef
-    custommodule = {
-        PyModuleDef_HEAD_INIT,
-        .m_name = "tensor",
-        .m_doc = "Tensor is a numpy wrapper which supports autograd",
-        .m_size = -1,
+static PyMethodDef module_methods[] = {
+    {"reshape", (PyCFunction)reshape, METH_FASTCALL, "Method docstring"},
+    {"transpose", (PyCFunction)transpose, METH_FASTCALL, "Method docstring"},
+    {"argmax", (PyCFunction)_argmax_wrapper, METH_FASTCALL, "Method docstring"},
+    {"argmin", (PyCFunction)_argmin_wrapper, METH_FASTCALL, "Method docstring"},
+    {"sum", (PyCFunction)_sum, METH_FASTCALL, "Method docstring"},
+    {"max", (PyCFunction)_max, METH_FASTCALL, "Method docstring"},
+    {"min", (PyCFunction)_min, METH_FASTCALL, "Method docstring"},
+    {"sin", (PyCFunction)_sin, METH_FASTCALL, "Method docstring"},
+    {"cos", (PyCFunction)_cos, METH_FASTCALL, "Method docstring"},
+    {"tan", (PyCFunction)_tan, METH_FASTCALL, "Method docstring"},
+    {"arcsin", (PyCFunction)_asin, METH_FASTCALL, "Method docstring"},
+    {"arccos", (PyCFunction)_acos, METH_FASTCALL, "Method docstring"},
+    {"arctan", (PyCFunction)_atan, METH_FASTCALL, "Method docstring"},
+    {"arcsinh", (PyCFunction)_asinh, METH_FASTCALL, "Method docstring"},
+    {"arccosh", (PyCFunction)_acosh, METH_FASTCALL, "Method docstring"},
+    {"arctanh", (PyCFunction)_atanh, METH_FASTCALL, "Method docstring"},
+    {"sinh", (PyCFunction)_sinh, METH_FASTCALL, "Method docstring"},
+    {"cosh", (PyCFunction)_cosh, METH_FASTCALL, "Method docstring"},
+    {"tanh", (PyCFunction)_tanh, METH_FASTCALL, "Method docstring"},
+    {"log10", (PyCFunction)_log10, METH_FASTCALL, "Method docstring"},
+    {"log", (PyCFunction)_log, METH_FASTCALL, "Method docstring"},
+    {"exp", (PyCFunction)_exp, METH_FASTCALL, "Method docstring"},
+    {"sqrt", (PyCFunction)_sqrt, METH_FASTCALL, "Method docstring"},
+    {"abs", (PyCFunction)_abs, METH_FASTCALL, "Method docstring"},
+    {"power", (PyCFunction)_pow, METH_FASTCALL, "Method docstring"},
+    {"mean", (PyCFunction)_mean, METH_FASTCALL, "Method docstring"},
+    {"set_track", (PyCFunction)set_track, METH_FASTCALL, "Method docstring"},
+    {NULL}};
+
+static PyModuleDef custommodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "Numboost",
+    .m_doc = "Tensor is a numpy wrapper which supports autograd",
+    .m_size = -1,
+    .m_methods = module_methods,
 };
 
 PyTypeObject
     Tensor_type = {
-        PyVarObject_HEAD_INIT(NULL, 0).tp_name = "tensor.Tensor",
+        PyVarObject_HEAD_INIT(NULL, 0).tp_name = "Tensor",
         .tp_doc = "Tensor objects",
         .tp_basicsize = sizeof(Tensor),
         .tp_itemsize = 0,
-        .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+        .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_VECTORCALL,
         .tp_new = (newfunc)__new__,
         .tp_members = properties,
         .tp_dealloc = (destructor)Tensor_dealloc,
@@ -512,9 +565,16 @@ void init_map()
 }
 
 PyMODINIT_FUNC
-PyInit_tensor(void)
+PyInit_Numboost(void)
 {
-    omp_set_num_threads(16);
+    Py_Initialize();
+    omp_set_num_threads(omp_get_max_threads());
+    if (import_xla_ops(&xla_ops) == NULL)
+        return NULL;
+    if (import_jnp_methods(&JNP_METHOD) == NULL)
+        return NULL;
+    if (import_np_methods(&NP_METHOD) == NULL)
+        return NULL;
     import_array();
     init_map();
     PyObject *m;

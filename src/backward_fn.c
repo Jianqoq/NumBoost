@@ -1,8 +1,7 @@
-#define PY_ARRAY_UNIQUE_SYMBOL core_c
+#define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #include <numpy/arrayobject.h>
 #include "tensor.h"
-#include "core.h"
 extern Array_Shape *ARRAY_SHAPE;
 
 void power_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
