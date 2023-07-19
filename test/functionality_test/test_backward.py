@@ -9,8 +9,8 @@ import platform
 if platform.system() == 'Windows':
     os.add_dll_directory(r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from src.tensor import Tensor
-import src.core as core
+from NumBoost import Tensor
+import NumBoost as core
 
 
 @pytest.mark.parametrize("array, array2, grad", [(np.array([1., 2., 3.]), np.array([5., 7., 8.]), np.array([10., 9., 5.])),])
