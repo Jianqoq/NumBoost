@@ -155,6 +155,13 @@ typedef struct
     UT_hash_handle hh;
 } Log_Dict;
 
+typedef struct
+{
+    long long index;
+    Tensor *tensor;
+    UT_hash_handle hh;
+} Tensor_need_grad_Dict;
+
 void store_array_shape(Tensor *key, npy_intp *shape, int len);
 npy_intp *get_array_shape(Tensor *key);
 int *get_shape_len(Tensor *key);

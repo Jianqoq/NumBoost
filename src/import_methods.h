@@ -196,6 +196,7 @@ typedef struct
 #define JNP_METHOD_H
 typedef struct
 {
+    PyObject *copy;
     PyObject *array;
     PyObject *sin;
     PyObject *cos;

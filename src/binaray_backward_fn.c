@@ -2,6 +2,8 @@
 #define NO_IMPORT_ARRAY
 #include <numpy/arrayobject.h>
 #include "tensor.h"
+extern long TRACK;
+extern jnp_method *JNP_METHOD;
 
 static bool shape_is_equal(npy_intp *dims1, npy_intp *dims2, int *nd)
 {
@@ -138,6 +140,13 @@ void check_shape(PyArrayObject *grad, PyObject *origin_data, PyObject **out, con
 
 void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
+    if (TRACK)
+    {
+        *out1 = PyObject_CallFunctionObjArgs(JNP_METHOD->copy, grad, NULL);
+        *out2 = PyObject_CallFunctionObjArgs(JNP_METHOD->copy, grad, NULL);
+        return;
+
+    }
     if (!vaild_shape((PyArrayObject *)grad, (PyArrayObject *)self->data, "grad shape not equal to previous output shape"))
     {
         *out1 = NULL;
@@ -145,9 +154,8 @@ void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
         return;
     }
     PyArrayObject *tmp = (PyArrayObject *)grad;
-    PyObject *grad2 = PyArray_Copy(tmp);
-    *out1 = grad;// might need incref for grad
-    *out2 = grad2;
+    *out1 = PyArray_Copy(tmp);
+    *out2 = PyArray_Copy(tmp);
 };
 
 void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
@@ -165,14 +173,21 @@ void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
 
 void mul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
+    Tensor *tmp1 = (Tensor *)self->x;
+    Tensor *tmp2 = (Tensor *)self->y;
+    if (TRACK)
+    {
+        PyObject *jaxarray = PyObject_CallFunctionObjArgs(JNP_METHOD->multiply, grad, tmp2->data, NULL);
+        *out1 = PyObject_CallFunctionObjArgs(JNP_METHOD->multiply, grad, tmp2->data, NULL);
+        *out2 = PyObject_CallFunctionObjArgs(JNP_METHOD->multiply, grad, tmp1->data, NULL);
+        return;
+    }
     if (!vaild_shape((PyArrayObject *)grad, (PyArrayObject *)self->data, "grad shape not equal to previous output shape"))
     {
         *out1 = NULL;
         *out2 = NULL;
         return;
     }
-    Tensor *tmp1 = (Tensor *)self->x;
-    Tensor *tmp2 = (Tensor *)self->y;
 
     PyObject *grad1 = PyNumber_Multiply(grad, tmp2->data);
     PyObject *grad2 = PyNumber_Multiply(grad, tmp1->data);

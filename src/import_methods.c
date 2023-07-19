@@ -11,7 +11,7 @@ inline static PyObject **_Generic_check_import_if_success(PyObject **struct_with
         {
             char line[100];
             // 23 is the number of ops in the list above, need to change if num ops are changed
-            sprintf(line, "%s %ld", "Failed to import xla ops at import_methods.c line", p - begin + start_line);
+            sprintf(line, "%s %lld", "Failed to import xla ops at import_methods.c line", p - begin + start_line);
             PyErr_SetString(PyExc_RuntimeError, (const char *)line);
             free(struct_with_methods);
             return NULL;
@@ -246,6 +246,7 @@ jnp_method *import_jnp_methods(jnp_method **JNP_METHOD_)
     if (module == NULL || module2 == NULL || module3 == NULL)
         return NULL;
     JNP_METHOD->unspecified_value = PyObject_GetAttrString(module3, "UnspecifiedValue");
+    JNP_METHOD->copy = PyObject_GetAttrString(module, "copy");
     JNP_METHOD->jit = PyObject_GetAttrString(module2, "jit");
     JNP_METHOD->array = PyObject_GetAttrString(module, "array");
     JNP_METHOD->sin = PyObject_GetAttrString(module, "sin");

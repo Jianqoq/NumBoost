@@ -17,6 +17,37 @@ Array_Shape *ARRAY_SHAPE = NULL;
 Power_Dict *POWER_DICT = NULL;
 Log_Dict *LOG_DICT = NULL;
 jnp_method *JNP_METHOD = NULL;
+Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT = NULL;
+
+static void store_tensor_need_grad(long long index, Tensor *tensor)
+{
+    Tensor_need_grad_Dict *entry = (Tensor_need_grad_Dict *)malloc(sizeof(Tensor_need_grad_Dict));
+    entry->index = index;
+    entry->tensor = tensor;
+    HASH_ADD_INT(TENSOR_NEED_GRAD_DICT, index, entry);
+}
+Tensor *get_tensor(long long index)
+{
+    Tensor_need_grad_Dict *entry;
+    HASH_FIND_INT(TENSOR_NEED_GRAD_DICT, &index, entry);
+    if (entry != NULL)
+    {
+        return entry->tensor;
+    }
+    return NULL;
+}
+
+PyObject *convert_tensor_dict_to_Py_dict(PyObject *self, PyObject *const *args, size_t nargsf)
+{
+    PyObject *dict = PyDict_New();
+    Tensor_need_grad_Dict *entry, *tmp;
+    HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, entry, tmp)
+    {
+        PyDict_SetItem(dict, (PyObject *)entry->tensor, PyTuple_GetItem(args[0], entry->index));
+        HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
+    }
+    return dict;
+}
 
 void INCREF_TENSOR(Tensor *self)
 {
@@ -81,7 +112,7 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"data", "requires_grad", NULL};
     PyObject *data = NULL, *cache = NULL;
-    bool require_grad = false;
+    bool *require_grad = NULL;
     if (!PyArg_ParseTupleAndKeywords(
             args, kwds, "O|p", kwlist, &data, &require_grad))
         return NULL;
@@ -100,7 +131,14 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
     else
         return NULL;
     Tensor *self = (Tensor *)PyObject_GC_New(Tensor, type);
-    self->require_grad = require_grad;
+    if (require_grad == NULL)
+    {
+        self->require_grad = false;
+    }
+    else
+    {
+        self->require_grad = require_grad;
+    }
     if (self != NULL)
     {
         PyObject *zero = PyLong_FromLong(0);
@@ -124,7 +162,12 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
 PyObject *
 __str__(Tensor *self)
 {
-    char *result, *dest, *prefix = "Tensor(";
+    char *result, *dest, *prefix = "Tensor(", *end = ")\n";
+    if (TRACK)
+    {
+        prefix = "\n\tTensor(";
+        end = ")";
+    }
     PyObject *py_str = PyObject_Str(self->data);
     char require_grad[6];
     sprintf(require_grad, "%s", self->require_grad ? "true" : "false");
@@ -156,12 +199,13 @@ __str__(Tensor *self)
         count++;
     }
     result[index++] = '\0';
+
     if (!strcmp(self->grad_fn, ""))
     {
         const char *string_array[] = {(const char *)prefix,
                                       (const char *)result,
                                       ", requires_grad=",
-                                      (const char *)require_grad, ")\n"};
+                                      (const char *)require_grad, end};
         uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
         uint64_t string_total_len = 1;
         for (uint64_t i = 0; i < string_array_len; i++)
@@ -315,6 +359,8 @@ _Generic_backward(PyObject *self, PyObject *args)
     PyObject *current_grad2 = NULL;
     PyObject *grad = NULL;
     Tensor *tensor = NULL;
+    PyObject *list = PyList_New(0);
+    long long index = 0;
     const char *grad_fn = NULL;
     if (!PyArg_ParseTuple(args, "O", &grad))
     {
@@ -359,6 +405,32 @@ _Generic_backward(PyObject *self, PyObject *args)
                     return NULL;
                 }
                 PyObject *new_grad = PyNumber_Add(tensor->grad, tuple.ndarray);
+                if (new_grad == NULL)
+                {
+                    free_dict();
+                    return NULL;
+                }
+                if (TRACK)
+                {
+                    Tensor_need_grad_Dict *entry = NULL;
+                    Tensor_need_grad_Dict *s, *tmp;
+                    HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, s, tmp)
+                    {
+                        if (s->tensor == tensor)
+                        {
+                            entry = s;
+                        }
+                    }
+                    if (entry != NULL)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        store_tensor_need_grad(index, tensor);
+                        index++;
+                    }
+                }
                 Py_DECREF(tensor->grad);
                 tensor->grad = new_grad;
                 Py_DECREF(tuple.ndarray);
@@ -366,20 +438,19 @@ _Generic_backward(PyObject *self, PyObject *args)
             }
         }
         get_method(grad_fn)(tensor, tuple.ndarray, &current_grad1, &current_grad2);
-
-        if (current_grad1 != NULL)
-            if (current_grad2 != NULL)
-                if (current_grad1 == NULL && current_grad2 == NULL)
-                {
-                    free_dict();
-                    return NULL;
-                }
+        if (current_grad1 == NULL && current_grad2 == NULL)
+        {
+            free_dict();
+            return NULL;
+        }
         Tensor *tensor_x = (Tensor *)tensor->x;
         if (tensor_x != tensor)
         {
-            grad_fn = tensor_x->grad_fn;
-            Tuple tuple2 = {tensor->x, current_grad1};
-            push(stack, tuple2);
+            if (current_grad1 != NULL && tensor_x->require_grad)
+            {
+                Tuple tuple2 = {tensor->x, current_grad1};
+                push(stack, tuple2);
+            }
         }
         if (Py_IS_TYPE(tensor->y, &Tensor_type))
         {
@@ -393,7 +464,18 @@ _Generic_backward(PyObject *self, PyObject *args)
         Py_DECREF(tuple.ndarray);
     }
     freeStack(stack);
-
+    if (TRACK)
+    {
+        Tensor_need_grad_Dict *s, *tmp;
+        HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, s, tmp)
+        {
+            PyList_Append(list, s->tensor->grad);
+        }
+        PyObject *to_return = PyList_AsTuple(list);
+        Py_DECREF(list);
+        return to_return;
+    }
+    Py_DECREF(list);
     Py_INCREF(Py_None);
     return Py_None;
 };
@@ -505,6 +587,7 @@ static PyMethodDef module_methods[] = {
     {"power", (PyCFunction)_pow, METH_FASTCALL, "Method docstring"},
     {"mean", (PyCFunction)_mean, METH_FASTCALL, "Method docstring"},
     {"set_track", (PyCFunction)set_track, METH_FASTCALL, "Method docstring"},
+    {"to_dict", (PyCFunction)convert_tensor_dict_to_Py_dict, METH_FASTCALL, "Method docstring"},
     {NULL}};
 
 static PyModuleDef custommodule = {
