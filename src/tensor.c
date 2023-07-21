@@ -41,11 +41,21 @@ PyObject *convert_tensor_dict_to_Py_dict(PyObject *self, PyObject *const *args, 
 {
     PyObject *dict = PyDict_New();
     Tensor_need_grad_Dict *entry, *tmp;
-    HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, entry, tmp)
+    if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) == 1)
     {
-        PyDict_SetItem(dict, (PyObject *)entry->tensor, PyTuple_GetItem(args[0], entry->index));
-        HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
+        HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, entry, tmp)
+        {
+            PyDict_SetItem(dict, (PyObject *)entry->tensor, args[0]);
+            HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
+        }
+        return dict;
     }
+    else
+        HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, entry, tmp)
+        {
+            PyDict_SetItem(dict, (PyObject *)entry->tensor, PyTuple_GetItem(args[0], entry->index));
+            HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
+        }
     return dict;
 }
 
@@ -76,6 +86,50 @@ void (*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject 
         return entry->method;
     }
     return NULL;
+}
+
+void cleanup_dicts()
+{
+    Power_Dict *s, *tmp;
+    HASH_ITER(hh, POWER_DICT, s, tmp)
+    {
+        Py_DECREF(s->key);
+    }
+    HASH_CLEAR(hh, POWER_DICT);
+}
+
+PyObject *collect_gradients_and_cleanup(PyObject *list)
+{
+    Tensor_need_grad_Dict *gradient_entry, *gradient_tmp;
+    PyObject *to_return = NULL;
+    Power_Dict *power_entry, *power_tmp;
+    // If there is only one gradient, return it directly
+    if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) == 1)
+    {
+        HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, gradient_entry, gradient_tmp)
+        {
+            to_return = gradient_entry->tensor->grad;
+        }
+        Py_INCREF(to_return);
+        HASH_CLEAR(hh, POWER_DICT);
+    }
+    // Otherwise, append all gradients to a list and convert it to a tuple
+    else
+    {
+        HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, gradient_entry, gradient_tmp)
+        {
+            PyList_Append(list, gradient_entry->tensor->grad);
+        }
+        to_return = PyList_AsTuple(list);
+    }
+    // Cleanup: decrease reference count of list and also all tensor in POWER_DICT
+    Py_DECREF(list);
+    HASH_ITER(hh, POWER_DICT, power_entry, power_tmp)
+    {
+        Py_DECREF(power_entry->key);
+    }
+    HASH_CLEAR(hh, POWER_DICT);
+    return to_return;
 }
 
 Dict *
@@ -280,6 +334,10 @@ Tensor_clear(Tensor *self)
     Py_CLEAR(self->dtype);
     Py_CLEAR(self->grad);
     PyObject_GC_Track(self);
+    if (PyErr_Occurred())
+    {
+        return -1;
+    }
     return 0;
 }
 
@@ -293,6 +351,10 @@ Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     Py_VISIT(self->graph);
     Py_VISIT(self->dtype);
     Py_VISIT(self->grad);
+    if (PyErr_Occurred())
+    {
+        return -1;
+    }
     return 0;
 }
 
@@ -355,6 +417,7 @@ static PyNumberMethods
 PyObject *
 _Generic_backward(PyObject *self, PyObject *args)
 {
+    // Declare variables
     PyObject *current_grad1 = NULL;
     PyObject *current_grad2 = NULL;
     PyObject *grad = NULL;
@@ -362,12 +425,20 @@ _Generic_backward(PyObject *self, PyObject *args)
     PyObject *list = PyList_New(0);
     long long index = 0;
     const char *grad_fn = NULL;
+    // If tracking is enabled, clear the tensor gradient dictionary
+    if (TRACK)
+    {
+        if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) > 0)
+            HASH_CLEAR(hh, TENSOR_NEED_GRAD_DICT);
+    }
+    // Parse the Python argument tuple
     if (!PyArg_ParseTuple(args, "O", &grad))
     {
         return NULL;
     }
     Py_INCREF(grad); // Avoid grad reference count to be 0, current grad ref == 2
     Tensor *self_tensor = (Tensor *)self;
+    // If the tensor doesn't require gradient, return an error
     if (!self_tensor->require_grad)
     {
         Py_DECREF(grad);
@@ -379,10 +450,12 @@ _Generic_backward(PyObject *self, PyObject *args)
     Stack *stack = createStack(depth);
     Tuple tuple = {self, grad};
     push(stack, tuple);
+    // Start the main backward loop
     while (stack->len != 0)
     {
         tuple = pop(stack);
         PyObject *grad_fn_name = PyObject_GetAttrString(tuple.node, "grad_fn");
+        // Handle grad_fn_name being NULL
         if (grad_fn_name == NULL)
         {
             if (PyErr_Occurred())
@@ -394,8 +467,10 @@ _Generic_backward(PyObject *self, PyObject *args)
         }
         else
         {
+            Py_DECREF(grad_fn_name);
             tensor = (Tensor *)tuple.node;
             grad_fn = tensor->grad_fn;
+            // If grad_fn is empty string, perform gradient addition
             if (!strcmp(grad_fn, ""))
             {
                 if (tensor == NULL)
@@ -412,6 +487,7 @@ _Generic_backward(PyObject *self, PyObject *args)
                 }
                 if (TRACK)
                 {
+                    // Check whether the tensor needs gradient
                     Tensor_need_grad_Dict *entry = NULL;
                     Tensor_need_grad_Dict *s, *tmp;
                     HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, s, tmp)
@@ -437,12 +513,15 @@ _Generic_backward(PyObject *self, PyObject *args)
                 continue;
             }
         }
+        // Get the gradient function and apply it
         get_method(grad_fn)(tensor, tuple.ndarray, &current_grad1, &current_grad2);
+        // If both gradients are NULL, return an error
         if (current_grad1 == NULL && current_grad2 == NULL)
         {
             free_dict();
             return NULL;
         }
+        // Handle the tensor x
         Tensor *tensor_x = (Tensor *)tensor->x;
         if (tensor_x != tensor)
         {
@@ -451,7 +530,12 @@ _Generic_backward(PyObject *self, PyObject *args)
                 Tuple tuple2 = {tensor->x, current_grad1};
                 push(stack, tuple2);
             }
+            else
+            {
+                Py_DECREF(current_grad1);
+            }
         }
+        // Handle the tensor y
         if (Py_IS_TYPE(tensor->y, &Tensor_type))
         {
             bool require_grad = ((Tensor *)tensor->y)->require_grad;
@@ -460,22 +544,23 @@ _Generic_backward(PyObject *self, PyObject *args)
                 Tuple tuple2 = {tensor->y, current_grad2};
                 push(stack, tuple2);
             }
+            else
+            {
+                Py_DECREF(current_grad2);
+            }
         }
         Py_DECREF(tuple.ndarray);
     }
+    // Cleanup
     freeStack(stack);
+    Py_DECREF(list);
+    // If tracking, return the gradients as a tuple
     if (TRACK)
     {
-        Tensor_need_grad_Dict *s, *tmp;
-        HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, s, tmp)
-        {
-            PyList_Append(list, s->tensor->grad);
-        }
-        PyObject *to_return = PyList_AsTuple(list);
-        Py_DECREF(list);
-        return to_return;
+        return collect_gradients_and_cleanup(list);
     }
-    Py_DECREF(list);
+    // If not tracking, just cleanup and return None
+    cleanup_dicts();
     Py_INCREF(Py_None);
     return Py_None;
 };
