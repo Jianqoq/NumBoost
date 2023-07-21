@@ -3,6 +3,7 @@
 #include <numpy/arrayobject.h>
 #include "tensor.h"
 extern Array_Shape *ARRAY_SHAPE;
+extern jnp_method *JNP_METHOD;
 
 void power_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
 {
@@ -217,7 +218,7 @@ void log10_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **
 {
     Tensor *tmp1 = (Tensor *)self->x;
     npy_intp dims[1] = {1};
-    double data[1] = {10.0}; 
+    double data[1] = {10.0};
     PyObject *ten = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, data);
     PyObject *ln = _log_internal(ten, NULL);
     PyObject *mul = PyNumber_Multiply(tmp1->data, ln);
@@ -263,9 +264,21 @@ void abs_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **nu
 
 void reshape_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
 {
-    npy_intp *get = get_array_shape(self);
+    npy_intp *shape = get_array_shape(self);
     int len = *get_shape_len(self);
-    PyArray_Dims prev_shape = {get, len};
+    PyArray_Dims prev_shape = {shape, len};
+    if (TRACK)
+    {
+        PyObject *tuple = PyTuple_New(len);
+        for (int i = 0; i < len; i++)
+        {
+            PyTuple_SetItem(tuple, i, PyLong_FromLongLong(shape[i]));
+        }
+        *out = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, grad, tuple, NULL);
+        Py_DECREF(tuple);
+        *null = NULL;
+        return;
+    }
     PyObject *result = PyArray_Newshape((PyArrayObject *)grad, &prev_shape, NPY_CORDER);
     *out = result;
     *null = NULL;

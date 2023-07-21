@@ -1217,8 +1217,8 @@ Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf)
         return NULL;
     }
     Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "PowBackward");
-    Py_INCREF(power);
-    store_power(to_return, power);
+    if (to_return->require_grad)
+        store_power(to_return, power);
     return to_return;
 }
 

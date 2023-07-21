@@ -249,6 +249,7 @@ jnp_method *import_jnp_methods(jnp_method **JNP_METHOD_)
     JNP_METHOD->copy = PyObject_GetAttrString(module, "copy");
     JNP_METHOD->jit = PyObject_GetAttrString(module2, "jit");
     JNP_METHOD->array = PyObject_GetAttrString(module, "array");
+    JNP_METHOD->negative = PyObject_GetAttrString(module, "negative");
     JNP_METHOD->sin = PyObject_GetAttrString(module, "sin");
     JNP_METHOD->cos = PyObject_GetAttrString(module, "cos");
     JNP_METHOD->tan = PyObject_GetAttrString(module, "tan");
@@ -281,6 +282,7 @@ jnp_method *import_jnp_methods(jnp_method **JNP_METHOD_)
     JNP_METHOD->reshape = PyObject_GetAttrString(module, "reshape");
     JNP_METHOD->tensordot = PyObject_GetAttrString(module, "tensordot");
     JNP_METHOD->concatenate = PyObject_GetAttrString(module, "concatenate");
+    JNP_METHOD->sum = PyObject_GetAttrString(module, "sum");
 
     if (_Generic_check_import_if_success((PyObject **)JNP_METHOD_, "Failed to import numpy methods at import_methods.c line", 248) == NULL)
         return NULL;

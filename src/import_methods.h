@@ -198,6 +198,7 @@ typedef struct
 {
     PyObject *copy;
     PyObject *array;
+    PyObject *negative;
     PyObject *sin;
     PyObject *cos;
     PyObject *tan;
@@ -232,6 +233,7 @@ typedef struct
     PyObject *concatenate;
     PyObject *jit;
     PyObject *unspecified_value;
+    PyObject *sum;
 } jnp_method;
 #endif
 

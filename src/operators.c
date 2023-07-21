@@ -25,7 +25,10 @@ __new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y, const char *grad_f
             if (to_y != NULL)
                 Tensor_SetY_without_init_value(self, to_y);
             else
+            {
+                Py_INCREF(Py_None);
                 Tensor_SetY_without_init_value(self, Py_None);
+            }
         }
         else
         {
