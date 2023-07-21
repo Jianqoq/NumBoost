@@ -172,6 +172,7 @@ PyObject *get_base(Tensor *key);
 
 Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 Tensor *_sin(PyObject *self, PyObject *const *args, size_t nargsf);
 Tensor *_cos(PyObject *self, PyObject *const *args, size_t nargsf);
 Tensor *_tan(PyObject *self, PyObject *const *args, size_t nargsf);

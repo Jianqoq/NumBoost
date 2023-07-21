@@ -671,6 +671,7 @@ static PyMethodDef module_methods[] = {
     {"abs", (PyCFunction)_abs, METH_FASTCALL, "Method docstring"},
     {"power", (PyCFunction)_pow, METH_FASTCALL, "Method docstring"},
     {"mean", (PyCFunction)_mean, METH_FASTCALL, "Method docstring"},
+    {"tensordot", (PyCFunction)tensordot, METH_FASTCALL, "Method docstring"},
     {"set_track", (PyCFunction)set_track, METH_FASTCALL, "Method docstring"},
     {"to_dict", (PyCFunction)convert_tensor_dict_to_Py_dict, METH_FASTCALL, "Method docstring"},
     {NULL}};
