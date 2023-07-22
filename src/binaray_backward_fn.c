@@ -16,6 +16,7 @@ inline npy_intp search_num(npy_intp *arr, npy_intp n, npy_intp x)
             return i;
         }
     }
+    return 0; // should not happen
 }
 
 static bool shape_is_equal(npy_intp *dims1, npy_intp *dims2, int *nd)
