@@ -19,6 +19,7 @@ Power_Dict *POWER_DICT = NULL;
 Log_Dict *LOG_DICT = NULL;
 jnp_method *JNP_METHOD = NULL;
 Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT = NULL;
+Tensordot_Dict *TENSORDOT_DICT = NULL;
 
 static void store_tensor_need_grad(long long index, Tensor *tensor)
 {
@@ -58,6 +59,79 @@ PyObject *convert_tensor_dict_to_Py_dict(PyObject *self, PyObject *const *args, 
             HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
         }
     return dict;
+}
+
+void free_tensordot_data()
+{
+    Tensordot_Dict *entry, *tmp;
+    HASH_ITER(hh, TENSORDOT_DICT, entry, tmp)
+    {
+        DEBUG_PRINT("Freeing Tensordot data\n");
+        HASH_DEL(TENSORDOT_DICT, entry);
+        free(entry->metadata->newaxes_a.ptr);
+        free(entry->metadata->newaxes_b.ptr);
+        Py_DECREF(entry->metadata->matmul_result);
+        Py_DECREF(entry->metadata->transposed_reshape_a);
+        Py_DECREF(entry->metadata->transposed_reshape_b);
+        Py_DECREF(entry->key);
+        free(entry->metadata);
+        free(entry);
+    }
+}
+
+inline void free_tensordot_data_self(Tensor *self)
+{
+    Tensordot_Dict *entry;
+    DEBUG_PRINT("Going to free Tensordot data\n");
+    HASH_FIND_PTR(TENSORDOT_DICT, &self, entry);
+    if (entry != NULL)
+    {
+        DEBUG_PRINT("Freeing Tensordot data\n");
+        HASH_DEL(TENSORDOT_DICT, entry);
+        free(entry->metadata->newaxes_a.ptr);
+        free(entry->metadata->newaxes_b.ptr);
+        Py_DECREF(entry->metadata->matmul_result);
+        Py_DECREF(entry->metadata->transposed_reshape_a);
+        Py_DECREF(entry->metadata->transposed_reshape_b);
+        free(entry->metadata);
+        free(entry);
+    }
+}
+
+inline void free_array_shape(Tensor *key)
+{
+    Array_Shape *s = NULL;
+    if (ARRAY_SHAPE != NULL)
+        HASH_FIND_PTR(ARRAY_SHAPE, &key, s);
+    if (s != NULL)
+    {
+        HASH_DEL(ARRAY_SHAPE, s);
+        free(s);
+    }
+}
+
+inline void free_power(Tensor *key)
+{
+    Power_Dict *s = NULL;
+    if (POWER_DICT != NULL)
+        HASH_FIND_PTR(POWER_DICT, &key, s);
+    if (s != NULL)
+    {
+        HASH_DEL(POWER_DICT, s);
+        free(s);
+    }
+}
+
+inline void free_base(Tensor *key)
+{
+    Log_Dict *s = NULL;
+    if (LOG_DICT != NULL)
+        HASH_FIND_PTR(LOG_DICT, &key, s);
+    if (s != NULL)
+    {
+        HASH_DEL(LOG_DICT, s);
+        free(s);
+    }
 }
 
 void INCREF_TENSOR(Tensor *self)
@@ -312,6 +386,7 @@ __repr__(Tensor *self)
 static void
 Tensor_dealloc(Tensor *self)
 {
+    DEBUG_PRINT("Tensor_dealloc\n");
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->data);
     Py_CLEAR(self->x);
@@ -320,6 +395,9 @@ Tensor_dealloc(Tensor *self)
     Py_CLEAR(self->graph);
     Py_CLEAR(self->dtype);
     Py_CLEAR(self->grad);
+    free_tensordot_data_self(self);
+    free_array_shape(self);
+    free_power(self);
     PyObject_GC_Del(self);
 }
 
@@ -553,8 +631,11 @@ _Generic_backward(PyObject *self, PyObject *args)
         Py_DECREF(tuple.ndarray);
     }
     // Cleanup
+    DEBUG_PRINT("Cleaning up\n");
     freeStack(stack);
     Py_DECREF(list);
+    free_tensordot_data();
+    DEBUG_PRINT("finished cleaning up on tensordot data\n");
     // If tracking, return the gradients as a tuple
     if (TRACK)
     {
@@ -562,6 +643,7 @@ _Generic_backward(PyObject *self, PyObject *args)
     }
     // If not tracking, just cleanup and return None
     cleanup_dicts();
+    DEBUG_PRINT("finished cleaning up\n");
     Py_INCREF(Py_None);
     return Py_None;
 };
@@ -732,6 +814,7 @@ void init_map()
     add_entry("SqrtBackward", sqrt_backward_fn);
     add_entry("ReshapeBackward", reshape_backward_fn);
     add_entry("Log10Backward", log10_backward_fn);
+    add_entry("TensordotBackward", tensordot_backward_fn);
 }
 
 PyMODINIT_FUNC

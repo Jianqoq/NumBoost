@@ -77,7 +77,7 @@ new_Tensor(Tensor *tensor, Tensor *tensor2, PyObject *data, const char *grad_fn)
             Tensor_SetVars(self, 0);
         }
         PyObject *zero = PyLong_FromLong(0);
-        Tensor_SetData_startwone_without_init(self, data);
+        self->data = data;
         Tensor_SetHasConv(self, tensor->has_conv);
         Tensor_SetGraph_without_init_value(self, tensor->graph);
         Tensor_SetDim(self, tensor->dim);

@@ -13,8 +13,8 @@ for f in c_files:
         file.seek(0)
         content = file.read()
         contents.append(content)
-        new = re.sub(r'DEBUG_PRINT\(.*?\);\n', r'\n', content)
-        new = re.sub(r'#ifdef[\s+]DEBUG.*?#endif\n', r'\n', new, flags=re.DOTALL)
+        new = re.sub(r'DEBUG_PRINT\(.*?\);\n+', r'\n', content)
+        new = re.sub(r'#ifdef[\s+]DEBUG.*?#endif\n+', r'\n', new, flags=re.DOTALL)
         with open(f, 'w') as file2:
             file2.write(new)
 
