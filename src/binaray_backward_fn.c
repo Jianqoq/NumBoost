@@ -204,7 +204,6 @@ void check_jaxpr_shape(PyArrayObject *predict_data, PyObject *origin_data, PyObj
         }
         else
         {
-            PyObject *g = NULL;
             uint8_t new_axis = 0;
             for (i = 0; i < NPY_MAXDIMS; i++)
             {
@@ -219,7 +218,6 @@ void check_jaxpr_shape(PyArrayObject *predict_data, PyObject *origin_data, PyObj
                 }
                 new_axis++;
             }
-            PyArray_Dims shape = {new_dims, nd1}; // new shape with keep dims
             PyObject *tuple = PyTuple_New(nd1);
             for (i = 0; i < nd1; i++)
             {
@@ -239,7 +237,6 @@ void check_jaxpr_shape(PyArrayObject *predict_data, PyObject *origin_data, PyObj
     }
     else
     {
-        PyObject *g = NULL;
         uint8_t range = nd1 - nd2;
         npy_intp dims3[NPY_MAXDIMS] = {0};
         for (i = 0; i < range; i++)
@@ -356,7 +353,6 @@ void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
         PyObject *midle = PyNumber_Power(tmp2->data, two, Py_None);
         PyObject *midle2 = PyNumber_Negative(tmp1->data);
         PyObject *tmp = PyNumber_TrueDivide(midle2, midle);
-        PyObject *grad2 = PyNumber_Multiply(grad, tmp);
         Py_DECREF(tmp);
         Py_DECREF(midle);
         Py_DECREF(midle2);

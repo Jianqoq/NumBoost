@@ -9,12 +9,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from NumBoost import Tensor, tensordot
 
 
-@pytest.mark.parametrize("array, array2", [(np.array([[1.], [2.], [3.]]), np.array([[5., 7., 8.]]))])
+@pytest.mark.parametrize("array, array2", [(np.random.randn(2, 5, 3), np.random.randn(2, 5, 3))])
 def test_C_Tensor_addition1(array, array2):
     autograd_grad_operands1 = Tensor(array, True)
     autograd_grad_operands2 = Tensor(array2)
-    result1 = tensordot(autograd_grad_operands1, autograd_grad_operands2, 2)
-    o = np.tensordot(array, array2, 2)
+    result1 = tensordot(autograd_grad_operands1, autograd_grad_operands2, 3)
+    o = np.tensordot(array, array2, 3)
     assert np.allclose(o, result1.data), f"correct: {o} | got: {result1.data}"
 
 

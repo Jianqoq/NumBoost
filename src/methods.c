@@ -425,7 +425,7 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
         index = 0;
         for (j = 0; j < real_len; j++)
             newaxes_[j] = notin[j];
-        for (j; j < *axes_len; j++)
+        for (; j < *axes_len; j++)
             newaxes_[j] = axes_[index++];
     }
     else // b
@@ -434,7 +434,7 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
         index = 0;
         for (j = 0; j < n_len; j++)
             newaxes_[j] = axes_[j];
-        for (j; j < *axes_len; j++)
+        for (; j < *axes_len; j++)
             newaxes_[j] = notin[index++];
     }
 #ifdef DEBUG
@@ -686,8 +686,10 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         PyErr_SetString(PyExc_TypeError, "transpose error");
         return NULL;
     }
-    PyObject *at = PyArray_Newshape((PyArrayObject *)at_, &at_dims, 0);
-    PyObject *bt = PyArray_Newshape((PyArrayObject *)bt_, &bt_dims, 0);
+    PyArrayObject* at_arr = (PyArrayObject*)at_;
+    PyArrayObject* bt_arr = (PyArrayObject*)bt_;
+    PyObject *at = PyArray_Newshape(at_arr, &at_dims, 0);
+    PyObject *bt = PyArray_Newshape(bt_arr, &bt_dims, 0);
     DEBUG_PRINT("calculated at bt\n");
     if (at == NULL || bt == NULL)
     {
@@ -704,7 +706,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     DEBUG_PRINT("total_len: %d\n", total_len);
     npy_intp *olds_merge_shape = malloc(sizeof(npy_intp) * (total_len));
     int j = 0;
-    for (j; j < total_len; j++)
+    for (; j < total_len; j++)
     {
         if (j < a_len)
             olds_merge_shape[j] = oldshape_a[j];
@@ -728,20 +730,20 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     {
         DEBUG_PRINT("stored metadata\n");
         Tensordot_Metadata *metadata = malloc(sizeof(Tensordot_Metadata));
-        metadata->newshape_a.ptr = PyArray_SHAPE(at_);
-        metadata->newshape_a.len = PyArray_NDIM(at_);
-        metadata->newshape_b.ptr = PyArray_SHAPE(bt_);
-        metadata->newshape_b.len = PyArray_NDIM(bt_);
+        metadata->newshape_a.ptr = PyArray_SHAPE(at_arr);
+        metadata->newshape_a.len = PyArray_NDIM(at_arr);
+        metadata->newshape_b.ptr = PyArray_SHAPE(bt_arr);
+        metadata->newshape_b.len = PyArray_NDIM(bt_arr);
         metadata->newaxes_a.ptr = newaxes_a;
         metadata->newaxes_a.len = newaxes_a_len;
         metadata->newaxes_b.ptr = newaxes_b;
         metadata->newaxes_b.len = newaxes_b_len;
         metadata->matmul_result = res;
-        metadata->matmul_result_shape.ptr = PyArray_SHAPE(res);
-        metadata->matmul_result_shape.len = PyArray_NDIM(res);
-        metadata->transposed_shape_a.ptr = PyArray_SHAPE(at_);
+        metadata->matmul_result_shape.ptr = PyArray_SHAPE((PyArrayObject*)res);
+        metadata->matmul_result_shape.len = PyArray_NDIM((PyArrayObject*)res);
+        metadata->transposed_shape_a.ptr = PyArray_SHAPE(at_arr);
         metadata->transposed_shape_a.len = at_new_dims.len;
-        metadata->transposed_shape_b.ptr = PyArray_SHAPE(bt_);
+        metadata->transposed_shape_b.ptr = PyArray_SHAPE(bt_arr);
         metadata->transposed_shape_b.len = bt_new_dims.len;
         metadata->transposed_reshape_a = at;
         metadata->transposed_reshape_b = bt;
