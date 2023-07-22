@@ -1,6 +1,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define PY_SSIZE_T_CLEAN
 #include "numpy/arrayobject.h"
+#include "utils.h"
 #include "omp.h"
 #include <stdlib.h>
 #include <string.h>

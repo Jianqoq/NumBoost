@@ -3,6 +3,12 @@
 #include <Python.h>
 #endif
 
+#ifdef DEBUG
+#define DEBUG_PRINT(...) printf(__VA_ARGS__)
+#else
+#define DEBUG_PRINT(...)
+#endif
+
 #ifndef XLA_OPS_H
 #define XLA_OPS_H
 typedef struct
