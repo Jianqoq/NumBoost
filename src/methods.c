@@ -379,14 +379,7 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
             index++;
         }
     free(__notin);
-#ifdef DEBUG
-    
-    for (int i = 0; i < real_len; i++)
-    {
-        
-    }
-    
-#endif
+
     // newaxes_a
     
     *axes_len = n_len + real_len;
@@ -410,14 +403,7 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
         for (j; j < *axes_len; j++)
             newaxes_[j] = notin[index++];
     }
-#ifdef DEBUG
-    
-    for (int i = 0; i < *axes_len; i++)
-    {
-        
-    }
-    
-#endif
+
     npy_intp N2 = 1;
     for (long i = 0; i < n_len; i++)
     {
@@ -609,20 +595,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     
 
 
-#ifdef DEBUG
-    
-    for (int i = 0; i < newaxes_a_len; i++)
-    {
-        
-    }
-    
-    
-    for (int i = 0; i < newaxes_b_len; i++)
-    {
-        
-    }
-    
-#endif
+
 
     PyObject *at_ = PyArray_Transpose(a_, &at_new_dims);
     PyObject *bt_ = PyArray_Transpose(b_, &bt_new_dims);
