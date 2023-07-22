@@ -1,7 +1,7 @@
 # NumBoost
 
 # To do
-1. add tensordot(forward, backward)
+1. ~~add tensordot(forward, backward)~~
 2. add slice(forward, backward)
 3. remove redundant calculation in backward(add require grad check)
 4. implement add, sub, mul, div operation directly instead of using np built in method(better performance)(include broadcast)
