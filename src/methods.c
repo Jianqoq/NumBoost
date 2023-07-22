@@ -447,6 +447,40 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
     *oldshape = oldshape_a;
 }
 
+
+inline void *handle_axes(long **axes_, PyObject *axes_tuple, long *ndim, long axes)
+{
+    if (*axes_ == NULL && axes_tuple != NULL && PySequence_Check(axes_tuple))
+    {
+        long nd = (long)PyObject_Length(axes_tuple);
+        *ndim = nd;
+        *axes_ = malloc(sizeof(long) * nd);
+        PyObject **ptr = PySequence_Fast_ITEMS(axes_tuple);
+        DEBUG_PRINT("ndim: %ld\n", nd);
+        for (Py_ssize_t i = 0; i < nd; i++)
+        {
+            (*axes_)[i] = PyLong_AsLong(ptr[i]);
+            if ((*axes_)[i] == -1 && PyErr_Occurred())
+            {
+                PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
+                return NULL;
+            }
+        }
+    }
+    else if (*axes_ == NULL && axes && axes_tuple != NULL)
+    {
+        *axes_ = malloc(sizeof(long) * 1);
+        (*axes_)[0] = PyLong_AsLong(axes_tuple);
+        if ((*axes_)[0] == -1 && PyErr_Occurred())
+        {
+            PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
+            return NULL;
+        }
+    }
+    return ndim;
+}
+
+
 Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
     if (nargsf != 3)
@@ -501,7 +535,6 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
             }
             else
             {
-                DEBUG_PRINT("axes is 0\n");
                 na = 0;
                 nb = 0;
                 axes_a = NULL;
@@ -510,66 +543,13 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         }
     }
     DEBUG_PRINT("getting a axes\n");
-    if (axes_a == NULL && axes_a_tuple != NULL && PySequence_Check(axes_a_tuple))
-    {
-        DEBUG_PRINT("getting axes_a in axes_a_tuple iterable\n");
-        na = (long)PyObject_Length(axes_a_tuple);
-        DEBUG_PRINT("na: %ld\n", na);
-        axes_a = malloc(sizeof(long) * na);
-        PyObject **ptr = PySequence_Fast_ITEMS(axes_a_tuple);
-        for (Py_ssize_t i = 0; i < na; i++)
-        {
-            axes_a[i] = PyLong_AsLong(ptr[i]);
-            DEBUG_PRINT("axes_a[%ld] = %ld\n", i, PyLong_AsLong(ptr[i]));
-            if (axes_a[i] == -1 && PyErr_Occurred())
-            {
-                PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
-                return NULL;
-            }
-        }
-    }
-    else if (axes_a == NULL && axes && axes_a_tuple != NULL)
-    {
-        DEBUG_PRINT("getting axes_a in axes_a_tuple != NULL\n");
-        long *axes_a = malloc(sizeof(long) * 1);
-        axes_a[0] = PyLong_AsLong(axes_a_tuple);
-        if (axes_a[0] == -1 && PyErr_Occurred())
-        {
-            PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
-            return NULL;
-        }
-    }
-    if (axes_b == NULL && axes_b_tuple != NULL && PySequence_Check(axes_b_tuple))
-    {
-        DEBUG_PRINT("getting axes_b in axes_b_tuple iterable\n");
-        nb = (long)PyObject_Length(axes_b_tuple);
-        axes_b = malloc(sizeof(long) * na);
-        PyObject **ptr = PySequence_Fast_ITEMS(axes_b_tuple);
-        for (Py_ssize_t i = 0; i < na; i++)
-        {
-            axes_b[i] = PyLong_AsLong(ptr[i]);
-            DEBUG_PRINT("axes_b[%ld] = %ld\n", i, PyLong_AsLong(ptr[i]));
-            if (axes_b[i] == -1 && PyErr_Occurred())
-            {
-                PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
-                return NULL;
-            }
-        }
-    }
-    else if (axes_b == NULL && axes && axes_b_tuple != NULL)
-    {
-        DEBUG_PRINT("getting axes_b in axes_b_tuple != NULL\n");
-        long *axes_b = malloc(sizeof(long) * 1);
-        axes_b[0] = PyLong_AsLong(axes_b_tuple);
-        if (axes_b[0] == -1 && PyErr_Occurred())
-        {
-            PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
-            return NULL;
-        }
-    }
+    if (handle_axes(&axes_a, axes_a_tuple, &na, axes)==NULL) return NULL;
+    DEBUG_PRINT("getting b axes\n");
+    if (handle_axes(&axes_b, axes_b_tuple, &nb, axes)==NULL) return NULL;
     DEBUG_PRINT("asarray\n");
     PyObject *a = PyArray_FromAny(tensor1->data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
     PyObject *b = PyArray_FromAny(tensor2->data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
+
     if (a == NULL || b == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "connot convert tensor to numpy array");
@@ -618,7 +598,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     DEBUG_PRINT("a_len = %ld\n", a_len);
     PyArray_Dims at_dims = {newshape_a, 2};
     PyArray_Dims at_new_dims = {newaxes_a, newaxes_a_len};
-    ////////////////////////////////////////////////////////////////////
+
     long b_len = 0, newaxes_b_len = 0;
     npy_intp *newshape_b = malloc(sizeof(npy_intp) * 2);
     npy_intp *newaxes_b = NULL, *oldshape_b = NULL;
@@ -627,7 +607,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     PyArray_Dims bt_new_dims = {newaxes_b, newaxes_b_len};
     DEBUG_PRINT("b_len = %ld\n", b_len);
     DEBUG_PRINT("free bt\n");
-    ///////////////////////////////////////////////////////////////////
+
 
 #ifdef DEBUG
     DEBUG_PRINT("newaxes_a = (");
@@ -690,6 +670,10 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         Py_DECREF(bt);
     if (result != res)
         Py_DECREF(res);
+    if (a != tensor1->data)
+        Py_DECREF(a);
+    if (b != tensor2->data)
+        Py_DECREF(b);
     free(newaxes_a);
     free(newaxes_b);
     free(oldshape_a);
