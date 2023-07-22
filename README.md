@@ -8,4 +8,4 @@
 5. implement shape prediction instead of doing real calculation in jax tracing
 6. implement broadcast detection based on shape
 7. let cache can handle more senario at the same function
-8. --add debug macro for debug in C. Use python setup.py build_ext -DEBUG to enable--
+8. ~~add debug macro for debug in C. Use python setup.py build_ext -DEBUG to enable~~
