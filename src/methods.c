@@ -474,7 +474,7 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
     *oldshape = oldshape_a;
 }
 
-inline void *handle_axes(long **axes_, PyObject *axes_tuple, long *ndim, long axes)
+inline void *handle_axes(long **axes_, PyObject *axes_tuple, long *ndim)
 {
     if (*axes_ == NULL && axes_tuple != NULL && PySequence_Check(axes_tuple))
     {
@@ -492,16 +492,19 @@ inline void *handle_axes(long **axes_, PyObject *axes_tuple, long *ndim, long ax
                 return NULL;
             }
         }
+        Py_DECREF(axes_tuple);
     }
-    else if (*axes_ == NULL && axes && axes_tuple != NULL)
+    else if (*axes_ == NULL && axes_tuple != NULL)
     {
         *axes_ = malloc(sizeof(long) * 1);
         (*axes_)[0] = PyLong_AsLong(axes_tuple);
+        DEBUG_PRINT("axes_tuple != NULL, axes: %ld\n", (*axes_)[0]);
         if ((*axes_)[0] == -1 && PyErr_Occurred())
         {
             PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
             return NULL;
         }
+        Py_DECREF(axes_tuple);
     }
     return ndim;
 }
@@ -532,7 +535,10 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     else
     {
         DEBUG_PRINT(" is not iteralble.\n");
-        axes = abs(PyLong_AsLong(args[2]));
+        axes = PyLong_AsLong(args[2]);
+        long axes_abs = abs(axes);
+        na = axes_abs;
+        nb = axes_abs;
         DEBUG_PRINT("axes: %ld\n", axes);
         if (axes == -1 && PyErr_Occurred())
         {
@@ -541,22 +547,41 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         }
         else
         {
-            axes_a = malloc(sizeof(long) * axes);
-            axes_b = malloc(sizeof(long) * axes);
-
+            axes_a = malloc(sizeof(long) * axes_abs);
+            axes_b = malloc(sizeof(long) * axes_abs);
             if (axes < 0)
             {
-                for (long i = 0; i < axes; i--)
-                    axes_a[i] = -axes + i;
-                for (long i = 0; i < axes; i++)
-                    axes_b[i] = i;
+                for (long i = 0; i < axes_abs; i++)
+                    axes_a[i] = axes_abs - i;
+                for (long i = 0; i < axes_abs; i++)
+                    axes_b[i] = -i + axes_abs; // (+ axes_abs) means when (-axes + i) is -1, list[-axes + i] can be last element
+#ifdef DEBUG
+                DEBUG_PRINT("axes_a: [");
+                for (long i = 0; i < axes_abs; i++)
+                    DEBUG_PRINT("%ld ", axes_a[i]);
+                DEBUG_PRINT("]\n");
+                DEBUG_PRINT("axes_b: [");
+                for (long i = 0; i < axes_abs; i++)
+                    DEBUG_PRINT("%ld ", axes_b[i]);
+                DEBUG_PRINT("]\n");
+#endif
             }
             else if (axes > 0)
             {
-                for (long i = 0; i < axes; i++)
-                    axes_a[i] = -axes + i;
-                for (long i = 0; i < -axes; i--)
+                for (long i = 0; i < axes_abs; i++)
+                    axes_a[i] = -axes + i + axes_abs; // (+ axes_abs) means when (-axes + i) is -1, list[-axes + i] can be last element
+                for (long i = 0; i < axes_abs; i++)
                     axes_b[i] = i;
+#ifdef DEBUG
+                DEBUG_PRINT("axes_a: [");
+                for (long i = 0; i < axes_abs; i++)
+                    DEBUG_PRINT("%ld ", axes_a[i]);
+                DEBUG_PRINT("]\n");
+                DEBUG_PRINT("axes_b: [");
+                for (long i = 0; i < axes_abs; i++)
+                    DEBUG_PRINT("%ld ", axes_b[i]);
+                DEBUG_PRINT("]\n");
+#endif
             }
             else
             {
@@ -568,13 +593,11 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         }
     }
     DEBUG_PRINT("getting a axes\n");
-    if (handle_axes(&axes_a, axes_a_tuple, &na, axes) == NULL)
+    if (handle_axes(&axes_a, axes_a_tuple, &na) == NULL)
         return NULL;
     DEBUG_PRINT("getting b axes\n");
-    if (handle_axes(&axes_b, axes_b_tuple, &nb, axes) == NULL)
+    if (handle_axes(&axes_b, axes_b_tuple, &nb) == NULL)
         return NULL;
-    Py_DECREF(axes_a_tuple);
-    Py_DECREF(axes_b_tuple);
     DEBUG_PRINT("asarray\n");
     PyObject *a = PyArray_FromAny(tensor1->data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
     PyObject *b = PyArray_FromAny(tensor2->data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
@@ -603,6 +626,8 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         DEBUG_PRINT("na: %d\n", na);
         for (int i = 0; i < na; i++)
         {
+            DEBUG_PRINT("axes_a[%d]: %ld\n", i, axes_a[i]);
+            DEBUG_PRINT("axes_b[%d]: %ld\n", i, axes_b[i]);
             if (a_shape[axes_a[i]] != b_shape[axes_b[i]])
             {
                 shape_equal = false;
@@ -726,7 +751,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         Py_DECREF(at);
         Py_DECREF(bt);
         Py_DECREF(res);
-        DEBUG_PRINT("refcount: %d\n", ((PyObject*)to_return)->ob_refcnt);
+        DEBUG_PRINT("refcount: %d\n", ((PyObject *)to_return)->ob_refcnt);
         return to_return;
     }
 

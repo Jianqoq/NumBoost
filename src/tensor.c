@@ -163,16 +163,6 @@ void (*get_method(const char *key))(Tensor *, PyObject *, PyObject **, PyObject 
     return NULL;
 }
 
-void cleanup_dicts()
-{
-    Power_Dict *s, *tmp;
-    HASH_ITER(hh, POWER_DICT, s, tmp)
-    {
-        Py_DECREF(s->key);
-    }
-    HASH_CLEAR(hh, POWER_DICT);
-}
-
 PyObject *collect_gradients_and_cleanup(PyObject *list)
 {
     Tensor_need_grad_Dict *gradient_entry, *gradient_tmp;
@@ -634,7 +624,6 @@ _Generic_backward(PyObject *self, PyObject *args)
     DEBUG_PRINT("Cleaning up\n");
     freeStack(stack);
     Py_DECREF(list);
-    free_tensordot_data();
     DEBUG_PRINT("finished cleaning up on tensordot data\n");
     // If tracking, return the gradients as a tuple
     if (TRACK)
@@ -642,7 +631,6 @@ _Generic_backward(PyObject *self, PyObject *args)
         return collect_gradients_and_cleanup(list);
     }
     // If not tracking, just cleanup and return None
-    cleanup_dicts();
     DEBUG_PRINT("finished cleaning up\n");
     Py_INCREF(Py_None);
     return Py_None;
