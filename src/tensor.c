@@ -209,8 +209,7 @@ PyObject *collect_gradients_and_cleanup(PyObject *list)
     return to_return;
 }
 
-Dict *
-get_address(const char *key)
+Dict *get_address(const char *key)
 {
     Dict *entry;
     HASH_FIND_INT(dict, &key, entry);
@@ -238,8 +237,47 @@ PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf)
     return Py_None;
 }
 
-static PyObject *
-__new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
+Tensor *T(Tensor *self)
+{
+    DEBUG_PRINT("Transposing tensor in T\n");
+    npy_intp *shape = ((PyArrayObject_fields *)self->data)->dimensions;
+    npy_intp ndim = ((PyArrayObject_fields *)self->data)->nd;
+    npy_intp *new_shape = (npy_intp *)malloc(sizeof(npy_intp) * ndim);
+    for (int i = 0; i < ndim; i++)
+        new_shape[i] = shape[ndim - i - 1];
+#if DEBUG
+    printf("Shape: ");
+    for (int i = 0; i < ndim; i++)
+        printf("%ld ", shape[i]);
+    printf("\n");
+    printf("New Shape: ");
+    for (int i = 0; i < ndim; i++)
+        printf("%ld ", new_shape[i]);
+    printf("\n");
+#endif
+    PyArray_Dims new_dims = {new_shape, ndim};
+    PyObject *transposed = PyArray_Newshape((PyArrayObject *)self->data, &new_dims, NPY_CORDER);
+    if (transposed == NULL)
+        return NULL;
+    free(new_shape);
+    DEBUG_PRINT("Transposed tensor in T\n");
+    Tensor *to_return = (Tensor *)new_Tensor_x(self, transposed, "TransposeBackward");
+    if (self->require_grad)
+    {
+        npy_intp i;
+        npy_intp *store_shape = (npy_intp *)malloc(sizeof(npy_intp) * ndim);
+        for (i = 0; i < ndim; i++)
+            store_shape[i] = ndim - i - 1;
+
+        DEBUG_PRINT("Stored Shape: ");
+        DEBUG_FOR_LOOP(i, 0, ndim, printf("%ld ", store_shape[i]););
+        DEBUG_PRINT("\n");
+        store_array_shape(to_return, store_shape, ndim);
+    }
+    return to_return;
+}
+
+static PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"data", "requires_grad", NULL};
     PyObject *data = NULL, *cache = NULL;
@@ -290,8 +328,7 @@ __new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
-PyObject *
-__str__(Tensor *self)
+PyObject *__str__(Tensor *self)
 {
     char *result, *dest, *prefix = "Tensor(", *end = ")\n";
     if (TRACK)
@@ -379,14 +416,12 @@ __str__(Tensor *self)
     return representation;
 }
 
-PyObject *
-__repr__(Tensor *self)
+PyObject *__repr__(Tensor *self)
 {
     return __str__(self);
 }
 
-static void
-Tensor_dealloc(Tensor *self)
+static void Tensor_dealloc(Tensor *self)
 {
     DEBUG_PRINT("Tensor_dealloc\n");
     PyObject_GC_UnTrack(self);
@@ -404,8 +439,7 @@ Tensor_dealloc(Tensor *self)
     PyObject_GC_Del(self);
 }
 
-static int
-Tensor_clear(Tensor *self)
+static int Tensor_clear(Tensor *self)
 {
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->data);
@@ -423,8 +457,7 @@ Tensor_clear(Tensor *self)
     return 0;
 }
 
-static int
-Tensor_traverse(Tensor *self, visitproc visit, void *arg)
+static int Tensor_traverse(Tensor *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->data);
     Py_VISIT(self->x);
@@ -440,64 +473,65 @@ Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     return 0;
 }
 
-PyMemberDef
-    properties[] = {
-        {"data", T_OBJECT, offsetof(Tensor, data), 0, "data"},
-        {"x", T_OBJECT, offsetof(Tensor, x), 0, "x"},
-        {"y", T_OBJECT, offsetof(Tensor, y), 0, "y"},
-        {"has_conv", T_INT, offsetof(Tensor, has_conv), 0, "has_conv"},
-        {"depth", T_ULONGLONG, offsetof(Tensor, vars), 0, "depth"},
-        {"require_grad", T_BOOL, offsetof(Tensor, require_grad), 0,
-         "require_grad"},
-        {"grad_fn", T_STRING, offsetof(Tensor, grad_fn), 0, "grad_fn"},
-        {"graph", T_OBJECT, offsetof(Tensor, graph), 0, "graph"},
-        {"axis", T_OBJECT, offsetof(Tensor, axis), 0, "axis"},
-        {"dim", T_INT, offsetof(Tensor, dim), 0, "dim"},
-        {"dtype", T_OBJECT_EX, offsetof(Tensor, dtype), 0, "base"},
-        {"grad", T_OBJECT, offsetof(Tensor, grad), 0, "grad"},
-        {NULL}};
+PyMemberDef properties[] = {
+    {"data", T_OBJECT, offsetof(Tensor, data), 0, "data"},
+    {"x", T_OBJECT, offsetof(Tensor, x), 0, "x"},
+    {"y", T_OBJECT, offsetof(Tensor, y), 0, "y"},
+    {"has_conv", T_INT, offsetof(Tensor, has_conv), 0, "has_conv"},
+    {"depth", T_ULONGLONG, offsetof(Tensor, vars), 0, "depth"},
+    {"require_grad", T_BOOL, offsetof(Tensor, require_grad), 0, "require_grad"},
+    {"grad_fn", T_STRING, offsetof(Tensor, grad_fn), 0, "grad_fn"},
+    {"graph", T_OBJECT, offsetof(Tensor, graph), 0, "graph"},
+    {"axis", T_OBJECT, offsetof(Tensor, axis), 0, "axis"},
+    {"dim", T_INT, offsetof(Tensor, dim), 0, "dim"},
+    {"dtype", T_OBJECT_EX, offsetof(Tensor, dtype), 0, "base"},
+    {"grad", T_OBJECT, offsetof(Tensor, grad), 0, "grad"},
+    {NULL}};
 
-static PyNumberMethods
-    tensor_operator_methods = {
-        (binaryfunc)tensor_add,
-        (binaryfunc)tensor_sub,
-        (binaryfunc)tensor_mul,
-        (binaryfunc)tensor_remainder,
-        (binaryfunc)tensor_divmod,
-        (ternaryfunc)tensor_pow,
-        (unaryfunc)tensor_negative,
-        (unaryfunc)tensor_positive,
-        (unaryfunc)tensor_absolute,
-        0, // inquiry tensor_bool,
-        (unaryfunc)tensor_invert,
-        (binaryfunc)tensor_lshift,
-        (binaryfunc)tensor_rshift,
-        (binaryfunc)tensor_and,
-        (binaryfunc)tensor_xor,
-        (binaryfunc)tensor_or,
-        (unaryfunc)tensor_int,
-        0, // void *tensor_reserved;
-        (unaryfunc)tensor_float,
-        (binaryfunc)tensor_iadd,
-        (binaryfunc)tensor_isub,
-        (binaryfunc)tensor_imul,
-        (binaryfunc)tensor_iremainder,
-        (ternaryfunc)tensor_ipow,
-        (binaryfunc)tensor_ilshift,
-        (binaryfunc)tensor_irshift,
-        (binaryfunc)tensor_iand,
-        (binaryfunc)tensor_ixor,
-        (binaryfunc)tensor_ior,
-        (binaryfunc)tensor_floordiv,
-        (binaryfunc)tensor_div,
-        (binaryfunc)tensor_ifloordiv,
-        (binaryfunc)tensor_idiv,
-        0,
-        (binaryfunc)tensor_matmul,
-        (binaryfunc)tensor_imatmul};
+static PyGetSetDef Tensor_getsetters[] = {
+    {"T", (getter)T, NULL, "T", NULL},
+    {NULL} /* Sentinel */
+};
 
-PyObject *
-_Generic_backward(PyObject *self, PyObject *args)
+static PyNumberMethods tensor_operator_methods = {
+    (binaryfunc)tensor_add,
+    (binaryfunc)tensor_sub,
+    (binaryfunc)tensor_mul,
+    (binaryfunc)tensor_remainder,
+    (binaryfunc)tensor_divmod,
+    (ternaryfunc)tensor_pow,
+    (unaryfunc)tensor_negative,
+    (unaryfunc)tensor_positive,
+    (unaryfunc)tensor_absolute,
+    0, // inquiry tensor_bool,
+    (unaryfunc)tensor_invert,
+    (binaryfunc)tensor_lshift,
+    (binaryfunc)tensor_rshift,
+    (binaryfunc)tensor_and,
+    (binaryfunc)tensor_xor,
+    (binaryfunc)tensor_or,
+    (unaryfunc)tensor_int,
+    0, // void *tensor_reserved;
+    (unaryfunc)tensor_float,
+    (binaryfunc)tensor_iadd,
+    (binaryfunc)tensor_isub,
+    (binaryfunc)tensor_imul,
+    (binaryfunc)tensor_iremainder,
+    (ternaryfunc)tensor_ipow,
+    (binaryfunc)tensor_ilshift,
+    (binaryfunc)tensor_irshift,
+    (binaryfunc)tensor_iand,
+    (binaryfunc)tensor_ixor,
+    (binaryfunc)tensor_ior,
+    (binaryfunc)tensor_floordiv,
+    (binaryfunc)tensor_div,
+    (binaryfunc)tensor_ifloordiv,
+    (binaryfunc)tensor_idiv,
+    0,
+    (binaryfunc)tensor_matmul,
+    (binaryfunc)tensor_imatmul};
+
+PyObject *_Generic_backward(PyObject *self, PyObject *args)
 {
     DEBUG_PRINT("Generic_backward start\n");
     // Declare variables
@@ -528,6 +562,7 @@ _Generic_backward(PyObject *self, PyObject *args)
     Tuple tuple = {self, grad};
     push(stack, tuple);
     // Start the main backward loop
+    DEBUG_PRINT("Generic_backward loop start\n");
     while (stack->len != 0)
     {
         tuple = pop(stack);
@@ -589,8 +624,11 @@ _Generic_backward(PyObject *self, PyObject *args)
                 continue;
             }
         }
+        DEBUG_PRINT("grad_fn_name: %s\n", grad_fn);
         // Get the gradient function and apply it
         get_method(grad_fn)(tensor, tuple.ndarray, &current_grad1, &current_grad2);
+        DEBUG_PyObject_Print(current_grad1);
+        DEBUG_PyObject_Print(current_grad2);
         // If both gradients are NULL, return an error
         if (current_grad1 == NULL && current_grad2 == NULL)
         {
@@ -762,23 +800,23 @@ static PyModuleDef custommodule = {
     .m_methods = module_methods,
 };
 
-PyTypeObject
-    Tensor_type = {
-        PyVarObject_HEAD_INIT(NULL, 0).tp_name = "Tensor",
-        .tp_doc = "Tensor objects",
-        .tp_basicsize = sizeof(Tensor),
-        .tp_itemsize = 0,
-        .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_VECTORCALL,
-        .tp_new = (newfunc)__new__,
-        .tp_members = properties,
-        .tp_dealloc = (destructor)Tensor_dealloc,
-        .tp_alloc = PyType_GenericAlloc,
-        .tp_clear = (inquiry)Tensor_clear,
-        .tp_traverse = (traverseproc)Tensor_traverse,
-        .tp_as_number = &tensor_operator_methods,
-        .tp_methods = Tensor_methods,
-        .tp_str = (reprfunc)__str__,
-        .tp_repr = (reprfunc)__repr__,
+PyTypeObject Tensor_type = {
+    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "Tensor",
+    .tp_doc = "Tensor objects",
+    .tp_basicsize = sizeof(Tensor),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_VECTORCALL,
+    .tp_new = (newfunc)__new__,
+    .tp_members = properties,
+    .tp_dealloc = (destructor)Tensor_dealloc,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_clear = (inquiry)Tensor_clear,
+    .tp_traverse = (traverseproc)Tensor_traverse,
+    .tp_as_number = &tensor_operator_methods,
+    .tp_methods = Tensor_methods,
+    .tp_str = (reprfunc)__str__,
+    .tp_repr = (reprfunc)__repr__,
+    .tp_getset = Tensor_getsetters,
 };
 
 void init_map()
@@ -812,8 +850,7 @@ void init_map()
     add_entry("TensordotBackward", tensordot_backward_fn);
 }
 
-PyMODINIT_FUNC
-PyInit_Numboost(void)
+PyMODINIT_FUNC PyInit_Numboost(void)
 {
     Py_Initialize();
     omp_set_num_threads(omp_get_max_threads());

@@ -10,6 +10,7 @@ class JitWrapper:
 
 
 class Tensor:
+    T: Tensor
     axis: int
     dtype: ndarray.dtype
     data: ndarray

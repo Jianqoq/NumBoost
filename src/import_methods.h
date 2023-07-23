@@ -5,10 +5,17 @@
 
 #ifdef DEBUG
 #define DEBUG_PRINT(...) printf(__VA_ARGS__)
-#define DEBUG_PyObject_Print(obj) PyObject_Print(obj, stdout, 0)
+#define DEBUG_PyObject_Print(obj) \
+PyObject_Print(obj, stdout, 0); \
+printf("\n"); 
+#define DEBUG_FOR_LOOP(i, start, end, body) \
+    for (i = (start); i < (end); i++) { \
+        body \
+    }
 #else
 #define DEBUG_PRINT(...)
 #define DEBUG_PyObject_Print(obj)
+#define DEBUG_FOR_LOOP(i, start, end, body)
 #endif
 
 #ifndef XLA_OPS_H
