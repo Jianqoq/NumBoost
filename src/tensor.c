@@ -240,23 +240,18 @@ PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf)
 Tensor *T(Tensor *self)
 {
     DEBUG_PRINT("Transposing tensor in T\n");
-    npy_intp *shape = ((PyArrayObject_fields *)self->data)->dimensions;
     npy_intp ndim = ((PyArrayObject_fields *)self->data)->nd;
     npy_intp *new_shape = (npy_intp *)malloc(sizeof(npy_intp) * ndim);
     for (int i = 0; i < ndim; i++)
-        new_shape[i] = shape[ndim - i - 1];
+        new_shape[i] = ndim - i - 1;
 #if DEBUG
-    printf("Shape: ");
-    for (int i = 0; i < ndim; i++)
-        printf("%ld ", shape[i]);
-    printf("\n");
     printf("New Shape: ");
     for (int i = 0; i < ndim; i++)
         printf("%ld ", new_shape[i]);
     printf("\n");
 #endif
     PyArray_Dims new_dims = {new_shape, ndim};
-    PyObject *transposed = PyArray_Newshape((PyArrayObject *)self->data, &new_dims, NPY_CORDER);
+    PyObject *transposed = PyArray_Transpose((PyArrayObject *)self->data, &new_dims);
     if (transposed == NULL)
         return NULL;
     free(new_shape);
@@ -270,7 +265,10 @@ Tensor *T(Tensor *self)
             store_shape[i] = ndim - i - 1;
 
         DEBUG_PRINT("Stored Shape: ");
-        DEBUG_FOR_LOOP(i, 0, ndim, printf("%ld ", store_shape[i]););
+        DEBUG_FOR_LOOP(i = 0; i < ndim; i++)
+        {
+            printf("%ld ", store_shape[i]);
+        }
         DEBUG_PRINT("\n");
         store_array_shape(to_return, store_shape, ndim);
     }

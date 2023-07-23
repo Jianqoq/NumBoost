@@ -22,6 +22,6 @@ def test_C_Tensor_addition1(array, array2):
 def test_C_Tensor_addition2(array, array2):
     autograd_grad_operands1 = Tensor(array, True)
     autograd_grad_operands2 = Tensor(array2)
-    result1 = tensordot(autograd_grad_operands1, autograd_grad_operands2, ((0, 1), (0, 1)))
-    # o = np.tensordot(array, array2, ((0, 1), (0, 1)))
-    # assert np.allclose(o, result1.data), f"correct: {o} | got: {result1.data}"
+    result1 = tensordot(autograd_grad_operands1, autograd_grad_operands2, ((0, 1, 2), (0, 1, 2)))
+    o = np.tensordot(array, array2, ((0, 1, 2), (0, 1, 2))) # ((0, 1) (0, 1)) has bug
+    assert np.allclose(o, result1.data), f"correct: {o} | got: {result1.data}"
