@@ -3,6 +3,14 @@
 #include <Python.h>
 #endif
 
+#ifdef DEBUG
+#define DEBUG_PRINT(...) printf(__VA_ARGS__)
+#define DEBUG_PyObject_Print(obj) PyObject_Print(obj, stdout, 0)
+#else
+#define DEBUG_PRINT(...)
+#define DEBUG_PyObject_Print(obj)
+#endif
+
 #ifndef XLA_OPS_H
 #define XLA_OPS_H
 typedef struct

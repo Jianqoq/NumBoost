@@ -1,11 +1,13 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #include "import_methods.h"
+#include "utils.h"
 #include <omp.h>
 #include "mkl_vml_functions.h"
 #include <numpy/npy_math.h>
 #include <numpy/arrayobject.h>
 #include <math.h>
+#include <stdlib.h>
 #include "numpy/ndarraytypes.h"
 #include "set_Tensor_properties.h"
 #include "tensor.h"
@@ -14,6 +16,7 @@ extern np_method *NP_METHOD;
 extern Array_Shape *ARRAY_SHAPE;
 extern Power_Dict *POWER_DICT;
 extern Log_Dict *LOG_DICT;
+extern Tensordot_Dict *TENSORDOT_DICT;
 
 void store_base(Tensor *key, PyObject *base)
 {
@@ -25,7 +28,6 @@ void store_base(Tensor *key, PyObject *base)
         s = (Log_Dict *)malloc(sizeof(Power_Dict));
         s->key = key;
         s->base = base;
-        Py_INCREF(key);
         HASH_ADD_PTR(LOG_DICT, key, s);
     }
 }
@@ -52,7 +54,6 @@ void store_power(Tensor *key, PyObject *power)
         s = (Power_Dict *)malloc(sizeof(Power_Dict));
         s->key = key;
         s->prev_power = power;
-        Py_INCREF(key);
         HASH_ADD_PTR(POWER_DICT, key, s);
     }
 }
@@ -80,7 +81,6 @@ void store_array_shape(Tensor *key, npy_intp *shape, int len)
         s->key = key;
         s->shape = shape;
         s->len = len;
-        Py_INCREF(key);
         HASH_ADD_PTR(ARRAY_SHAPE, key, s);
     }
 }
@@ -107,6 +107,35 @@ int *get_shape_len(Tensor *key)
         return NULL;
     }
     return &s->len;
+}
+
+void store_tensordot_data(Tensor *key, Tensordot_Metadata *metadata)
+{
+    Tensordot_Dict *s = NULL;
+    if (TENSORDOT_DICT != NULL)
+        HASH_FIND_PTR(TENSORDOT_DICT, &key, s);
+    if (s == NULL)
+    {
+        s = (Tensordot_Dict *)malloc(sizeof(Tensordot_Dict));
+        s->key = key;
+        s->metadata = metadata;
+        Py_INCREF(metadata->matmul_result);
+        Py_INCREF(metadata->transposed_reshape_a);
+        Py_INCREF(metadata->transposed_reshape_b);
+        HASH_ADD_PTR(TENSORDOT_DICT, key, s);
+    }
+}
+
+Tensordot_Metadata *get_tensordot_data(Tensor *key)
+{
+    Tensordot_Dict *s;
+    HASH_FIND_PTR(TENSORDOT_DICT, &key, s);
+    if (s == NULL)
+    {
+        PyErr_SetString(PyExc_KeyError, "Tensordot data not found in dict");
+        return NULL;
+    }
+    return s->metadata;
 }
 
 inline static Tensor *Generic_function_new_float(void (*vect_func)(const int, const float *, float *),
@@ -358,6 +387,335 @@ Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *
     {
         store_array_shape(to_return, pre_shape2, ndim);
     }
+    return to_return;
+}
+
+inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *shape,
+                       npy_intp *newshape, npy_intp **newaxes, npy_intp **oldshape, long *axes_len, bool a)
+{
+    long real_len = 0;
+    long *__notin = range_excluding_list(0, ndim, axes_, -100, n_len, &real_len);
+    *_len = real_len;
+    // get len
+    long *notin = malloc(sizeof(long) * (real_len));
+    int index = 0;
+    for (int i = 0; i < ndim; i++)
+        if (__notin[i] != -100)
+        {
+            notin[index] = __notin[i];
+            index++;
+        }
+    free(__notin);
+
+    // newaxes_a
+    
+    *axes_len = n_len + real_len;
+    npy_intp *newaxes_ = malloc(sizeof(npy_intp) * (*axes_len));
+    *newaxes = newaxes_;
+    if (a)
+    {
+        int j = 0;
+        index = 0;
+        for (j = 0; j < real_len; j++)
+            newaxes_[j] = notin[j];
+        for (; j < *axes_len; j++)
+            newaxes_[j] = axes_[index++];
+    }
+    else // b
+    {
+        int j = 0;
+        index = 0;
+        for (j = 0; j < n_len; j++)
+            newaxes_[j] = axes_[j];
+        for (; j < *axes_len; j++)
+            newaxes_[j] = notin[index++];
+    }
+
+    npy_intp N2 = 1;
+    for (long i = 0; i < n_len; i++)
+    {
+        long axis = axes_[i];
+        N2 *= shape[axis];
+    }
+    // newshape_a
+    npy_intp multiply_reduce = 1;
+    for (int i = 0; i < real_len; i++)
+        multiply_reduce *= shape[notin[i]];
+    if (!a)
+    {
+        newshape[0] = N2;
+        newshape[1] = multiply_reduce;
+    }
+    else
+    {
+        newshape[0] = multiply_reduce;
+        newshape[1] = N2;
+    }
+    // old_a
+    npy_intp *oldshape_a = malloc(sizeof(npy_intp) * real_len);
+    for (int i = 0; i < real_len; i++)
+        oldshape_a[i] = shape[notin[i]];
+    free(notin);
+    
+    *oldshape = oldshape_a;
+}
+
+inline void *handle_axes(long **axes_, PyObject *axes_tuple, long *ndim)
+{
+    if (*axes_ == NULL && axes_tuple != NULL && PySequence_Check(axes_tuple))
+    {
+        long nd = (long)PyObject_Length(axes_tuple);
+        *ndim = nd;
+        *axes_ = malloc(sizeof(long) * nd);
+        PyObject **ptr = PySequence_Fast_ITEMS(axes_tuple);
+        
+        for (Py_ssize_t i = 0; i < nd; i++)
+        {
+            (*axes_)[i] = PyLong_AsLong(ptr[i]);
+            if ((*axes_)[i] == -1 && PyErr_Occurred())
+            {
+                PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
+                return NULL;
+            }
+        }
+        Py_DECREF(axes_tuple);
+    }
+    else if (*axes_ == NULL && axes_tuple != NULL)
+    {
+        *axes_ = malloc(sizeof(long) * 1);
+        (*axes_)[0] = PyLong_AsLong(axes_tuple);
+        
+        if ((*axes_)[0] == -1 && PyErr_Occurred())
+        {
+            PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
+            return NULL;
+        }
+        Py_DECREF(axes_tuple);
+    }
+    return ndim;
+}
+
+Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    if (nargsf != 3)
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected 3 positional arguments");
+        return NULL;
+    }
+    Tensor *tensor1 = (Tensor *)args[0];
+    Tensor *tensor2 = (Tensor *)args[1];
+    npy_intp *a_shape = NULL, *b_shape = NULL;
+    long na = 1, nb = 1;
+    long axes = 1;
+    long *axes_a = NULL, *axes_b = NULL;
+    PyObject *axes_a_tuple = NULL;
+    PyObject *axes_b_tuple = NULL;
+    if (PySequence_Check(args[2]))
+    {
+        
+        axes_a_tuple = PySequence_GetItem(args[2], 0);
+        
+        axes_b_tuple = PySequence_GetItem(args[2], 1);
+        
+    }
+    else
+    {
+        
+        axes = PyLong_AsLong(args[2]);
+        long axes_abs = abs(axes);
+        na = axes_abs;
+        nb = axes_abs;
+        
+        if (axes == -1 && PyErr_Occurred())
+        {
+            PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
+            return NULL;
+        }
+        else
+        {
+            axes_a = malloc(sizeof(long) * axes_abs);
+            axes_b = malloc(sizeof(long) * axes_abs);
+            if (axes < 0)
+            {
+                for (long i = 0; i < axes_abs; i++)
+                    axes_a[i] = axes_abs - i;
+                for (long i = 0; i < axes_abs; i++)
+                    axes_b[i] = -i + axes_abs; // (+ axes_abs) means when (-axes + i) is -1, list[-axes + i] can be last element
+
+            }
+            else if (axes > 0)
+            {
+                for (long i = 0; i < axes_abs; i++)
+                    axes_a[i] = -axes + i + axes_abs; // (+ axes_abs) means when (-axes + i) is -1, list[-axes + i] can be last element
+                for (long i = 0; i < axes_abs; i++)
+                    axes_b[i] = i;
+
+            }
+            else
+            {
+                na = 0;
+                nb = 0;
+                axes_a = NULL;
+                axes_b = NULL;
+            }
+        }
+    }
+    
+    if (handle_axes(&axes_a, axes_a_tuple, &na) == NULL)
+        return NULL;
+    
+    if (handle_axes(&axes_b, axes_b_tuple, &nb) == NULL)
+        return NULL;
+    
+    PyObject *a = PyArray_FromAny(tensor1->data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
+    PyObject *b = PyArray_FromAny(tensor2->data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
+
+    if (a == NULL || b == NULL)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "connot convert tensor to numpy array");
+        return NULL;
+    }
+    PyArrayObject *a_ = (PyArrayObject *)a;
+    PyArrayObject *b_ = (PyArrayObject *)b;
+    
+    a_shape = PyArray_SHAPE(a_);
+    b_shape = PyArray_SHAPE(b_);
+    int ndim_a = ((PyArrayObject_fields *)a_)->nd;
+    int ndim_b = ((PyArrayObject_fields *)b_)->nd;
+    bool shape_equal = true;
+    if (na != nb)
+    {
+        shape_equal = false;
+        
+    }
+    else if (axes_a != NULL && axes_b != NULL)
+    {
+        
+        
+        for (int i = 0; i < na; i++)
+        {
+            
+            
+            if (a_shape[axes_a[i]] != b_shape[axes_b[i]])
+            {
+                shape_equal = false;
+                break;
+            }
+            if (axes_a[i] < 0)
+                axes_a[i] += ndim_a;
+            if (axes_b[i] < 0)
+                axes_b[i] += ndim_b;
+        }
+    }
+    if (!shape_equal)
+    {
+        PyErr_SetString(PyExc_TypeError, "shape-mismatch for sum");
+        return NULL;
+    }
+    
+    long a_len = 0, newaxes_a_len = 0;
+    npy_intp *newshape_a = malloc(sizeof(npy_intp) * 2);
+    npy_intp *newaxes_a = NULL, *oldshape_a = NULL;
+    tensordot_axes_(ndim_a, axes_a, na, &a_len, a_shape, newshape_a, &newaxes_a, &oldshape_a, &newaxes_a_len, true);
+    
+    PyArray_Dims at_dims = {newshape_a, 2};
+    PyArray_Dims at_new_dims = {newaxes_a, newaxes_a_len};
+    
+    long b_len = 0, newaxes_b_len = 0;
+    npy_intp *newshape_b = malloc(sizeof(npy_intp) * 2);
+    npy_intp *newaxes_b = NULL, *oldshape_b = NULL;
+    tensordot_axes_(ndim_b, axes_b, nb, &b_len, b_shape, newshape_b, &newaxes_b, &oldshape_b, &newaxes_b_len, false);
+    PyArray_Dims bt_dims = {newshape_b, 2};
+    PyArray_Dims bt_new_dims = {newaxes_b, newaxes_b_len};
+    
+    
+    
+
+    PyObject *at_ = PyArray_Transpose(a_, &at_new_dims);
+    PyObject *bt_ = PyArray_Transpose(b_, &bt_new_dims);
+    if (at_ == NULL || bt_ == NULL)
+    {
+        PyErr_SetString(PyExc_TypeError, "transpose error");
+        return NULL;
+    }
+    PyArrayObject* at_arr = (PyArrayObject*)at_;
+    PyArrayObject* bt_arr = (PyArrayObject*)bt_;
+    PyObject *at = PyArray_Newshape(at_arr, &at_dims, 0);
+    PyObject *bt = PyArray_Newshape(bt_arr, &bt_dims, 0);
+    
+    if (at == NULL || bt == NULL)
+    {
+        return NULL;
+    }
+    PyObject *res = PyArray_MatrixProduct(at, bt);
+    
+    if (res == NULL)
+    {
+        PyErr_SetString(PyExc_TypeError, "matmul error");
+        return NULL;
+    }
+    int total_len = a_len + b_len;
+    
+    npy_intp *olds_merge_shape = malloc(sizeof(npy_intp) * (total_len));
+    int j = 0;
+    for (; j < total_len; j++)
+    {
+        if (j < a_len)
+            olds_merge_shape[j] = oldshape_a[j];
+        else
+            olds_merge_shape[j] = oldshape_b[j - a_len];
+    }
+    PyArray_Dims olds_merge_dims = {olds_merge_shape, total_len};
+    PyObject *result = PyArray_Newshape((PyArrayObject *)res, &olds_merge_dims, 0);
+    
+    Tensor *to_return = (Tensor *)new_Tensor((Tensor *)args[0], (Tensor *)args[1], result, "TensordotBackward");
+    Py_DECREF(a);
+    Py_DECREF(b);
+    free(oldshape_a);
+    free(oldshape_b);
+    free(axes_a);
+    free(axes_b);
+    free(olds_merge_shape);
+    free(newshape_a);
+    free(newshape_b);
+    if (to_return->require_grad)
+    {
+        
+        Tensordot_Metadata *metadata = malloc(sizeof(Tensordot_Metadata));
+        metadata->newshape_a.ptr = PyArray_SHAPE(at_arr);
+        metadata->newshape_a.len = PyArray_NDIM(at_arr);
+        metadata->newshape_b.ptr = PyArray_SHAPE(bt_arr);
+        metadata->newshape_b.len = PyArray_NDIM(bt_arr);
+        metadata->newaxes_a.ptr = newaxes_a;
+        metadata->newaxes_a.len = newaxes_a_len;
+        metadata->newaxes_b.ptr = newaxes_b;
+        metadata->newaxes_b.len = newaxes_b_len;
+        metadata->matmul_result = res;
+        metadata->matmul_result_shape.ptr = PyArray_SHAPE((PyArrayObject*)res);
+        metadata->matmul_result_shape.len = PyArray_NDIM((PyArrayObject*)res);
+        metadata->transposed_shape_a.ptr = PyArray_SHAPE(at_arr);
+        metadata->transposed_shape_a.len = at_new_dims.len;
+        metadata->transposed_shape_b.ptr = PyArray_SHAPE(bt_arr);
+        metadata->transposed_shape_b.len = bt_new_dims.len;
+        metadata->transposed_reshape_a = at;
+        metadata->transposed_reshape_b = bt;
+        store_tensordot_data(to_return, metadata);
+        Py_DECREF(at_);
+        Py_DECREF(bt_);
+        Py_DECREF(at);
+        Py_DECREF(bt);
+        Py_DECREF(res);
+        
+        return to_return;
+    }
+    
+    Py_DECREF(at_);
+    Py_DECREF(bt_);
+    Py_DECREF(at);
+    Py_DECREF(bt);
+    Py_DECREF(res);
+    free(newaxes_a);
+    free(newaxes_b);
     return to_return;
 }
 

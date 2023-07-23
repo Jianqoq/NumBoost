@@ -77,7 +77,7 @@ new_Tensor(Tensor *tensor, Tensor *tensor2, PyObject *data, const char *grad_fn)
             Tensor_SetVars(self, 0);
         }
         PyObject *zero = PyLong_FromLong(0);
-        Tensor_SetData_startwone_without_init(self, data);
+        self->data = data;
         Tensor_SetHasConv(self, tensor->has_conv);
         Tensor_SetGraph_without_init_value(self, tensor->graph);
         Tensor_SetDim(self, tensor->dim);
@@ -223,7 +223,6 @@ tensor_add(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "AddBackward");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -380,7 +379,6 @@ tensor_div(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "DivBackward");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -520,7 +518,6 @@ tensor_sub(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "SubBackward");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -600,7 +597,6 @@ tensor_pow(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, temp, numpy_result, "PowBackward");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -676,7 +672,6 @@ tensor_matmul(PyObject *self, PyObject *other)
         return NULL;
     }
     PyObject *new_tensor = new_Tensor(_self, _other, numpy_result, "MatMulBackward");
-    Py_DECREF(numpy_result);
     return new_tensor;
 }
 
@@ -786,7 +781,6 @@ tensor_lshift(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -866,7 +860,6 @@ tensor_rshift(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -945,7 +938,6 @@ tensor_and(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -986,7 +978,6 @@ tensor_xor(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -1027,7 +1018,6 @@ tensor_or(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -1111,7 +1101,6 @@ tensor_remainder(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -1272,7 +1261,6 @@ tensor_divmod(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
@@ -1353,7 +1341,6 @@ tensor_floordiv(PyObject *self, PyObject *other)
             return NULL;
         }
         PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        Py_DECREF(numpy_result);
         return new_tensor;
     }
     else
