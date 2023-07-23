@@ -348,16 +348,25 @@ void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
     Tensor *tmp2 = (Tensor *)self->y;
     if (TRACK)
     {
+        DEBUG_PRINT("track div backward\n");
         *out1 = PyNumber_TrueDivide(grad, tmp2->data);
         PyObject *two = PyLong_FromLong(2);
         PyObject *midle = PyNumber_Power(tmp2->data, two, Py_None);
         PyObject *midle2 = PyNumber_Negative(tmp1->data);
         PyObject *tmp = PyNumber_TrueDivide(midle2, midle);
+#ifdef DEBUG
+        PyObject_Print(tmp, stdout, 0);
+        printf("\n");
+#endif
+        *out2 = PyNumber_Multiply(grad, tmp);
         Py_DECREF(tmp);
         Py_DECREF(midle);
         Py_DECREF(midle2);
         Py_DECREF(two);
-        *out2 = PyNumber_Multiply(grad, tmp);
+#ifdef DEBUG
+        PyObject_Print(*out2, stdout, 0);
+        printf("\n");
+#endif
         return;
     }
     if (!vaild_shape((PyArrayObject *)grad, (PyArrayObject *)self->data, "grad shape not equal to previous output shape"))
@@ -459,9 +468,115 @@ void negative_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObjec
 
 void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **out2)
 {
+    PyObject *reshaped = NULL, *tmp1 = NULL, *tmp2 = NULL, *at_grad = NULL, *bt_grad = NULL,
+             *at_grad_reshaped = NULL, *bt_grad_reshaped = NULL, *a_transposed = NULL, *b_transposed = NULL;
+    DEBUG_PRINT("tensordot backward start\n");
     Tensordot_Metadata *metadata = get_tensordot_data(self);
+    if (metadata == NULL)
+    {
+        DEBUG_PRINT("metadata is null\n");
+        *out = NULL;
+        *out2 = NULL;
+        return;
+    }
+    if (TRACK)
+    {
+        DEBUG_PRINT("tracking tensordot\n");
+        int i;
+        PyObject *matmul_result_shape = PyTuple_New(metadata->matmul_result_shape.len);
+#ifdef DEBUG
+        printf("reshaping :");
+        printf("(");
+        for (i = 0; i < metadata->matmul_result_shape.len; i++)
+        {
+            printf("%lld ", metadata->matmul_result_shape.ptr[i]);
+        }
+        printf(")\n");
+#endif
+        for (i = 0; i < metadata->matmul_result_shape.len; i++)
+        {
+            PyTuple_SetItem(matmul_result_shape, i, PyLong_FromLongLong(metadata->matmul_result_shape.ptr[i]));
+        }
+        reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, grad, matmul_result_shape, NULL);
+        Py_DECREF(matmul_result_shape);
+#ifdef DEBUG
+        printf("reshaped:\n");
+        PyObject_Print(reshaped, stdout, 0);
+        printf("\n");
+#endif
+        if (reshaped == NULL)
+        {
+            DEBUG_PRINT("reshaped is null\n");
+            *out = NULL;
+            *out2 = NULL;
+            return;
+        }
+        npy_intp t1_ptr_[] = {1, 0};
+        PyArray_Dims t1 = {t1_ptr_, 2};
+#ifdef DEBUG
+        printf("transposing:\n");
+        PyObject_Print(metadata->transposed_reshape_b, stdout, 0);
+        printf("\n");
+#endif
+        tmp1 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_b, &t1);
+        tmp2 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_a, &t1);
+        if (tmp1 == NULL || tmp2 == NULL)
+        {
+            DEBUG_PRINT("tmp1 or tmp2 is null\n");
+            *out = NULL;
+            *out2 = NULL;
+            return;
+        }
+        at_grad = PyNumber_MatrixMultiply(reshaped, tmp1);
+        bt_grad = PyNumber_MatrixMultiply(tmp2, reshaped);
+        Py_DECREF(reshaped);
+        Py_DECREF(tmp1);
+        Py_DECREF(tmp2);
+        DEBUG_PRINT("matmul done\n");
+        PyObject *newshape_a = PyTuple_New(metadata->newshape_a.len);
+        for (i = 0; i < metadata->newshape_a.len; i++)
+        {
+            PyTuple_SetItem(newshape_a, i, PyLong_FromLongLong(metadata->newshape_a.ptr[i]));
+        }
+        PyObject *newshape_b = PyTuple_New(metadata->newshape_b.len);
+        for (i = 0; i < metadata->newshape_b.len; i++)
+        {
+            PyTuple_SetItem(newshape_b, i, PyLong_FromLongLong(metadata->newshape_b.ptr[i]));
+        }
+        at_grad_reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, at_grad, newshape_a, NULL);
+        bt_grad_reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, bt_grad, newshape_b, NULL);
+        Py_DECREF(at_grad);
+        Py_DECREF(bt_grad);
+        Py_DECREF(newshape_a);
+        Py_DECREF(newshape_b);
+        DEBUG_PRINT("at_grad_reshaped && bt_grad_reshaped done\n");
 
-    PyObject *reshaped = PyArray_Newshape((PyArrayObject *)grad, &metadata->matmul_result_shape, NPY_CORDER);
+        PyObject *tmp_a_ptr = PyTuple_New(metadata->newaxes_a.len);
+        PyObject *tmp_b_ptr = PyTuple_New(metadata->newaxes_b.len);
+        for (npy_intp i = 0; i < metadata->newaxes_a.len; i++)
+        {
+            PyTuple_SetItem(tmp_a_ptr, i, PyLong_FromLongLong(search_num(metadata->newaxes_a.ptr, metadata->newaxes_a.len, i)));
+            PyTuple_SetItem(tmp_b_ptr, i, PyLong_FromLongLong(search_num(metadata->newaxes_b.ptr, metadata->newaxes_b.len, i)));
+        }
+        a_transposed = PyObject_CallFunctionObjArgs(JNP_METHOD->transpose, at_grad_reshaped, tmp_a_ptr, NULL);
+        b_transposed = PyObject_CallFunctionObjArgs(JNP_METHOD->transpose, bt_grad_reshaped, tmp_b_ptr, NULL);
+        Py_DECREF(tmp_a_ptr);
+        Py_DECREF(tmp_b_ptr);
+        Py_DECREF(at_grad_reshaped);
+        Py_DECREF(bt_grad_reshaped);
+        if (a_transposed == NULL || b_transposed == NULL)
+        {
+            DEBUG_PRINT("a_transposed or b_transposed is null");
+            *out = NULL;
+            *out2 = NULL;
+            return;
+        }
+        *out = a_transposed;
+        *out2 = b_transposed;
+        DEBUG_PRINT("tensordot backward tracing done\n");
+        return;
+    }
+    reshaped = PyArray_Newshape((PyArrayObject *)grad, &metadata->matmul_result_shape, NPY_CORDER);
     if (reshaped == NULL)
     {
         DEBUG_PRINT("reshaped is null");
@@ -482,8 +597,8 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
     PyObject_Print((PyObject *)metadata->transposed_reshape_a, stdout, 0);
     DEBUG_PRINT("\n");
 #endif
-    PyObject *tmp1 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_b, &t1);
-    PyObject *tmp2 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_a, &t1);
+    tmp1 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_b, &t1);
+    tmp2 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_a, &t1);
     if (tmp1 == NULL || tmp2 == NULL)
     {
         DEBUG_PRINT("tmp1 or tmp2 is null");
@@ -491,8 +606,8 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         *out2 = NULL;
         return;
     }
-    PyObject *at_grad = PyNumber_MatrixMultiply(reshaped, tmp1);
-    PyObject *bt_grad = PyNumber_MatrixMultiply(tmp2, reshaped);
+    at_grad = PyNumber_MatrixMultiply(reshaped, tmp1);
+    bt_grad = PyNumber_MatrixMultiply(tmp2, reshaped);
     if (at_grad == NULL || bt_grad == NULL)
     {
         DEBUG_PRINT("at_grad or bt_grad is null");
@@ -516,8 +631,8 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
     PyObject_Print(bt_grad, stdout, 0);
     DEBUG_PRINT("\n");
 #endif
-    PyObject *at_grad_reshaped = PyArray_Newshape((PyArrayObject *)at_grad, &metadata->newshape_a, NPY_CORDER);
-    PyObject *bt_grad_reshaped = PyArray_Newshape((PyArrayObject *)bt_grad, &metadata->newshape_b, NPY_CORDER);
+    at_grad_reshaped = PyArray_Newshape((PyArrayObject *)at_grad, &metadata->newshape_a, NPY_CORDER);
+    bt_grad_reshaped = PyArray_Newshape((PyArrayObject *)bt_grad, &metadata->newshape_b, NPY_CORDER);
     if (at_grad_reshaped == NULL || bt_grad_reshaped == NULL)
     {
         DEBUG_PRINT("at_grad_reshaped or bt_grad_reshaped is null");
@@ -550,8 +665,8 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         tmp_a_ptr[i] = search_num(metadata->newaxes_a.ptr, metadata->newaxes_a.len, i);
         tmp_b_ptr[i] = search_num(metadata->newaxes_b.ptr, metadata->newaxes_b.len, i);
     }
-    PyObject *a_transposed = PyArray_Transpose((PyArrayObject *)at_grad_reshaped, &tmp_a);
-    PyObject *b_transposed = PyArray_Transpose((PyArrayObject *)bt_grad_reshaped, &tmp_b);
+    a_transposed = PyArray_Transpose((PyArrayObject *)at_grad_reshaped, &tmp_a);
+    b_transposed = PyArray_Transpose((PyArrayObject *)bt_grad_reshaped, &tmp_b);
     free(tmp_a_ptr);
     free(tmp_b_ptr);
     if (a_transposed == NULL || b_transposed == NULL)

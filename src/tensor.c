@@ -23,14 +23,32 @@ Tensordot_Dict *TENSORDOT_DICT = NULL;
 
 static void store_tensor_need_grad(long long index, Tensor *tensor)
 {
-    Tensor_need_grad_Dict *entry = (Tensor_need_grad_Dict *)malloc(sizeof(Tensor_need_grad_Dict));
-    entry->index = index;
-    entry->tensor = tensor;
-    HASH_ADD_INT(TENSOR_NEED_GRAD_DICT, index, entry);
+    Tensor_need_grad_Dict *entry = NULL;
+    if (TENSOR_NEED_GRAD_DICT != NULL)
+        HASH_FIND_PTR(TENSOR_NEED_GRAD_DICT, &tensor, entry);
+    if (entry == NULL)
+    {
+        Tensor_need_grad_Dict *entry = (Tensor_need_grad_Dict *)malloc(sizeof(Tensor_need_grad_Dict));
+        entry->tensor = tensor;
+        entry->index = index;
+        HASH_ADD_PTR(TENSOR_NEED_GRAD_DICT, tensor, entry);
+    }
 }
+
+inline void free_tensor_need_grad(Tensor *self)
+{
+    Tensor_need_grad_Dict *entry = NULL;
+    HASH_FIND_PTR(TENSOR_NEED_GRAD_DICT, &self, entry);
+    if (entry != NULL)
+    {
+        HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
+        free(entry);
+    }
+}
+
 Tensor *get_tensor(long long index)
 {
-    Tensor_need_grad_Dict *entry;
+    Tensor_need_grad_Dict *entry = NULL;
     HASH_FIND_INT(TENSOR_NEED_GRAD_DICT, &index, entry);
     if (entry != NULL)
     {
@@ -42,13 +60,12 @@ Tensor *get_tensor(long long index)
 PyObject *convert_tensor_dict_to_Py_dict(PyObject *self, PyObject *const *args, size_t nargsf)
 {
     PyObject *dict = PyDict_New();
-    Tensor_need_grad_Dict *entry, *tmp;
+    Tensor_need_grad_Dict *entry = NULL, *tmp = NULL;
     if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) == 1)
     {
         HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, entry, tmp)
         {
             PyDict_SetItem(dict, (PyObject *)entry->tensor, args[0]);
-            HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
         }
         return dict;
     }
@@ -56,14 +73,13 @@ PyObject *convert_tensor_dict_to_Py_dict(PyObject *self, PyObject *const *args, 
         HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, entry, tmp)
         {
             PyDict_SetItem(dict, (PyObject *)entry->tensor, PyTuple_GetItem(args[0], entry->index));
-            HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
         }
     return dict;
 }
 
 void free_tensordot_data()
 {
-    Tensordot_Dict *entry, *tmp;
+    Tensordot_Dict *entry = NULL, *tmp = NULL;
     HASH_ITER(hh, TENSORDOT_DICT, entry, tmp)
     {
         DEBUG_PRINT("Freeing Tensordot data\n");
@@ -81,7 +97,7 @@ void free_tensordot_data()
 
 inline void free_tensordot_data_self(Tensor *self)
 {
-    Tensordot_Dict *entry;
+    Tensordot_Dict *entry = NULL;
     DEBUG_PRINT("Going to free Tensordot data\n");
     HASH_FIND_PTR(TENSORDOT_DICT, &self, entry);
     if (entry != NULL)
@@ -167,33 +183,29 @@ PyObject *collect_gradients_and_cleanup(PyObject *list)
 {
     Tensor_need_grad_Dict *gradient_entry, *gradient_tmp;
     PyObject *to_return = NULL;
-    Power_Dict *power_entry, *power_tmp;
-    // If there is only one gradient, return it directly
+    Power_Dict *power_entry = NULL, *power_tmp = NULL;
+
+    DEBUG_PRINT("Collecting gradients and cleaning up, dict length %d.\n", HASH_COUNT(TENSOR_NEED_GRAD_DICT));
     if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) == 1)
     {
         HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, gradient_entry, gradient_tmp)
         {
             to_return = gradient_entry->tensor->grad;
+            gradient_entry->tensor->grad = PyLong_FromLong(0);
         }
-        Py_INCREF(to_return);
-        HASH_CLEAR(hh, POWER_DICT);
     }
-    // Otherwise, append all gradients to a list and convert it to a tuple
     else
     {
         HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, gradient_entry, gradient_tmp)
         {
             PyList_Append(list, gradient_entry->tensor->grad);
+            gradient_entry->tensor->grad = PyLong_FromLong(0);
         }
         to_return = PyList_AsTuple(list);
     }
     // Cleanup: decrease reference count of list and also all tensor in POWER_DICT
+    DEBUG_PRINT("Finished collecting gradients and cleaning up, dict length %d.\n", HASH_COUNT(TENSOR_NEED_GRAD_DICT));
     Py_DECREF(list);
-    HASH_ITER(hh, POWER_DICT, power_entry, power_tmp)
-    {
-        Py_DECREF(power_entry->key);
-    }
-    HASH_CLEAR(hh, POWER_DICT);
     return to_return;
 }
 
@@ -388,6 +400,7 @@ Tensor_dealloc(Tensor *self)
     free_tensordot_data_self(self);
     free_array_shape(self);
     free_power(self);
+    free_tensor_need_grad(self);
     PyObject_GC_Del(self);
 }
 
@@ -486,6 +499,7 @@ static PyNumberMethods
 PyObject *
 _Generic_backward(PyObject *self, PyObject *args)
 {
+    DEBUG_PRINT("Generic_backward start\n");
     // Declare variables
     PyObject *current_grad1 = NULL;
     PyObject *current_grad2 = NULL;
@@ -494,12 +508,6 @@ _Generic_backward(PyObject *self, PyObject *args)
     PyObject *list = PyList_New(0);
     long long index = 0;
     const char *grad_fn = NULL;
-    // If tracking is enabled, clear the tensor gradient dictionary
-    if (TRACK)
-    {
-        if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) > 0)
-            HASH_CLEAR(hh, TENSOR_NEED_GRAD_DICT);
-    }
     // Parse the Python argument tuple
     if (!PyArg_ParseTuple(args, "O", &grad))
     {
@@ -559,19 +567,18 @@ _Generic_backward(PyObject *self, PyObject *args)
                     // Check whether the tensor needs gradient
                     Tensor_need_grad_Dict *entry = NULL;
                     Tensor_need_grad_Dict *s, *tmp;
-                    HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, s, tmp)
-                    {
-                        if (s->tensor == tensor)
-                        {
-                            entry = s;
-                        }
-                    }
+                    HASH_FIND_PTR(TENSOR_NEED_GRAD_DICT, &tensor, entry);
                     if (entry != NULL)
                     {
+                        Py_DECREF(tensor->grad);
+                        tensor->grad = new_grad;
+                        Py_DECREF(tuple.ndarray);
                         continue;
                     }
                     else
                     {
+                        DEBUG_PRINT("Add tensor to TENSOR_NEED_GRAD_DICT\n");
+                        DEBUG_PyObject_Print(tensor);
                         store_tensor_need_grad(index, tensor);
                         index++;
                     }
