@@ -135,6 +135,19 @@ PyObject *_abs_internal(PyObject *args, PyObject *out);
 PyObject *_pow_internal(PyObject *args, PyObject *out);
 void INCREF_TENSOR(Tensor *self);
 
+inline npy_intp search_num(npy_intp *arr, npy_intp n, npy_intp x)
+{
+    npy_intp i;
+    for (i = 0; i < n; i++)
+    {
+        if (arr[i] == x)
+        {
+            return i;
+        }
+    }
+    return 0;
+}
+
 typedef struct
 {
     Tensor *key;

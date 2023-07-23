@@ -6,19 +6,6 @@ extern long TRACK;
 extern jnp_method *JNP_METHOD;
 extern Tensordot_Dict *TENSORDOT_DICT;
 
-inline npy_intp search_num(npy_intp *arr, npy_intp n, npy_intp x)
-{
-    npy_intp i;
-    for (i = 0; i < n; i++)
-    {
-        if (arr[i] == x)
-        {
-            return i;
-        }
-    }
-    return 0; // should not happen
-}
-
 static bool shape_is_equal(npy_intp *dims1, npy_intp *dims2, int *nd)
 {
     for (uint8_t i = 0; i < *nd; i++)
