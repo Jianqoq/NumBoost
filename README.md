@@ -7,7 +7,7 @@
 4. implement add, sub, mul, div operation directly instead of using np built in method(better performance)(include broadcast)
 5. implement shape prediction instead of doing real calculation in jax tracing
 6. implement broadcast detection based on shape
-7. let cache can handle more senario at the same function
+7. let cache can handle more scenario at the same function need to be jit
 8. ~~add debug macro for debug in C. Use python setup.py build_ext -DEBUG to enable~~
 9. ~~Add T static method~~
 10. Proof of concept(POC) Object Pool for Tensor

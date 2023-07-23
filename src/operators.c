@@ -142,7 +142,7 @@ new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn)
     tensor = (Tensor *)Tensor_Type->tp_alloc(Tensor_Type, 0);
     if (tensor != NULL)
     {
-        Tensor_SetData_startwone_without_init(tensor, data);
+        tensor->data = data;
         if (self->require_grad)
         {
             Tensor_SetX_without_init_value(tensor, (PyObject *)self);
@@ -729,7 +729,6 @@ tensor_absolute(PyObject *self)
         return NULL;
     }
     PyObject *new_tensor = new_Tensor_x(_self, numpy_result, "");
-    Py_DECREF(numpy_result);
     return new_tensor;
 }
 
@@ -753,7 +752,6 @@ tensor_invert(PyObject *self)
         return NULL;
     }
     PyObject *new_tensor = new_Tensor_x(_self, numpy_result, "");
-    Py_DECREF(numpy_result);
     return new_tensor;
 }
 

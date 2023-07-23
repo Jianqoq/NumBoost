@@ -686,8 +686,8 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         PyErr_SetString(PyExc_TypeError, "transpose error");
         return NULL;
     }
-    PyArrayObject* at_arr = (PyArrayObject*)at_;
-    PyArrayObject* bt_arr = (PyArrayObject*)bt_;
+    PyArrayObject *at_arr = (PyArrayObject *)at_;
+    PyArrayObject *bt_arr = (PyArrayObject *)bt_;
     PyObject *at = PyArray_Newshape(at_arr, &at_dims, 0);
     PyObject *bt = PyArray_Newshape(bt_arr, &bt_dims, 0);
     DEBUG_PRINT("calculated at bt\n");
@@ -739,8 +739,8 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         metadata->newaxes_b.ptr = newaxes_b;
         metadata->newaxes_b.len = newaxes_b_len;
         metadata->matmul_result = res;
-        metadata->matmul_result_shape.ptr = PyArray_SHAPE((PyArrayObject*)res);
-        metadata->matmul_result_shape.len = PyArray_NDIM((PyArrayObject*)res);
+        metadata->matmul_result_shape.ptr = PyArray_SHAPE((PyArrayObject *)res);
+        metadata->matmul_result_shape.len = PyArray_NDIM((PyArrayObject *)res);
         metadata->transposed_shape_a.ptr = PyArray_SHAPE(at_arr);
         metadata->transposed_shape_a.len = at_new_dims.len;
         metadata->transposed_shape_b.ptr = PyArray_SHAPE(bt_arr);
@@ -767,47 +767,40 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     return to_return;
 }
 
-PyObject *class_reshape(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames)
-{
-    if (nargsf != 1)
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected 1 positional arguments");
-        return NULL;
-    }
-    Tensor *tensor = (Tensor *)args[0];
-    PyObject *result = PyObject_CallOneArg(NP_METHOD->reshape, tensor->data);
-    if (result == NULL)
-    {
-        return NULL;
-    }
-    return result;
-}
-
 PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
     int nargs = (int)PyVectorcall_NARGS(nargsf);
+    DEBUG_PRINT("nargs: %d\n", nargs);
     if (nargs < 2)
     {
         PyErr_SetString(PyExc_TypeError, "Expected at least 2 positional arguments");
         return NULL;
     }
     Tensor *tensor = (Tensor *)args[0];
+    DEBUG_PyObject_Print(tensor);
     PyArrayObject *array = (PyArrayObject *)tensor->data;
     int length = nargs - 1;
     npy_intp *dims = malloc(sizeof(npy_intp) * length);
-    for (uint8_t i = 1; i < length; i++)
+    DEBUG_PRINT("dims: ");
+    for (uint8_t i = 1; i < nargs; i++)
     {
         long item = PyLong_AsLong(args[i]);
+        DEBUG_PRINT("%d ", item);
         dims[i - 1] = item;
     }
+    DEBUG_PRINT("\n");
     PyArray_Dims shape = {dims, length};
     PyObject *result = PyArray_Transpose(array, &shape);
-    free(dims);
     if (result == NULL)
     {
         return NULL;
     }
-    return result;
+    PyObject *to_return = new_Tensor_x(tensor, result, "TransposeBackward");
+    if (tensor->require_grad)
+        store_array_shape(to_return, dims, length);
+    else
+        free(dims);
+    return to_return;
 }
 
 Tensor *_sum(PyObject *self, PyObject *const *args, size_t nargsf)

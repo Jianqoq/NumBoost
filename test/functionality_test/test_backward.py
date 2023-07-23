@@ -79,17 +79,17 @@ def test_C_Tensor_subtraction_broadcast_backward(array, array2, grad):
         f"correct: {torch_operands1.grad.numpy()} | got: {autograd_grad_operands1.grad}"
 
 
-@pytest.mark.parametrize("array, array2, grad", [(np.array([1., 2., 3.]), np.array([5., 7., 8.]), np.array([10., 9., 5.])),])
+@pytest.mark.parametrize("array, array2, grad", [(np.array([1., 2., 3.]), np.array([5., 7., 8.]),
+                                                  np.array([10., 9., 5.]))])
 def test_C_Tensor_division_backward(array, array2, grad):
     autograd_grad_operands1 = Tensor(array, True)
     autograd_grad_operands2 = Tensor(array2)
-    autograd_grad = grad
     torch_operands1 = torch.tensor(array, requires_grad=True)
     torch_operands2 = torch.tensor(array2)
     torch_grad = torch.tensor(grad)
     result1 = autograd_grad_operands1 / autograd_grad_operands2
     result2 = torch_operands1 / torch_operands2
-    result1.backward(autograd_grad)
+    result1.backward(grad)
     result2.backward(torch_grad)
     assert np.allclose(autograd_grad_operands1.grad, torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {autograd_grad_operands1.grad}"
@@ -355,4 +355,14 @@ def test_C_Tensor_log_backward(array, grad):
         f"correct: {torch_operands1.grad.numpy()} | got: {autograd_grad_operands1.grad}"
 
 
+@pytest.mark.parametrize("array", [(np.array([[1.], [2.], [3.]]))])
+def test_C_Tensor_transpose_backward(array):
+    autograd_grad_operands1 = Tensor(array, True)
+    torch_operands1 = torch.tensor(array, requires_grad=True)
+    result1 = core.transpose(autograd_grad_operands1, 1, 0)
+    result2 = torch.permute(torch_operands1, (1, 0))
+    result1.backward(result1.data)
+    result2.backward(result2)
+    assert np.allclose(autograd_grad_operands1.grad, torch_operands1.grad.numpy(), equal_nan=True), \
+        f"correct: {torch_operands1.grad.numpy()} | got: {autograd_grad_operands1.grad}"
 

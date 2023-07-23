@@ -4,7 +4,7 @@
 #endif
 
 #ifdef DEBUG
-#define DEBUG_PRINT(...) printf(__VA_ARGS__)
+#define DEBUG_PRINT(...) printf(__VA_ARGS__);
 #define DEBUG_PyObject_Print(obj) \
 PyObject_Print(obj, stdout, 0); \
 printf("\n"); 

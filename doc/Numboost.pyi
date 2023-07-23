@@ -3,12 +3,6 @@ from typing import Any, Iterable, List, Tuple
 from numpy import ndarray
 
 
-class JitWrapper:
-    @classmethod
-    def __init__(cls, *args, **kwargs) -> None: ...
-    def __call__(self, *args) -> Any: ...
-
-
 class Tensor:
     T: Tensor
     axis: int

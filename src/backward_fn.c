@@ -283,3 +283,30 @@ void reshape_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject 
     *out = result;
     *null = NULL;
 };
+
+void transpose_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
+{
+    DEBUG_PRINT("transpose_backward_fn start\n")
+    npy_intp *axes = get_array_shape(self);
+    int len = *get_shape_len(self);
+    DEBUG_PRINT("got axes")
+    DEBUG_FOR_LOOP(npy_intp i = 0; i < len; i++)
+    {
+        DEBUG_PRINT("%lld ", axes[i]);
+    }
+    DEBUG_PRINT("\n")
+    npy_intp *new_axes = (npy_intp *)malloc(sizeof(npy_intp) * len);
+    for (npy_intp i = 0; i < len; i++)
+    {
+        new_axes[i] = search_num(axes, len, i);
+    }
+    DEBUG_FOR_LOOP(npy_intp i = 0; i < len; i++)
+    {
+        DEBUG_PRINT("%lld\n", new_axes[i])
+    }
+    PyArray_Dims prev_axes = {new_axes, len};
+    PyObject *result = PyArray_Transpose((PyArrayObject *)grad, &prev_axes);
+    free(new_axes);
+    *out = result;
+    *null = NULL;
+};

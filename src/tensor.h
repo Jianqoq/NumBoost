@@ -114,6 +114,7 @@ void sqrt_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **n
 void abs_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null);
 void reshape_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null);
 void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **out2);
+void transpose_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null);
 PyObject *_sin_internal(PyObject *args, PyObject *out);
 PyObject *_cos_internal(PyObject *args, PyObject *out);
 PyObject *_tan_internal(PyObject *args, PyObject *out);
@@ -184,19 +185,34 @@ typedef struct
     UT_hash_handle hh;
 } Tensordot_Dict;
 
+typedef struct
+{
+    Tensor *key;
+    PyObject *slice_obj;
+    UT_hash_handle hh;
+} Slice_Dict;
+
 void store_array_shape(Tensor *key, npy_intp *shape, int len);
 npy_intp *get_array_shape(Tensor *key);
 void free_array_shape(Tensor *key);
+
 int *get_shape_len(Tensor *key);
+
 void store_power(Tensor *key, PyObject *power);
 PyObject *get_power(Tensor *key);
 void free_power(Tensor *key);
+
 void store_base(Tensor *key, PyObject *base);
 PyObject *get_base(Tensor *key);
 void free_base(Tensor *key);
+
 void store_tensordot_data(Tensor *key, Tensordot_Metadata *metadata);
 Tensordot_Metadata *get_tensordot_data(Tensor *key);
 void free_tensordot_data();
+
+void store_slice_obj(Tensor *key, PyObject *slice_obj);
+PyObject *get_slice_obj(Tensor *key);
+void free_slice_obj(Tensor *key);
 
 Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);

@@ -344,6 +344,7 @@ void mul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
 
 void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
+    DEBUG_PRINT("div backward start\n")
     Tensor *tmp1 = (Tensor *)self->x;
     Tensor *tmp2 = (Tensor *)self->y;
     if (TRACK)
@@ -354,19 +355,11 @@ void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
         PyObject *midle = PyNumber_Power(tmp2->data, two, Py_None);
         PyObject *midle2 = PyNumber_Negative(tmp1->data);
         PyObject *tmp = PyNumber_TrueDivide(midle2, midle);
-#ifdef DEBUG
-        PyObject_Print(tmp, stdout, 0);
-        printf("\n");
-#endif
         *out2 = PyNumber_Multiply(grad, tmp);
         Py_DECREF(tmp);
         Py_DECREF(midle);
         Py_DECREF(midle2);
         Py_DECREF(two);
-#ifdef DEBUG
-        PyObject_Print(*out2, stdout, 0);
-        printf("\n");
-#endif
         return;
     }
     if (!vaild_shape((PyArrayObject *)grad, (PyArrayObject *)self->data, "grad shape not equal to previous output shape"))
@@ -375,16 +368,22 @@ void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
         *out2 = NULL;
         return;
     }
+    DEBUG_PRINT("div backward valid shape done\n")
     PyObject *two = PyLong_FromLong(2);
     PyObject *midle = PyNumber_Power(tmp2->data, two, Py_None);
     PyObject *midle2 = PyNumber_Negative(tmp1->data);
     PyObject *tmp = PyNumber_TrueDivide(midle2, midle);
+    DEBUG_PRINT("div backward calculated data\n")
+    DEBUG_PRINT("div backward decref done\n")
+    PyObject *grad1 = PyNumber_TrueDivide(grad, tmp2->data);
+    PyObject *grad2 = PyNumber_Multiply(grad, tmp);
+    check_shape((PyArrayObject *)grad1, tmp1->data, out1, "grad1 shape not equal to previous data shape in divbackward");
+    check_shape((PyArrayObject *)grad2, tmp2->data, out2, "grad2 shape not equal to previous data shape in divbackward");
+    DEBUG_PRINT("div backward check shape done\n")
     Py_DECREF(tmp);
     Py_DECREF(midle);
     Py_DECREF(midle2);
     Py_DECREF(two);
-    check_shape((PyArrayObject *)PyNumber_TrueDivide(grad, tmp2->data), tmp1->data, out1, "grad1 shape not equal to previous data shape in divbackward");
-    check_shape((PyArrayObject *)PyNumber_Multiply(grad, tmp), tmp2->data, out2, "grad2 shape not equal to previous data shape in divbackward");
     if (*out1 == NULL || *out2 == NULL)
     {
         *out1 = NULL;
