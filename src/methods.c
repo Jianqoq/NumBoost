@@ -406,9 +406,16 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
             index++;
         }
     free(__notin);
-
+#ifdef DEBUG
+    DEBUG_PRINT("notin = [");
+    for (int i = 0; i < real_len; i++)
+    {
+        DEBUG_PRINT("%ld ", notin[i]);
+    }
+    DEBUG_PRINT("]\n");
+#endif
     // newaxes_a
-    
+    DEBUG_PRINT("newaxes length: %ld\n", n_len + real_len);
     *axes_len = n_len + real_len;
     npy_intp *newaxes_ = malloc(sizeof(npy_intp) * (*axes_len));
     *newaxes = newaxes_;
@@ -430,7 +437,14 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
         for (; j < *axes_len; j++)
             newaxes_[j] = notin[index++];
     }
-
+#ifdef DEBUG
+    DEBUG_PRINT("newaxes_ = [");
+    for (int i = 0; i < *axes_len; i++)
+    {
+        DEBUG_PRINT("%ld ", newaxes_[i]);
+    }
+    DEBUG_PRINT("]\n");
+#endif
     npy_intp N2 = 1;
     for (long i = 0; i < n_len; i++)
     {
@@ -456,7 +470,7 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
     for (int i = 0; i < real_len; i++)
         oldshape_a[i] = shape[notin[i]];
     free(notin);
-    
+    DEBUG_PRINT("REAL_LEN: %ld\n", real_len);
     *oldshape = oldshape_a;
 }
 
@@ -468,7 +482,7 @@ inline void *handle_axes(long **axes_, PyObject *axes_tuple, long *ndim)
         *ndim = nd;
         *axes_ = malloc(sizeof(long) * nd);
         PyObject **ptr = PySequence_Fast_ITEMS(axes_tuple);
-        
+        DEBUG_PRINT("ndim: %ld\n", nd);
         for (Py_ssize_t i = 0; i < nd; i++)
         {
             (*axes_)[i] = PyLong_AsLong(ptr[i]);
@@ -484,7 +498,7 @@ inline void *handle_axes(long **axes_, PyObject *axes_tuple, long *ndim)
     {
         *axes_ = malloc(sizeof(long) * 1);
         (*axes_)[0] = PyLong_AsLong(axes_tuple);
-        
+        DEBUG_PRINT("axes_tuple != NULL, axes: %ld\n", (*axes_)[0]);
         if ((*axes_)[0] == -1 && PyErr_Occurred())
         {
             PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
@@ -512,20 +526,20 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     PyObject *axes_b_tuple = NULL;
     if (PySequence_Check(args[2]))
     {
-        
+        DEBUG_PRINT(" is iteralble.\n");
         axes_a_tuple = PySequence_GetItem(args[2], 0);
-        
+        DEBUG_PRINT("\n");
         axes_b_tuple = PySequence_GetItem(args[2], 1);
-        
+        DEBUG_PRINT("\n");
     }
     else
     {
-        
+        DEBUG_PRINT(" is not iteralble.\n");
         axes = PyLong_AsLong(args[2]);
         long axes_abs = abs(axes);
         na = axes_abs;
         nb = axes_abs;
-        
+        DEBUG_PRINT("axes: %ld\n", axes);
         if (axes == -1 && PyErr_Occurred())
         {
             PyErr_SetString(PyExc_TypeError, "Invalid data type for axes");
@@ -541,7 +555,16 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
                     axes_a[i] = axes_abs - i;
                 for (long i = 0; i < axes_abs; i++)
                     axes_b[i] = -i + axes_abs; // (+ axes_abs) means when (-axes + i) is -1, list[-axes + i] can be last element
-
+#ifdef DEBUG
+                DEBUG_PRINT("axes_a: [");
+                for (long i = 0; i < axes_abs; i++)
+                    DEBUG_PRINT("%ld ", axes_a[i]);
+                DEBUG_PRINT("]\n");
+                DEBUG_PRINT("axes_b: [");
+                for (long i = 0; i < axes_abs; i++)
+                    DEBUG_PRINT("%ld ", axes_b[i]);
+                DEBUG_PRINT("]\n");
+#endif
             }
             else if (axes > 0)
             {
@@ -549,7 +572,16 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
                     axes_a[i] = -axes + i + axes_abs; // (+ axes_abs) means when (-axes + i) is -1, list[-axes + i] can be last element
                 for (long i = 0; i < axes_abs; i++)
                     axes_b[i] = i;
-
+#ifdef DEBUG
+                DEBUG_PRINT("axes_a: [");
+                for (long i = 0; i < axes_abs; i++)
+                    DEBUG_PRINT("%ld ", axes_a[i]);
+                DEBUG_PRINT("]\n");
+                DEBUG_PRINT("axes_b: [");
+                for (long i = 0; i < axes_abs; i++)
+                    DEBUG_PRINT("%ld ", axes_b[i]);
+                DEBUG_PRINT("]\n");
+#endif
             }
             else
             {
@@ -560,13 +592,13 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
             }
         }
     }
-    
+    DEBUG_PRINT("getting a axes\n");
     if (handle_axes(&axes_a, axes_a_tuple, &na) == NULL)
         return NULL;
-    
+    DEBUG_PRINT("getting b axes\n");
     if (handle_axes(&axes_b, axes_b_tuple, &nb) == NULL)
         return NULL;
-    
+    DEBUG_PRINT("asarray\n");
     PyObject *a = PyArray_FromAny(tensor1->data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
     PyObject *b = PyArray_FromAny(tensor2->data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
 
@@ -577,7 +609,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     }
     PyArrayObject *a_ = (PyArrayObject *)a;
     PyArrayObject *b_ = (PyArrayObject *)b;
-    
+    DEBUG_PRINT("shape\n");
     a_shape = PyArray_SHAPE(a_);
     b_shape = PyArray_SHAPE(b_);
     int ndim_a = ((PyArrayObject_fields *)a_)->nd;
@@ -586,16 +618,16 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     if (na != nb)
     {
         shape_equal = false;
-        
+        DEBUG_PRINT("shape not equal\n");
     }
     else if (axes_a != NULL && axes_b != NULL)
     {
-        
-        
+        DEBUG_PRINT("shape equal\n");
+        DEBUG_PRINT("na: %d\n", na);
         for (int i = 0; i < na; i++)
         {
-            
-            
+            DEBUG_PRINT("axes_a[%d]: %ld\n", i, axes_a[i]);
+            DEBUG_PRINT("axes_b[%d]: %ld\n", i, axes_b[i]);
             if (a_shape[axes_a[i]] != b_shape[axes_b[i]])
             {
                 shape_equal = false;
@@ -612,24 +644,40 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         PyErr_SetString(PyExc_TypeError, "shape-mismatch for sum");
         return NULL;
     }
-    
+    DEBUG_PRINT("shape equal\n");
     long a_len = 0, newaxes_a_len = 0;
     npy_intp *newshape_a = malloc(sizeof(npy_intp) * 2);
     npy_intp *newaxes_a = NULL, *oldshape_a = NULL;
     tensordot_axes_(ndim_a, axes_a, na, &a_len, a_shape, newshape_a, &newaxes_a, &oldshape_a, &newaxes_a_len, true);
-    
+    DEBUG_PRINT("a_len = %ld\n", a_len);
     PyArray_Dims at_dims = {newshape_a, 2};
     PyArray_Dims at_new_dims = {newaxes_a, newaxes_a_len};
-    
+    DEBUG_PRINT("newaxes_a_len = %d\n", newaxes_a_len);
+
     long b_len = 0, newaxes_b_len = 0;
     npy_intp *newshape_b = malloc(sizeof(npy_intp) * 2);
     npy_intp *newaxes_b = NULL, *oldshape_b = NULL;
     tensordot_axes_(ndim_b, axes_b, nb, &b_len, b_shape, newshape_b, &newaxes_b, &oldshape_b, &newaxes_b_len, false);
     PyArray_Dims bt_dims = {newshape_b, 2};
     PyArray_Dims bt_new_dims = {newaxes_b, newaxes_b_len};
-    
-    
-    
+    DEBUG_PRINT("b_len = %ld\n", b_len);
+    DEBUG_PRINT("newaxes_b_len = %d\n", newaxes_b_len);
+    DEBUG_PRINT("free bt\n");
+
+#ifdef DEBUG
+    DEBUG_PRINT("newaxes_a = (");
+    for (int i = 0; i < newaxes_a_len; i++)
+    {
+        DEBUG_PRINT("%ld, ", i, newaxes_a[i]);
+    }
+    DEBUG_PRINT(")\n");
+    DEBUG_PRINT("newaxes_b = (");
+    for (int i = 0; i < newaxes_b_len; i++)
+    {
+        DEBUG_PRINT("%ld, ", i, newaxes_b[i]);
+    }
+    DEBUG_PRINT(")\n");
+#endif
 
     PyObject *at_ = PyArray_Transpose(a_, &at_new_dims);
     PyObject *bt_ = PyArray_Transpose(b_, &bt_new_dims);
@@ -642,20 +690,20 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     PyArrayObject* bt_arr = (PyArrayObject*)bt_;
     PyObject *at = PyArray_Newshape(at_arr, &at_dims, 0);
     PyObject *bt = PyArray_Newshape(bt_arr, &bt_dims, 0);
-    
+    DEBUG_PRINT("calculated at bt\n");
     if (at == NULL || bt == NULL)
     {
         return NULL;
     }
     PyObject *res = PyArray_MatrixProduct(at, bt);
-    
+    DEBUG_PRINT("calculated res\n");
     if (res == NULL)
     {
         PyErr_SetString(PyExc_TypeError, "matmul error");
         return NULL;
     }
     int total_len = a_len + b_len;
-    
+    DEBUG_PRINT("total_len: %d\n", total_len);
     npy_intp *olds_merge_shape = malloc(sizeof(npy_intp) * (total_len));
     int j = 0;
     for (; j < total_len; j++)
@@ -667,7 +715,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     }
     PyArray_Dims olds_merge_dims = {olds_merge_shape, total_len};
     PyObject *result = PyArray_Newshape((PyArrayObject *)res, &olds_merge_dims, 0);
-    
+    DEBUG_PRINT("calculated result\n");
     Tensor *to_return = (Tensor *)new_Tensor((Tensor *)args[0], (Tensor *)args[1], result, "TensordotBackward");
     Py_DECREF(a);
     Py_DECREF(b);
@@ -680,7 +728,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
     free(newshape_b);
     if (to_return->require_grad)
     {
-        
+        DEBUG_PRINT("stored metadata\n");
         Tensordot_Metadata *metadata = malloc(sizeof(Tensordot_Metadata));
         metadata->newshape_a.ptr = PyArray_SHAPE(at_arr);
         metadata->newshape_a.len = PyArray_NDIM(at_arr);
@@ -705,10 +753,10 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf, PyObject
         Py_DECREF(at);
         Py_DECREF(bt);
         Py_DECREF(res);
-        
+        DEBUG_PRINT("refcount: %d\n", ((PyObject *)to_return)->ob_refcnt);
         return to_return;
     }
-    
+    DEBUG_PRINT("calculated to_return\n");
     Py_DECREF(at_);
     Py_DECREF(bt_);
     Py_DECREF(at);

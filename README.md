@@ -9,5 +9,5 @@
 6. implement broadcast detection based on shape
 7. let cache can handle more senario at the same function
 8. ~~add debug macro for debug in C. Use python setup.py build_ext -DEBUG to enable~~
-9. Add T static method
+9. ~~Add T static method~~
 10. Proof of concept(POC) Object Pool for Tensor
