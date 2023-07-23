@@ -346,15 +346,13 @@ def test_C_Tensor_power_backward(array, grad):
 def test_C_Tensor_tensordot_backward(array, grad):
     autograd_grad_operands1 = Tensor(array, requires_grad=True)
     autograd_grad_operands2 = Tensor(array)
-    autograd_grad = grad
     torch_operands1 = torch.tensor(array, requires_grad=True)
     torch_operands2 = torch.tensor(array)
-    torch_grad = torch.tensor(grad)
     result1 = core.tensordot(autograd_grad_operands1, autograd_grad_operands2, 3)
     result2 = torch.tensordot(torch_operands1, torch_operands2, 3)
     set_track(1)
-    res = to_dict(jax.jit(result1.backward)(autograd_grad))
+    res = to_dict(jax.jit(result1.backward)(result1.data))
     set_track(0)
-    result2.backward(torch_grad)
+    result2.backward(result2)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
