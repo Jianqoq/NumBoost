@@ -5,7 +5,6 @@ from numpy import ndarray
 class Tensor:
     T: Tensor
     axis: int
-    dtype: ndarray.dtype
     data: ndarray
     depth: int
     dim: int
