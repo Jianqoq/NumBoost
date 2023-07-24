@@ -2,7 +2,7 @@
 #define NO_IMPORT_ARRAY
 #include <numpy/arrayobject.h>
 #include "tensor.h"
-extern long TRACK;
+extern bool TRACK;
 extern jnp_method *JNP_METHOD;
 extern Tensordot_Dict *TENSORDOT_DICT;
 
@@ -485,12 +485,9 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         }
         reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, grad, matmul_result_shape, NULL);
         Py_DECREF(matmul_result_shape);
-#ifdef DEBUG
-        printf("reshaped:\n");
-        PyObject_Print(reshaped, stdout, 0);
-        printf("\n");
-#endif
-        if (reshaped == NULL)
+        DEBUG_PRINT("reshaped:\n")
+        DEBUG_PyObject_Print(reshaped)
+            DEBUG_PRINTLN("") if (reshaped == NULL)
         {
             DEBUG_PRINT("reshaped is null\n");
             *out = NULL;
@@ -521,14 +518,12 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         DEBUG_PRINT("matmul done\n");
         PyObject *newshape_a = PyTuple_New(metadata->newshape_a.len);
         for (i = 0; i < metadata->newshape_a.len; i++)
-        {
             PyTuple_SetItem(newshape_a, i, PyLong_FromLongLong(metadata->newshape_a.ptr[i]));
-        }
+
         PyObject *newshape_b = PyTuple_New(metadata->newshape_b.len);
         for (i = 0; i < metadata->newshape_b.len; i++)
-        {
             PyTuple_SetItem(newshape_b, i, PyLong_FromLongLong(metadata->newshape_b.ptr[i]));
-        }
+
         at_grad_reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, at_grad, newshape_a, NULL);
         bt_grad_reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, bt_grad, newshape_b, NULL);
         Py_DECREF(at_grad);
@@ -662,10 +657,10 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         *out2 = NULL;
         return;
     }
-    Py_DECREF(tmp1);
-    Py_DECREF(tmp2);
     *out = a_transposed;
     *out2 = b_transposed;
+    Py_DECREF(tmp1);
+    Py_DECREF(tmp2);
     Py_DECREF(reshaped);
     Py_DECREF(at_grad_reshaped);
     Py_DECREF(bt_grad_reshaped);

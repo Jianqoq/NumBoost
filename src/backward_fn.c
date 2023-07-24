@@ -4,6 +4,7 @@
 #include "tensor.h"
 extern Array_Shape *ARRAY_SHAPE;
 extern jnp_method *JNP_METHOD;
+extern Zeros_Array_Dict *ZEROS_ARRAY_DICT;
 
 void power_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
 {
@@ -300,13 +301,37 @@ void transpose_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
     {
         new_axes[i] = search_num(axes, len, i);
     }
-    DEBUG_FOR_LOOP(npy_intp i = 0; i < len; i++)
-    {
-        DEBUG_PRINT("%lld\n", new_axes[i])
-    }
-    PyArray_Dims prev_axes = {new_axes, len};
+    DEBUG_FOR_LOOP(npy_intp i = 0; i < len; i++){
+        DEBUG_PRINT("%lld\n", new_axes[i])} PyArray_Dims prev_axes = {new_axes, len};
     PyObject *result = PyArray_Transpose((PyArrayObject *)grad, &prev_axes);
     free(new_axes);
     *out = result;
     *null = NULL;
+};
+
+void slice_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
+{
+    npy_intp *origin_shape = NULL;
+    PyObject *slice_obj = NULL, *zeros = NULL;
+    int nd = 0;
+    DEBUG_PRINT("slice_backward_fn start\n")
+    get_slice_objs(self, &origin_shape, &slice_obj, &nd, &zeros); //zeros is ndarray
+    DEBUG_PRINT("got slice objs\n")
+    if (zeros == NULL || slice_obj == NULL || origin_shape == NULL)
+    {
+        *out = NULL;
+        *null = NULL;
+        return;
+    }
+    PyObject *sliced = PyObject_GetItem(zeros, slice_obj);
+        DEBUG_PRINT("sliced refcnt: %d\n", sliced->ob_refcnt)
+    DEBUG_PRINT("Inplace adding grad to sliced\n")
+    PyObject *result = PyNumber_InPlaceAdd(sliced, grad);
+    DEBUG_PRINT("sliced refcnt: %d\n", sliced->ob_refcnt)
+    DEBUG_PRINT("Inplace adding grad to sliced done\n")
+    *out = zeros;
+    *null = NULL;
+    Py_INCREF(zeros);
+    Py_DECREF(sliced);
+    Py_DECREF(result);
 };

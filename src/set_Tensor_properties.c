@@ -69,19 +69,7 @@ void Tensor_SetGraph(Tensor *self, PyObject *graph)
         PyErr_Clear();
     }
 }
-void Tensor_SetDtype(Tensor *self, PyArray_Descr *dtype)
-{
-    Py_INCREF(dtype);
-    Py_DECREF(self->dtype);
-    self->dtype = dtype;
-    if (self->dtype == NULL)
-    {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_RuntimeError, "Unable to allocate memory for Tensor object");
-        PyErr_Print();
-        PyErr_Clear();
-    }
-}
+
 void Tensor_SetGradFn(Tensor *self, const char *grad_fn)
 {
     self->grad_fn = grad_fn;
@@ -176,18 +164,6 @@ void Tensor_SetGraph_without_init_value(Tensor *self, PyObject *graph)
         PyErr_Clear();
     }
 }
-void Tensor_SetDtype_without_init_value(Tensor *self, PyArray_Descr *dtype)
-{
-    Py_INCREF(dtype);
-    self->dtype = dtype;
-    if (self->dtype == NULL)
-    {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_RuntimeError, "Unable to allocate memory for Tensor object");
-        PyErr_Print();
-        PyErr_Clear();
-    }
-}
 
 void Tensor_SetAxis_without_init_value(Tensor *self, PyObject *axis)
 {
@@ -262,18 +238,7 @@ void Tensor_SetGraph_startwone(Tensor *self, PyObject *graph)
         PyErr_Clear();
     }
 }
-void Tensor_SetDtype_startwone(Tensor *self, PyArray_Descr *dtype)
-{
-    Py_DECREF(self->dtype);
-    self->dtype = dtype;
-    if (self->dtype == NULL)
-    {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_RuntimeError, "Unable to allocate memory for Tensor object");
-        PyErr_Print();
-        PyErr_Clear();
-    }
-}
+
 void Tensor_SetAxis_startwone(Tensor *self, PyObject *axis)
 {
     Py_DECREF(self->axis);
@@ -348,18 +313,7 @@ void Tensor_SetGraph_startwone_without_init(Tensor *self, PyObject *graph)
         PyErr_Clear();
     }
 }
-void Tensor_SetDtype_startwone_without_init(Tensor *self, PyArray_Descr *dtype)
-{
-    self->dtype = dtype;
-    Py_INCREF(dtype);
-    if (self->dtype == NULL)
-    {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_RuntimeError, "Unable to allocate memory for Tensor object");
-        PyErr_Print();
-        PyErr_Clear();
-    }
-}
+
 void Tensor_SetAxis_startwone_without_init(Tensor *self, PyObject *axis)
 {
     self->axis = axis;

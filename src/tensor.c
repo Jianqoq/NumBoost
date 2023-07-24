@@ -12,7 +12,7 @@
 
 static Dict *dict = NULL;
 XLA_OPS *xla_ops = NULL;
-long TRACK = 0;
+bool TRACK = 0;
 np_method *NP_METHOD = NULL;
 Array_Shape *ARRAY_SHAPE = NULL;
 Power_Dict *POWER_DICT = NULL;
@@ -21,8 +21,9 @@ jnp_method *JNP_METHOD = NULL;
 Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT = NULL;
 Tensordot_Dict *TENSORDOT_DICT = NULL;
 Slice_Dict *SLICE_DICT = NULL;
+Zeros_Array_Dict *ZEROS_ARRAY_DICT = NULL;
 
-void store_slice_obj(Tensor *key, PyObject *slice_obj)
+void store_for_slicebackward(Tensor *key, PyObject *slice_obj, npy_intp *ptr, int nd, Tensor *parent)
 {
     Slice_Dict *entry = NULL;
     HASH_FIND_PTR(SLICE_DICT, &key, entry);
@@ -31,30 +32,77 @@ void store_slice_obj(Tensor *key, PyObject *slice_obj)
         Slice_Dict *entry = (Slice_Dict *)malloc(sizeof(Slice_Dict));
         entry->key = key;
         entry->slice_obj = slice_obj;
+        entry->origin_shape = ptr;
+        entry->origin_shape_nd = nd;
+        entry->parent = parent;
         HASH_ADD_PTR(SLICE_DICT, key, entry);
     }
-}
-
-PyObject *get_slice_obj(Tensor *key)
-{
-    Slice_Dict *entry = NULL;
-    HASH_FIND_PTR(SLICE_DICT, &key, entry);
-    if (entry != NULL)
+    Zeros_Array_Dict *entry2 = NULL;
+    HASH_FIND_PTR(ZEROS_ARRAY_DICT, &parent, entry2);
+    if (entry2 == NULL)
     {
-        return entry->slice_obj;
+        Zeros_Array_Dict *entry2 = (Zeros_Array_Dict *)malloc(sizeof(Zeros_Array_Dict));
+        PyObject *zeros = PyArray_Zeros(nd, (npy_intp const *)ptr, NULL, 0);
+        entry2->parent = parent;
+        entry2->zeros_array = zeros;
+        HASH_ADD_PTR(ZEROS_ARRAY_DICT, parent, entry2);
     }
-    return NULL;
 }
 
-void free_slice_obj(Tensor *key)
+void get_slice_objs(Tensor *key, npy_intp **origin_shape, PyObject **slice_obj, int *nd, PyObject **zeros_array)
+{
+    Slice_Dict *entry = NULL;
+    Tensor *parent = NULL;
+    DEBUG_PRINT("get_slice_objs\n");
+    HASH_FIND_PTR(SLICE_DICT, &key, entry);
+    if (entry != NULL)
+    {
+        *origin_shape = entry->origin_shape;
+        *slice_obj = entry->slice_obj;
+        *nd = entry->origin_shape_nd;
+        parent = entry->parent;
+    }
+    else
+    {
+        *origin_shape = NULL;
+        *slice_obj = NULL;
+    }
+    DEBUG_PRINT("get_slice_objs done\n");
+    DEBUG_PRINT("get ZEROS_ARRAY_DICT\n")
+    DEBUG_PyObject_Print(parent)
+        Zeros_Array_Dict *entry2 = NULL;
+    if (parent != NULL)
+        HASH_FIND_PTR(ZEROS_ARRAY_DICT, &parent, entry2);
+    DEBUG_PRINT("Found ZEROS_ARRAY_DICT\n")
+    if (entry2 != NULL)
+        *zeros_array = entry2->zeros_array;
+    else
+        *zeros_array = NULL;
+    DEBUG_PRINT("get ZEROS_ARRAY_DICT done\n")
+}
+
+void free_slice_objs(Tensor *key)
 {
     Slice_Dict *entry = NULL;
     HASH_FIND_PTR(SLICE_DICT, &key, entry);
     if (entry != NULL)
     {
+        DEBUG_PRINT("free_slice_objs\n");
         HASH_DEL(SLICE_DICT, entry);
         Py_DECREF(entry->slice_obj);
         free(entry);
+        DEBUG_PRINT("free_slice_objs done\n");
+    }
+    Zeros_Array_Dict *entry2 = NULL;
+    HASH_FIND_PTR(ZEROS_ARRAY_DICT, &key, entry2);
+    if (entry2 != NULL)
+    {
+        DEBUG_PRINT("free zero arrays\n");
+        HASH_DEL(ZEROS_ARRAY_DICT, entry2);
+        DEBUG_PyObject_Print(entry2->zeros_array);
+        Py_DECREF(entry2->zeros_array);
+        free(entry2);
+        DEBUG_PRINT("free zero arrays done\n");
     }
 }
 
@@ -163,6 +211,7 @@ inline void free_array_shape(Tensor *key)
         free(s->shape);
         free(s);
     }
+    DEBUG_PRINT("Freeing Array shape done\n");
 }
 
 inline void free_power(Tensor *key)
@@ -196,7 +245,6 @@ void INCREF_TENSOR(Tensor *self)
     Py_INCREF(self->y);
     Py_INCREF(self->graph);
     Py_INCREF(self->axis);
-    Py_INCREF(self->dtype);
 }
 
 void add_entry(const char *key, void (*method)(Tensor *, PyObject *, PyObject **, PyObject **))
@@ -271,7 +319,10 @@ void free_dict(void)
 
 PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf)
 {
-    TRACK = PyLong_AsLong(args[0]);
+    if (PyDataType_ISNUMBER(args[0]))
+        TRACK = PyLong_AsLong(args[0]) != 0 ? true : false;
+    else
+        TRACK = Py_IsTrue(args[0]);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -308,31 +359,34 @@ Tensor *get_item(Tensor *self, PyObject *item)
     PyObject *subarray = PyObject_GetItem(self->data, item);
     if (subarray == NULL)
         return NULL;
+    if (TRACK)
+        return subarray;
     Tensor *to_return = (Tensor *)new_Tensor_x(self, subarray, "SliceBackward");
     if (self->require_grad)
     {
         DEBUG_PRINT("refcount of item: %d\n", (int)Py_REFCNT(item));
-        store_slice_obj(to_return, item);
+        store_for_slicebackward(to_return, item, PyArray_SHAPE(self->data), PyArray_NDIM(self->data),
+                                self);
         Py_INCREF(item);
     }
     return to_return;
 }
 
-Tensor *set_item(Tensor *self, PyObject *item)
-{
-    DEBUG_PRINT("Getting item in get_item\n");
-    PyObject *subarray = PyObject_GetItem(self->data, item);
-    if (subarray == NULL)
-        return NULL;
-    Tensor *to_return = (Tensor *)new_Tensor_x(self, subarray, "SliceBackward");
-    if (self->require_grad)
-    {
-        DEBUG_PRINT("refcount of item: %d\n", (int)Py_REFCNT(item));
-        store_slice_obj(to_return, item);
-        Py_INCREF(item);
-    }
-    return to_return;
-}
+// Tensor *set_item(Tensor *self, PyObject *item)
+// {
+//     DEBUG_PRINT("Getting item in get_item\n");
+//     PyObject *subarray = PyObject_GetItem(self->data, item);
+//     if (subarray == NULL)
+//         return NULL;
+//     Tensor *to_return = (Tensor *)new_Tensor_x(self, subarray, "SliceBackward");
+//     if (self->require_grad)
+//     {
+//         DEBUG_PRINT("refcount of item: %d\n", (int)Py_REFCNT(item));
+//         store_slice_objs(to_return, item);
+//         Py_INCREF(item);
+//     }
+//     return to_return;
+// }
 
 static PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -358,13 +412,9 @@ static PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     Tensor *self = (Tensor *)PyObject_GC_New(Tensor, type);
     if (require_grad == NULL)
-    {
         self->require_grad = false;
-    }
     else
-    {
         self->require_grad = require_grad;
-    }
     if (self != NULL)
     {
         PyObject *zero = PyLong_FromLong(0);
@@ -377,7 +427,6 @@ static PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Tensor_SetGrad_without_init_value(self, zero);
         Tensor_SetGraph_without_init_value(self, Py_None);
         Tensor_SetAxis_without_init_value(self, Py_None);
-        Tensor_SetDtype_without_init_value(self, PyArray_DESCR((PyArrayObject *)cache));
         Tensor_SetDim(self, 1);
         Py_DECREF(zero);
     }
@@ -429,6 +478,8 @@ PyObject *__str__(Tensor *self)
     {
         const char *string_array[] = {(const char *)prefix,
                                       (const char *)result,
+                                      ", dtype=",
+                                      PyArray_DESCR((PyArrayObject *)self->data)->typeobj->tp_name,
                                       ", requires_grad=",
                                       (const char *)require_grad, end};
         uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
@@ -448,6 +499,8 @@ PyObject *__str__(Tensor *self)
     {
         const char *string_array[] = {(const char *)prefix,
                                       (const char *)result,
+                                      ", dtype=",
+                                      PyArray_DESCR((PyArrayObject *)self->data)->typeobj->tp_name,
                                       ", requires_grad=",
                                       (const char *)require_grad,
                                       ", backward=",
@@ -487,13 +540,12 @@ static void Tensor_dealloc(Tensor *self)
     Py_CLEAR(self->y);
     Py_CLEAR(self->axis);
     Py_CLEAR(self->graph);
-    Py_CLEAR(self->dtype);
     Py_CLEAR(self->grad);
     free_tensordot_data_self(self);
     free_array_shape(self);
     free_power(self);
     free_tensor_need_grad(self);
-    free_slice_obj(self);
+    free_slice_objs(self);
     PyObject_GC_Del(self);
 }
 
@@ -505,13 +557,8 @@ static int Tensor_clear(Tensor *self)
     Py_CLEAR(self->y);
     Py_CLEAR(self->axis);
     Py_CLEAR(self->graph);
-    Py_CLEAR(self->dtype);
     Py_CLEAR(self->grad);
     PyObject_GC_Track(self);
-    if (PyErr_Occurred())
-    {
-        return -1;
-    }
     return 0;
 }
 
@@ -522,12 +569,7 @@ static int Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     Py_VISIT(self->y);
     Py_VISIT(self->axis);
     Py_VISIT(self->graph);
-    Py_VISIT(self->dtype);
     Py_VISIT(self->grad);
-    if (PyErr_Occurred())
-    {
-        return -1;
-    }
     return 0;
 }
 
@@ -542,7 +584,6 @@ PyMemberDef properties[] = {
     {"graph", T_OBJECT, offsetof(Tensor, graph), 0, "graph"},
     {"axis", T_OBJECT, offsetof(Tensor, axis), 0, "axis"},
     {"dim", T_INT, offsetof(Tensor, dim), 0, "dim"},
-    {"dtype", T_OBJECT_EX, offsetof(Tensor, dtype), 0, "base"},
     {"grad", T_OBJECT, offsetof(Tensor, grad), 0, "grad"},
     {NULL}};
 
@@ -913,6 +954,7 @@ void init_map()
     add_entry("Log10Backward", log10_backward_fn);
     add_entry("TensordotBackward", tensordot_backward_fn);
     add_entry("TransposeBackward", transpose_backward_fn);
+    add_entry("SliceBackward", slice_backward_fn);
 }
 
 PyMODINIT_FUNC PyInit_Numboost(void)

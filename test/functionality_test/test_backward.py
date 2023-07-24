@@ -366,3 +366,15 @@ def test_C_Tensor_transpose_backward(array):
     assert np.allclose(autograd_grad_operands1.grad, torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {autograd_grad_operands1.grad}"
 
+
+@pytest.mark.parametrize("array", [(np.array([[1.], [2.], [3.]]))])
+def test_C_Tensor_slice_backward(array):
+    autograd_grad_operands1 = Tensor(array, True)
+    torch_operands1 = torch.tensor(array, requires_grad=True)
+    result1 = autograd_grad_operands1[1:, ...]
+    result2 = torch_operands1[1:, ...]
+    result1.backward(result1.data)
+    result2.backward(result2)
+    assert np.allclose(autograd_grad_operands1.grad, torch_operands1.grad.numpy(), equal_nan=True), \
+        f"correct: {torch_operands1.grad.numpy()} | got: {autograd_grad_operands1.grad}"
+
