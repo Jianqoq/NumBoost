@@ -7,7 +7,7 @@
 #include <Python.h>
 extern XLA_OPS *xla_ops;
 extern jnp_method *JNP_METHOD;
-extern long TRACK;
+extern bool TRACK;
 
 PyObject *
 __new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y, const char *grad_fn)
@@ -43,7 +43,6 @@ __new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y, const char *grad_f
         Tensor_SetGraph_without_init_value(self, tensor->graph);
         Tensor_SetDim(self, tensor->dim);
         Tensor_SetAxis_without_init_value(self, tensor->axis);
-        Tensor_SetDtype_without_init_value(self, tensor->dtype);
         self->grad = PyLong_FromLong(0);
         return (PyObject *)self;
     }
@@ -82,7 +81,6 @@ new_Tensor(Tensor *tensor, Tensor *tensor2, PyObject *data, const char *grad_fn)
         Tensor_SetGraph_without_init_value(self, tensor->graph);
         Tensor_SetDim(self, tensor->dim);
         Tensor_SetAxis_without_init_value(self, tensor->axis);
-        Tensor_SetDtype_without_init_value(self, tensor->dtype);
         Tensor_SetGrad_without_init_value(self, zero);
         Py_DECREF(zero);
         return (PyObject *)self;
@@ -123,7 +121,6 @@ new_Tensor_scalar(Tensor *self, PyObject *data, PyObject *y, const char *grad_fn
         Tensor_SetGraph_without_init_value(tensor, self->graph);
         Tensor_SetDim(tensor, self->dim);
         Tensor_SetAxis_without_init_value(tensor, self->axis);
-        Tensor_SetDtype_without_init_value(tensor, self->dtype);
         Tensor_SetGrad_without_init_value(tensor, zero);
         Py_DECREF(zero);
         return (PyObject *)tensor;
@@ -142,7 +139,7 @@ new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn)
     tensor = (Tensor *)Tensor_Type->tp_alloc(Tensor_Type, 0);
     if (tensor != NULL)
     {
-        Tensor_SetData_startwone_without_init(tensor, data);
+        tensor->data = data;
         if (self->require_grad)
         {
             Tensor_SetX_without_init_value(tensor, (PyObject *)self);
@@ -156,7 +153,7 @@ new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn)
             Tensor_SetX_without_init_value(tensor, Py_None);
             Tensor_SetY_without_init_value(tensor, Py_None);
             Tensor_SetRequireGrad(tensor, false);
-            Tensor_SetGradFn(tensor, grad_fn);
+            Tensor_SetGradFn(tensor, "");
             Tensor_SetVars(tensor, 0);
         }
         PyObject *zero = PyLong_FromLong(0);
@@ -164,7 +161,6 @@ new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn)
         Tensor_SetGraph_without_init_value(tensor, self->graph);
         Tensor_SetDim(tensor, self->dim);
         Tensor_SetAxis_without_init_value(tensor, self->axis);
-        Tensor_SetDtype_without_init_value(tensor, self->dtype);
         Tensor_SetGrad_without_init_value(tensor, zero);
         Py_DECREF(zero);
         return (PyObject *)tensor;
@@ -193,7 +189,6 @@ Tensor__new__(PyTypeObject *type, PyObject *data)
         Tensor_SetGraph_without_init_value(tensor, Py_None);
         Tensor_SetDim(tensor, 0);
         Tensor_SetAxis_without_init_value(tensor, Py_None);
-        Tensor_SetDtype_without_init_value(tensor, (PyArray_Descr *)Py_None);
         Tensor_SetGrad_without_init_value(tensor, zero);
         Py_DECREF(zero);
         return (PyObject *)tensor;
@@ -729,7 +724,6 @@ tensor_absolute(PyObject *self)
         return NULL;
     }
     PyObject *new_tensor = new_Tensor_x(_self, numpy_result, "");
-    Py_DECREF(numpy_result);
     return new_tensor;
 }
 
@@ -753,7 +747,6 @@ tensor_invert(PyObject *self)
         return NULL;
     }
     PyObject *new_tensor = new_Tensor_x(_self, numpy_result, "");
-    Py_DECREF(numpy_result);
     return new_tensor;
 }
 

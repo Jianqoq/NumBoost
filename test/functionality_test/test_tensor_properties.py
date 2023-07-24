@@ -14,3 +14,13 @@ def test_C_Tensor_T(array, array2):
     a = Tensor(array)
     result1 = a.T
     assert np.allclose(array.T, result1.data), f"correct: {array.T} | got: {result1.data}"
+
+
+@pytest.mark.parametrize("array, array2", [(np.random.randn(2, 5, 3), np.random.randn(2, 5, 3))])
+def test_C_Tensor_slice(array, array2):
+    a = Tensor(array)[1:, ...]
+    b = array[1:, ...]
+    assert np.allclose(b, a.data), f"correct: {b} | got: {a.data}"
+
+
+

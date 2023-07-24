@@ -2,22 +2,9 @@
 #define NO_IMPORT_ARRAY
 #include <numpy/arrayobject.h>
 #include "tensor.h"
-extern long TRACK;
+extern bool TRACK;
 extern jnp_method *JNP_METHOD;
 extern Tensordot_Dict *TENSORDOT_DICT;
-
-inline npy_intp search_num(npy_intp *arr, npy_intp n, npy_intp x)
-{
-    npy_intp i;
-    for (i = 0; i < n; i++)
-    {
-        if (arr[i] == x)
-        {
-            return i;
-        }
-    }
-    return 0; // should not happen
-}
 
 static bool shape_is_equal(npy_intp *dims1, npy_intp *dims2, int *nd)
 {
@@ -344,6 +331,7 @@ void mul_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
 
 void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2)
 {
+    DEBUG_PRINT("div backward start\n")
     Tensor *tmp1 = (Tensor *)self->x;
     Tensor *tmp2 = (Tensor *)self->y;
     if (TRACK)
@@ -354,19 +342,11 @@ void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
         PyObject *midle = PyNumber_Power(tmp2->data, two, Py_None);
         PyObject *midle2 = PyNumber_Negative(tmp1->data);
         PyObject *tmp = PyNumber_TrueDivide(midle2, midle);
-#ifdef DEBUG
-        PyObject_Print(tmp, stdout, 0);
-        printf("\n");
-#endif
         *out2 = PyNumber_Multiply(grad, tmp);
         Py_DECREF(tmp);
         Py_DECREF(midle);
         Py_DECREF(midle2);
         Py_DECREF(two);
-#ifdef DEBUG
-        PyObject_Print(*out2, stdout, 0);
-        printf("\n");
-#endif
         return;
     }
     if (!vaild_shape((PyArrayObject *)grad, (PyArrayObject *)self->data, "grad shape not equal to previous output shape"))
@@ -375,16 +355,22 @@ void div_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **o
         *out2 = NULL;
         return;
     }
+    DEBUG_PRINT("div backward valid shape done\n")
     PyObject *two = PyLong_FromLong(2);
     PyObject *midle = PyNumber_Power(tmp2->data, two, Py_None);
     PyObject *midle2 = PyNumber_Negative(tmp1->data);
     PyObject *tmp = PyNumber_TrueDivide(midle2, midle);
+    DEBUG_PRINT("div backward calculated data\n")
+    DEBUG_PRINT("div backward decref done\n")
+    PyObject *grad1 = PyNumber_TrueDivide(grad, tmp2->data);
+    PyObject *grad2 = PyNumber_Multiply(grad, tmp);
+    check_shape((PyArrayObject *)grad1, tmp1->data, out1, "grad1 shape not equal to previous data shape in divbackward");
+    check_shape((PyArrayObject *)grad2, tmp2->data, out2, "grad2 shape not equal to previous data shape in divbackward");
+    DEBUG_PRINT("div backward check shape done\n")
     Py_DECREF(tmp);
     Py_DECREF(midle);
     Py_DECREF(midle2);
     Py_DECREF(two);
-    check_shape((PyArrayObject *)PyNumber_TrueDivide(grad, tmp2->data), tmp1->data, out1, "grad1 shape not equal to previous data shape in divbackward");
-    check_shape((PyArrayObject *)PyNumber_Multiply(grad, tmp), tmp2->data, out2, "grad2 shape not equal to previous data shape in divbackward");
     if (*out1 == NULL || *out2 == NULL)
     {
         *out1 = NULL;
@@ -499,12 +485,9 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         }
         reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, grad, matmul_result_shape, NULL);
         Py_DECREF(matmul_result_shape);
-#ifdef DEBUG
-        printf("reshaped:\n");
-        PyObject_Print(reshaped, stdout, 0);
-        printf("\n");
-#endif
-        if (reshaped == NULL)
+        DEBUG_PRINT("reshaped:\n")
+        DEBUG_PyObject_Print(reshaped)
+            DEBUG_PRINTLN("") if (reshaped == NULL)
         {
             DEBUG_PRINT("reshaped is null\n");
             *out = NULL;
@@ -535,14 +518,12 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         DEBUG_PRINT("matmul done\n");
         PyObject *newshape_a = PyTuple_New(metadata->newshape_a.len);
         for (i = 0; i < metadata->newshape_a.len; i++)
-        {
             PyTuple_SetItem(newshape_a, i, PyLong_FromLongLong(metadata->newshape_a.ptr[i]));
-        }
+
         PyObject *newshape_b = PyTuple_New(metadata->newshape_b.len);
         for (i = 0; i < metadata->newshape_b.len; i++)
-        {
             PyTuple_SetItem(newshape_b, i, PyLong_FromLongLong(metadata->newshape_b.ptr[i]));
-        }
+
         at_grad_reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, at_grad, newshape_a, NULL);
         bt_grad_reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, bt_grad, newshape_b, NULL);
         Py_DECREF(at_grad);
@@ -676,10 +657,10 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         *out2 = NULL;
         return;
     }
-    Py_DECREF(tmp1);
-    Py_DECREF(tmp2);
     *out = a_transposed;
     *out2 = b_transposed;
+    Py_DECREF(tmp1);
+    Py_DECREF(tmp2);
     Py_DECREF(reshaped);
     Py_DECREF(at_grad_reshaped);
     Py_DECREF(bt_grad_reshaped);
