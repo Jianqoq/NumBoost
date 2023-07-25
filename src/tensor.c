@@ -531,6 +531,29 @@ PyObject *__repr__(Tensor *self)
     return __str__(self);
 }
 
+PyObject *__len__(Tensor *self)
+{
+    return PyLong_FromLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
+}
+
+PyObject *__iter__(Tensor *self)
+{
+    PyArray_IterNew(self->data);
+    PyArray_ITER_DATA(self->data)
+    PyObject *iter = PyObject_GetIter(self->data);
+    return iter;
+}
+
+PyObject *__max__(Tensor *self)
+{
+    return PyLong_FromLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
+}
+
+PyObject *__min__(Tensor *self)
+{
+    return PyLong_FromLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
+}
+
 static void Tensor_dealloc(Tensor *self)
 {
     DEBUG_PRINT("Tensor_dealloc\n");

@@ -785,6 +785,8 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObje
     for (uint8_t i = 1; i < nargs; i++)
     {
         long item = PyLong_AsLong(args[i]);
+        if (item < 0) //axis input cannot be negative
+            return NULL;
         DEBUG_PRINT("%d ", item);
         dims[i - 1] = item;
     }
