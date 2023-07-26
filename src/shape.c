@@ -230,3 +230,11 @@ int newshape_except_num(npy_intp except, npy_intp *shape, int ndim, npy_intp **n
     return new_ndim;
 }
 
+npy_intp shape_prod(npy_intp *shape, int ndim)
+{
+    npy_intp prod = 1;
+    for (int i = 0; i < ndim; i++)
+        prod *= shape[i];
+    return prod;
+}
+
