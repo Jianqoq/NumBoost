@@ -1,7 +1,7 @@
 import numpy as np
-
-a = np.random.randn(4, 4)
-b = np.random.randn(4, 1)
+# need to make it to the same shape first
+a = np.random.randn(5, 1, 6)
+b = np.random.randn(1, 5, 6)
 
 data_ptr = a.ctypes.data
 strides = a.strides
