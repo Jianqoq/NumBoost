@@ -538,10 +538,7 @@ PyObject *__len__(Tensor *self)
 
 PyObject *__iter__(Tensor *self)
 {
-    PyArray_IterNew(self->data);
-    PyArray_ITER_DATA(self->data)
-    PyObject *iter = PyObject_GetIter(self->data);
-    return iter;
+
 }
 
 PyObject *__max__(Tensor *self)
