@@ -25,7 +25,7 @@ if platform.system() == 'Windows':
     args = ['/Ox', '/openmp']
     extra_link_args = []
 else:
-    args = ['-O3', '-fopenmp', '-I/mkl-C/mkl/latest/include']
+    args = ['-O3', '-fopenmp', '-I/mkl-C/mkl/latest/include', '-mavx', '-mavx2']
     extra_link_args = ['-lmkl_rt']
     if os.path.exists('Numboost.cpython-38-x86_64-linux-gnu.so'):
         os.remove('Numboost.cpython-38-x86_64-linux-gnu.so')
@@ -36,7 +36,7 @@ else:
 mymodule = Extension('Numboost',
                      sources=['utils.c', 'tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
                               'set_Tensor_properties.c', 'methods.c', 'binaray_backward_fn.c', 'pcg_basic.c',
-                              'import_methods.c'],
+                              'import_methods.c', 'broadcast.c', 'shape.c'],
                      include_dirs=[
                          numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',
                          'mkl-C/mkl/latest/include'],

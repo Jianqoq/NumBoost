@@ -180,7 +180,7 @@ void free_tensordot_data()
     }
 }
 
-inline void free_tensordot_data_self(Tensor *self)
+static inline void free_tensordot_data_self(Tensor *self)
 {
     Tensordot_Dict *entry = NULL;
     DEBUG_PRINT("Going to free Tensordot data\n");
@@ -270,7 +270,6 @@ PyObject *collect_gradients_and_cleanup(PyObject *list)
 {
     Tensor_need_grad_Dict *gradient_entry, *gradient_tmp;
     PyObject *to_return = NULL;
-    Power_Dict *power_entry = NULL, *power_tmp = NULL;
 
     DEBUG_PRINT("Collecting gradients and cleaning up, dict length %d.\n", HASH_COUNT(TENSOR_NEED_GRAD_DICT));
     if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) == 1)
@@ -340,7 +339,7 @@ Tensor *T(Tensor *self)
         printf("%ld ", new_axes[i]);
     printf("\n");
 #endif
-    PyArray_Dims new_dims = {new_axes, ndim};
+    PyArray_Dims new_dims = {new_axes, (int)ndim};
     PyObject *transposed = PyArray_Transpose((PyArrayObject *)self->data, &new_dims);
     if (transposed == NULL)
         return NULL;
@@ -353,7 +352,7 @@ Tensor *T(Tensor *self)
     return to_return;
 }
 
-Tensor *get_item(Tensor *self, PyObject *item)
+PyObject *get_item(Tensor *self, PyObject *item)
 {
     DEBUG_PRINT("Getting item in get_item\n");
     PyObject *subarray = PyObject_GetItem(self->data, item);
@@ -365,11 +364,12 @@ Tensor *get_item(Tensor *self, PyObject *item)
     if (self->require_grad)
     {
         DEBUG_PRINT("refcount of item: %d\n", (int)Py_REFCNT(item));
-        store_for_slicebackward(to_return, item, PyArray_SHAPE(self->data), PyArray_NDIM(self->data),
+        PyArrayObject *arr = (PyArrayObject*)self->data;
+        store_for_slicebackward(to_return, item, PyArray_SHAPE(arr), PyArray_NDIM(arr),
                                 self);
         Py_INCREF(item);
     }
-    return to_return;
+    return (PyObject *)to_return;
 }
 
 // Tensor *set_item(Tensor *self, PyObject *item)
@@ -533,22 +533,23 @@ PyObject *__repr__(Tensor *self)
 
 PyObject *__len__(Tensor *self)
 {
-    return PyLong_FromLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
+    return PyLong_FromLongLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
 }
 
 PyObject *__iter__(Tensor *self)
 {
-
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyObject *__max__(Tensor *self)
 {
-    return PyLong_FromLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
+    return PyLong_FromLongLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
 }
 
 PyObject *__min__(Tensor *self)
 {
-    return PyLong_FromLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
+    return PyLong_FromLongLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
 }
 
 static void Tensor_dealloc(Tensor *self)
@@ -719,7 +720,6 @@ PyObject *_Generic_backward(PyObject *self, PyObject *args)
                 {
                     // Check whether the tensor needs gradient
                     Tensor_need_grad_Dict *entry = NULL;
-                    Tensor_need_grad_Dict *s, *tmp;
                     HASH_FIND_PTR(TENSOR_NEED_GRAD_DICT, &tensor, entry);
                     if (entry != NULL)
                     {

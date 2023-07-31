@@ -148,7 +148,7 @@ typedef struct
 {
     Tensor *key;
     npy_intp *shape;
-    int len;
+    npy_intp len;
     UT_hash_handle hh;
 } Array_Shape;
 
@@ -211,11 +211,11 @@ typedef struct
     UT_hash_handle hh;
 } Zeros_Array_Dict;
 
-void store_array_shape(Tensor *key, npy_intp *shape, int len);
+void store_array_shape(Tensor *key, npy_intp *shape, npy_intp len);
 npy_intp *get_array_shape(Tensor *key);
 void free_array_shape(Tensor *key);
 
-int *get_shape_len(Tensor *key);
+npy_intp get_shape_len(Tensor *key);
 
 void store_power(Tensor *key, PyObject *power);
 PyObject *get_power(Tensor *key);

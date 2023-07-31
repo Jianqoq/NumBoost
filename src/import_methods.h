@@ -19,8 +19,16 @@ for (npy_intp j = 0; j < len; j++) \
 #define DEBUG_PyObject_Print(obj) \
 PyObject_Print(obj, stdout, 0); \
 printf("\n"); 
+
+#define DEBUG_FOR_LOOP_PRINT(arr, len) \
+for (npy_intp j = 0; j < len; j++) \
+{ \
+    printf("%ld ", arr[j]); \
+} \
+printf("\n");\
+
 #define DEBUG_FOR_LOOP(...) \
-    for (__VA_ARGS__)
+    for (__VA_ARGS__) \
 
 #else
 #define DEBUG_PRINT(...)
@@ -28,6 +36,7 @@ printf("\n");
 #define DEBUG_FOR_LOOP(...)
 #define DEBUG_PRINTLN(...)
 #define DEBUG_PRINT_SHAPE(shape, len)
+#define DEBUG_FOR_LOOP_PRINT(arr, len)
 #endif
 
 #ifndef XLA_OPS_H

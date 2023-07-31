@@ -70,7 +70,7 @@ PyObject *get_power(Tensor *key)
     return s->prev_power;
 }
 
-void store_array_shape(Tensor *key, npy_intp *shape, int len)
+void store_array_shape(Tensor *key, npy_intp *shape, npy_intp len)
 {
     Array_Shape *s = NULL;
     if (ARRAY_SHAPE != NULL)
@@ -97,16 +97,16 @@ npy_intp *get_array_shape(Tensor *key)
     return s->shape;
 }
 
-int *get_shape_len(Tensor *key)
+npy_intp get_shape_len(Tensor *key)
 {
     Array_Shape *s;
     HASH_FIND_PTR(ARRAY_SHAPE, &key, s);
     if (s == NULL)
     {
         PyErr_SetString(PyExc_KeyError, "Array shape not found in dict");
-        return NULL;
+        return - 1;
     }
-    return &s->len;
+    return s->len;
 }
 
 void store_tensordot_data(Tensor *key, Tensordot_Metadata *metadata)
@@ -390,7 +390,7 @@ Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *
     return to_return;
 }
 
-inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *shape,
+inline void tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *shape,
                        npy_intp *newshape, npy_intp **newaxes, npy_intp **oldshape, long *axes_len, bool a)
 {
     long real_len = 0;
@@ -474,7 +474,7 @@ inline tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *
     *oldshape = oldshape_a;
 }
 
-inline void *handle_axes(long **axes_, PyObject *axes_tuple, long *ndim)
+static inline void *handle_axes(long **axes_, PyObject *axes_tuple, long *ndim)
 {
     if (*axes_ == NULL && axes_tuple != NULL && PySequence_Check(axes_tuple))
     {
@@ -779,7 +779,7 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObje
     Tensor *tensor = (Tensor *)args[0];
     DEBUG_PyObject_Print(tensor);
     PyArrayObject *array = (PyArrayObject *)tensor->data;
-    int length = nargs - 1;
+    npy_intp length = nargs - 1;
     npy_intp *dims = malloc(sizeof(npy_intp) * length);
     DEBUG_PRINT("dims: ");
     for (uint8_t i = 1; i < nargs; i++)
@@ -799,7 +799,7 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObje
     }
     PyObject *to_return = new_Tensor_x(tensor, result, "TransposeBackward");
     if (tensor->require_grad)
-        store_array_shape(to_return, dims, length);
+        store_array_shape((Tensor*)to_return, dims, length);
     else
         free(dims);
     return to_return;

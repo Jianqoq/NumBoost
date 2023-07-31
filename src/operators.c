@@ -5,6 +5,7 @@
 #include <numpy/arrayobject.h>
 #include "set_Tensor_properties.h"
 #include <Python.h>
+#include "broadcast.h"
 extern XLA_OPS *xla_ops;
 extern jnp_method *JNP_METHOD;
 extern bool TRACK;
@@ -209,10 +210,20 @@ tensor_add(PyObject *self, PyObject *other)
         return jaxarray;
     }
     Tensor *_self = (Tensor *)self;
+    PyObject *numpy_result = NULL;
+    PyArrayObject *a = (PyArrayObject *)_self->data;
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
-        PyObject *numpy_result = PyNumber_Add(_self->data, tmp->data);
+        PyArrayObject *b = (PyArrayObject *)tmp->data;
+        bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
+        if (!equal)
+        {
+            int type = ((PyArrayObject_fields *)a)->descr->type_num;
+            BroadCast(a, b, numpy_result, +, ADD, type);
+        }
+        else
+            numpy_result = PyNumber_Add(_self->data, tmp->data);
         if (numpy_result == NULL)
         {
             return NULL;
@@ -280,17 +291,27 @@ tensor_iadd(PyObject *self, PyObject *other)
 PyObject *
 tensor_mul(PyObject *self, PyObject *other)
 {
-    Tensor *tmp;
     if (TRACK)
     {
         PyObject *jaxarray = PyNumber_Multiply(self, other);
         return jaxarray;
     }
     Tensor *_self = (Tensor *)self;
+    PyArrayObject *a = (PyArrayObject *)_self->data;
+    PyObject *numpy_result = NULL;
+    Tensor *tmp;
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
-        PyObject *numpy_result = PyNumber_Multiply(_self->data, tmp->data);
+        PyArrayObject *b = (PyArrayObject *)tmp->data;
+        bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
+        if (!equal)
+        {
+            int type = ((PyArrayObject_fields *)a)->descr->type_num;
+            BroadCast(a, b, numpy_result, *, MUL, type);
+        }
+        else
+            numpy_result = PyNumber_Multiply(_self->data, tmp->data);
         if (numpy_result == NULL)
         {
             return NULL;
@@ -359,6 +380,7 @@ PyObject *
 tensor_div(PyObject *self, PyObject *other)
 {
     Tensor *tmp;
+    PyObject *numpy_result = NULL;
     if (TRACK)
     {
         PyObject *jaxarray = PyNumber_TrueDivide(self, other);
@@ -368,7 +390,16 @@ tensor_div(PyObject *self, PyObject *other)
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
-        PyObject *numpy_result = PyNumber_TrueDivide(_self->data, tmp->data);
+        PyArrayObject *b = (PyArrayObject *)tmp->data;
+        PyArrayObject *a = (PyArrayObject *)_self->data;
+        bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
+        if (!equal)
+        {
+            int type = ((PyArrayObject_fields *)a)->descr->type_num;
+            BroadCast(a, b, numpy_result, /, DIV, type);
+        }
+        else
+            numpy_result = PyNumber_TrueDivide(_self->data, tmp->data);
         if (numpy_result == NULL)
         {
             return NULL;
@@ -504,10 +535,20 @@ tensor_sub(PyObject *self, PyObject *other)
         return jaxarray;
     }
     Tensor *_self = (Tensor *)self;
+    PyObject *numpy_result = NULL;
+    PyArrayObject *a = (PyArrayObject *)_self->data;
     if (Py_TYPE(other) == &Tensor_type)
     {
         tmp = (Tensor *)other;
-        PyObject *numpy_result = PyNumber_Subtract(_self->data, tmp->data);
+        PyArrayObject *b = (PyArrayObject *)tmp->data;
+        bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
+        if (!equal)
+        {
+            int type = ((PyArrayObject_fields *)a)->descr->type_num;
+            BroadCast(a, b, numpy_result, -, SUB, type);
+        }
+        else
+            numpy_result = PyNumber_Subtract(_self->data, tmp->data);
         if (numpy_result == NULL)
         {
             return NULL;

@@ -266,8 +266,14 @@ void abs_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **nu
 void reshape_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
 {
     npy_intp *shape = get_array_shape(self);
-    int len = *get_shape_len(self);
-    PyArray_Dims prev_shape = {shape, len};
+    npy_intp len = get_shape_len(self);
+    if (len == -1)
+    {
+        *out = NULL;
+        *null = NULL;
+        return;
+    }
+    PyArray_Dims prev_shape = {shape, (int)len};
     if (TRACK)
     {
         PyObject *tuple = PyTuple_New(len);
@@ -289,7 +295,13 @@ void transpose_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
 {
     DEBUG_PRINT("transpose_backward_fn start\n")
     npy_intp *axes = get_array_shape(self);
-    int len = *get_shape_len(self);
+    npy_intp len = get_shape_len(self);
+    if (len == -1)
+    {
+        *out = NULL;
+        *null = NULL;
+        return;
+    }
     DEBUG_PRINT("got axes")
     DEBUG_FOR_LOOP(npy_intp i = 0; i < len; i++)
     {
@@ -302,7 +314,7 @@ void transpose_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         new_axes[i] = search_num(axes, len, i);
     }
     DEBUG_FOR_LOOP(npy_intp i = 0; i < len; i++){
-        DEBUG_PRINT("%lld\n", new_axes[i])} PyArray_Dims prev_axes = {new_axes, len};
+        DEBUG_PRINT("%lld\n", new_axes[i])} PyArray_Dims prev_axes = {new_axes, (int)len};
     PyObject *result = PyArray_Transpose((PyArrayObject *)grad, &prev_axes);
     free(new_axes);
     *out = result;
@@ -315,7 +327,7 @@ void slice_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **
     PyObject *slice_obj = NULL, *zeros = NULL;
     int nd = 0;
     DEBUG_PRINT("slice_backward_fn start\n")
-    get_slice_objs(self, &origin_shape, &slice_obj, &nd, &zeros); //zeros is ndarray
+    get_slice_objs(self, &origin_shape, &slice_obj, &nd, &zeros); // zeros is ndarray
     DEBUG_PRINT("got slice objs\n")
     if (zeros == NULL || slice_obj == NULL || origin_shape == NULL)
     {
@@ -324,7 +336,7 @@ void slice_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **
         return;
     }
     PyObject *sliced = PyObject_GetItem(zeros, slice_obj);
-        DEBUG_PRINT("sliced refcnt: %d\n", sliced->ob_refcnt)
+    DEBUG_PRINT("sliced refcnt: %d\n", sliced->ob_refcnt)
     DEBUG_PRINT("Inplace adding grad to sliced\n")
     PyObject *result = PyNumber_InPlaceAdd(sliced, grad);
     DEBUG_PRINT("sliced refcnt: %d\n", sliced->ob_refcnt)
