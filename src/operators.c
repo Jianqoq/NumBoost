@@ -8,6 +8,7 @@
 #include "broadcast.h"
 extern XLA_OPS *xla_ops;
 extern jnp_method *JNP_METHOD;
+extern BroadcastThreadpool* THREADPOOL;
 extern bool TRACK;
 
 PyObject *

@@ -33,6 +33,12 @@ extern PyTypeObject Tensor_type;
 #ifndef TENSOR_H
 #define TENSOR_H
 #include "numpy/arrayobject.h"
+
+#ifndef PARALLEL_H
+#define PARALLEL_H
+#include "parallel.h"
+#endif
+
 typedef struct
 {
     PyObject_HEAD
