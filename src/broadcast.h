@@ -20,6 +20,10 @@ void Broadcast_Standard_ia32(char *a_data_ptr, char *b_data_ptr, npy_int32 *resu
                              npy_intp *shape, npy_intp *strides_a, npy_intp *strides_b,
                              int ndim, int axis);
 
+void Broadcast_OuterPrallel_ia32(char *a_data_ptr, char *b_data_ptr, npy_int32 *result_data_ptr, npy_intp inner_loop_size,
+                                 npy_intp *shape, npy_intp *strides_a, npy_intp *strides_b,
+                                 int ndim, int axis, npy_intp left_prod);
+
 #define BroadCastLoop_Vec(type, strides_a, strides_b, shape,                   \
                           simd_type, simd_method, simd_op_method,              \
                           simd_store_method, a_ptr, b_ptr, result_ptr,         \
@@ -189,11 +193,12 @@ void Broadcast_Standard_ia32(char *a_data_ptr, char *b_data_ptr, npy_int32 *resu
                 break;                                                                                              \
             }                                                                                                       \
         }                                                                                                           \
+        npy_intp left_prod = PyArray_SIZE(result) / prod;                                                           \
         DEBUG_PRINT("Axis: %d\n", axis);                                                                            \
         if (!vectorizable || vec_size == -1)                                                                        \
         {                                                                                                           \
-            Broadcast_Standard_ia32(a_data_ptr, b_data_ptr, result_data_ptr, prod, shape, strides_a, strides_b,     \
-                                    ndim, axis);                                                                    \
+            Broadcast_OuterPrallel_ia32(a_data_ptr, b_data_ptr, result_data_ptr, prod, shape, strides_a, strides_b, \
+                                        ndim, axis, left_prod);                                                     \
         }                                                                                                           \
         else                                                                                                        \
         {                                                                                                           \

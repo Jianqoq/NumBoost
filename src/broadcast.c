@@ -875,3 +875,86 @@ void Broadcast_Standard_fs16(char *a_data_ptr, char *b_data_ptr, char *result_da
     free(indice_b_cache);
     free(shape_copy);
 }
+
+void Broadcast_OuterPrallel_ia32(char *a_data_ptr, char *b_data_ptr, npy_int32 *result_data_ptr, npy_intp inner_loop_size,
+                                 npy_intp *shape, npy_intp *strides_a, npy_intp *strides_b,
+                                 int ndim, int axis, npy_intp left_prod)
+{
+    int max_dim = ndim - 1;
+    int outer_start = max_dim - axis;
+    int vec_loop_size = inner_loop_size / 8;
+    int remain_size = inner_loop_size % 8;
+    npy_intp *shape_copy = malloc(sizeof(npy_intp) * ndim);
+    npy_intp *indice_a_cache = malloc(sizeof(npy_intp) * ndim);
+    npy_intp *indice_b_cache = malloc(sizeof(npy_intp) * ndim);
+    npy_int32 *b_data_ptr_saved = (npy_int32 *)b_data_ptr;
+    npy_int32 *a_data_ptr_saved = (npy_int32 *)a_data_ptr;
+    npy_int32 *b_data_ptr_ = (npy_int32 *)b_data_ptr;
+    npy_int32 *a_data_ptr_ = (npy_int32 *)a_data_ptr;
+    npy_int32 *result_data_ptr_saved = result_data_ptr;
+    npy_int32 *result_data_ptr_ = result_data_ptr;
+    npy_int32 num_elements = 0;
+    npy_intp i = 0;
+    npy_intp k = 0;
+    int cnt = 0;
+    for (int i = 0; i < ndim; i++)
+    {
+        shape[i]--;
+        shape_copy[i] = 0;
+        indice_a_cache[i] = strides_a[i] * shape[i];
+        indice_b_cache[i] = strides_b[i] * shape[i];
+    }
+    npy_intp *shape_copy1 = calloc(ndim, sizeof(npy_intp));
+    bool done = false;
+    Py_BEGIN_ALLOW_THREADS;
+#pragma omp parallel firstprivate(left_prod, shape_copy1, result_data_ptr_, done, strides_a, strides_b, a_data_ptr_saved, b_data_ptr_saved, k, indice_a_cache, indice_b_cache, inner_loop_size, outer_start, shape)
+    {
+        int thread_id = omp_get_thread_num();
+        int num_threads = omp_get_num_threads();
+
+        int start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+        int end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
+        npy_intp prd = num_elements;
+        result_data_ptr_ = result_data_ptr;
+        result_data_ptr += (end_index - start_index) * inner_loop_size;
+        num_elements = (result_data_ptr - result_data_ptr_saved);
+        for (int j = 1; j >= 0; j--)
+        {
+            shape_copy1[j] = prd % (shape[j] + 1);
+            prd /= (shape[j] + 1);
+            a_data_ptr_saved += shape_copy1[j] * (strides_a[j] / sizeof(npy_int32));
+            b_data_ptr_saved += shape_copy1[j] * (strides_b[j] / sizeof(npy_int32));
+        }
+#pragma omp for schedule(static)
+        for (k = 0; k < left_prod; k++)
+        {
+            for (int i = 0; i < inner_loop_size; i++)
+            {
+                int32_t val1 = *((b_data_ptr_saved + i * (strides_b[max_dim] / sizeof(npy_int32))));
+                int32_t val2 = *((a_data_ptr_saved + i * (strides_a[max_dim] / sizeof(npy_int32))));
+                *(result_data_ptr_ + i) = val1 + val2;
+            }
+            result_data_ptr_ += inner_loop_size;
+            for (int j = outer_start; j >= 0; j--)
+            {
+                if (shape_copy1[j] < shape[j])
+                {
+                    shape_copy1[j]++;
+                    a_data_ptr_saved += (strides_a[j] / sizeof(npy_int32));
+                    b_data_ptr_saved += (strides_b[j] / sizeof(npy_int32));
+                    break;
+                }
+                else
+                {
+                    shape_copy1[j] = 0;
+                    a_data_ptr_saved -= (indice_a_cache[j] / sizeof(npy_int32));
+                    b_data_ptr_saved -= (indice_b_cache[j] / sizeof(npy_int32));
+                }
+            }
+        }
+    }
+    Py_END_ALLOW_THREADS;
+    free(indice_a_cache);
+    free(indice_b_cache);
+    free(shape_copy);
+}
