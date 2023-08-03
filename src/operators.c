@@ -221,7 +221,7 @@ tensor_add(PyObject *self, PyObject *other)
         if (!equal)
         {
             int type = ((PyArrayObject_fields *)a)->descr->type_num;
-            Generic_BroadCast(a, b, numpy_result, type, ADD);
+            BroadCast(a, b, numpy_result, +, ADD, type);
         }
         else
             numpy_result = PyNumber_Add(_self->data, tmp->data);
@@ -309,7 +309,7 @@ tensor_mul(PyObject *self, PyObject *other)
         if (!equal)
         {
             int type = ((PyArrayObject_fields *)a)->descr->type_num;
-            Generic_BroadCast(a, b, numpy_result, type, MUL);
+            BroadCast(a, b, numpy_result, *, MUL, type);
         }
         else
             numpy_result = PyNumber_Multiply(_self->data, tmp->data);
@@ -397,7 +397,7 @@ tensor_div(PyObject *self, PyObject *other)
         if (!equal)
         {
             int type = ((PyArrayObject_fields *)a)->descr->type_num;
-            Generic_BroadCast(a, b, numpy_result, type, DIV);
+            BroadCast(a, b, numpy_result, /, DIV, type);
         }
         else
             numpy_result = PyNumber_TrueDivide(_self->data, tmp->data);
@@ -546,7 +546,7 @@ tensor_sub(PyObject *self, PyObject *other)
         if (!equal)
         {
             int type = ((PyArrayObject_fields *)a)->descr->type_num;
-            Generic_BroadCast(a, b, numpy_result, type, SUB);
+            BroadCast(a, b, numpy_result, -, SUB, type);
         }
         else
             numpy_result = PyNumber_Subtract(_self->data, tmp->data);

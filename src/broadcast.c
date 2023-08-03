@@ -256,108 +256,6 @@ void Broad_Cast_vec_(PyArrayObject *a, PyArrayObject *b, PyObject **array_result
     free(to_broadcast_shape_pad_one);
 }
 
-inline void BroadCast_Core(int ndim, npy_intp *shape_a, npy_intp *shape_b, PyArrayObject *bigger, PyArrayObject *to_broadcast, PyArrayObject *result,
-                           npy_intp *strides_a, npy_intp *strides_b,
-                           npy_intp *shape, int npy_type, int enum_op)
-{
-    DEBUG_PRINT("BroadCast_Core\n");
-    char *result_data_ptr = (char *)PyArray_DATA(result);
-    DEBUG_PRINT("Result data ptr: %p\n", result_data_ptr);
-    char *a_data_ptr = (char *)PyArray_DATA(bigger);
-    DEBUG_PRINT("A data ptr: %p\n", a_data_ptr);
-    char *b_data_ptr = (char *)PyArray_DATA(to_broadcast);
-    DEBUG_PRINT("Shape a: ");
-    for (int i = 0; i < ndim; i++)
-        DEBUG_PRINT("%d ", shape_a[i]);
-    DEBUG_PRINT("\n");
-    DEBUG_PRINT("Shape b: ");
-    for (int i = 0; i < ndim; i++)
-        DEBUG_PRINT("%d ", shape_b[i]);
-    DEBUG_PRINT("\n");
-    npy_intp prod = 1;
-    int axis = 0;
-    bool vectorizable = true;
-    for (int i = ndim - 1; i >= 0; i--)
-    {
-        if (shape_a[i] == shape_b[i])
-        {
-            axis++;
-            prod *= shape_a[i];
-        }
-        else
-        {
-            if (i == ndim - 1)
-            {
-                prod *= shape[ndim - 1];
-                vectorizable = false;
-                axis++;
-            }
-            break;
-        }
-    }
-    npy_intp left_prod = PyArray_SIZE(result) / prod;
-    DEBUG_PRINT("Axis: %d\n", axis);
-    OperationPicker(npy_type, enum_op)(a_data_ptr, b_data_ptr,
-                                       result_data_ptr, prod,
-                                       shape, strides_a,
-                                       strides_b, ndim,
-                                       axis, left_prod);
-}
-
-void *Generic_BroadCast(PyArrayObject *a, PyArrayObject *b, PyObject *array_result, int npy_type, int enum_op)
-{
-    DEBUG_PRINT("BroadCast\n");
-    int a_ndim = PyArray_NDIM(a);
-    int b_ndim = PyArray_NDIM(b);
-    npy_intp *a_shape = PyArray_SHAPE(a);
-    npy_intp *b_shape = PyArray_SHAPE(b);
-    npy_intp *to_broadcast_shape_pad_one = NULL;
-    npy_intp *bigger_shape = NULL;
-    PyArrayObject *to_broadcast = NULL;
-    PyArrayObject *bigger = NULL;
-    int ndim = 0;
-    if (a_ndim < b_ndim)
-    {
-        bigger_shape = b_shape;
-        to_broadcast = a;
-        bigger = b;
-        ndim = PyArray_NDIM(b);
-        if (!shape_isbroadcastable_to_ex(a_shape, b_shape, a_ndim, b_ndim, &to_broadcast_shape_pad_one))
-        {
-            PyErr_SetString(PyExc_ValueError, "Cannot broadcast shapes");
-            return NULL;
-        }
-    }
-    else
-    {
-        bigger_shape = a_shape;
-        to_broadcast = b;
-        bigger = a;
-        ndim = PyArray_NDIM(a);
-        if (!shape_isbroadcastable_to_ex(b_shape, a_shape, b_ndim, a_ndim, &to_broadcast_shape_pad_one))
-        {
-            PyErr_SetString(PyExc_ValueError, "Cannot broadcast shapes");
-            return NULL;
-        }
-    }
-    DEBUG_PRINT("ndim: %d\n", ndim);
-    npy_intp stride_last = PyArray_STRIDE((const PyArrayObject *)bigger, ndim - 1);
-    npy_intp *strides_a = NULL, *strides_b = NULL, *shape = NULL;
-    predict_broadcast_shape(to_broadcast_shape_pad_one, bigger_shape, ndim, &shape);
-    preprocess_strides(bigger_shape, stride_last, ndim, &strides_a);
-    preprocess_strides(to_broadcast_shape_pad_one, stride_last, ndim, &strides_b);
-    PyArrayObject *result = (PyArrayObject *)PyArray_EMPTY(ndim, (npy_intp const *)shape, npy_type, 0);
-    if (result == NULL)
-        return NULL;
-    DEBUG_PRINT("Result shape: ");
-    DEBUG_PyObject_Print(result);
-    BroadCast_Core(ndim, bigger_shape, to_broadcast_shape_pad_one, bigger, to_broadcast, result, strides_a, strides_b, shape, npy_type, enum_op);
-    array_result = (PyObject *)result;
-    free(strides_a);
-    free(strides_b);
-    free(shape);
-    free(to_broadcast_shape_pad_one);
-}
 
 /*============================================================= ADD =================================================================================*/
 void Broadcast_Standard_uint8_add(char *a_data_ptr, char *b_data_ptr, char *result_data_ptr, npy_intp inner_loop_size,
@@ -392,7 +290,7 @@ void Broadcast_Standard_uint8_add(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -554,7 +452,7 @@ void Broadcast_Standard_uint32_add(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -635,7 +533,7 @@ void Broadcast_Standard_uint64_add(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -716,7 +614,7 @@ void Broadcast_Standard_int8_add(char *a_data_ptr, char *b_data_ptr, char *resul
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -797,7 +695,7 @@ void Broadcast_Standard_int32_add(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -878,7 +776,7 @@ void Broadcast_Standard_int64_add(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -959,7 +857,7 @@ void Broadcast_Standard_int16_add(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1021,7 +919,7 @@ void Broadcast_Standard_float16_add(char *a_data_ptr, char *b_data_ptr, char *re
     npy_float16 *a_data_ptr_saved = (npy_float16 *)a_data_ptr;
     npy_float16 *result_data_ptr_saved = (npy_float16 *)result_data_ptr;
     npy_float16 *result_data_ptr_ = (npy_float16 *)result_data_ptr;
-    npy_float16 *result_data_ptr_cpy = (npy_float16 *)result_data_ptr;
+        npy_float16 *result_data_ptr_cpy = (npy_float16 *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -1040,7 +938,7 @@ void Broadcast_Standard_float16_add(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1102,7 +1000,7 @@ void Broadcast_Standard_float32_add(char *a_data_ptr, char *b_data_ptr, char *re
     npy_float32 *a_data_ptr_saved = (npy_float32 *)a_data_ptr;
     npy_float32 *result_data_ptr_saved = (npy_float32 *)result_data_ptr;
     npy_float32 *result_data_ptr_ = (npy_float32 *)result_data_ptr;
-    npy_float32 *result_data_ptr_cpy = (npy_float32 *)result_data_ptr;
+            npy_float32 *result_data_ptr_cpy = (npy_float32 *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -1121,7 +1019,7 @@ void Broadcast_Standard_float32_add(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1183,7 +1081,7 @@ void Broadcast_Standard_float64_add(char *a_data_ptr, char *b_data_ptr, char *re
     npy_float64 *a_data_ptr_saved = (npy_float64 *)a_data_ptr;
     npy_float64 *result_data_ptr_saved = (npy_float64 *)result_data_ptr;
     npy_float64 *result_data_ptr_ = (npy_float64 *)result_data_ptr;
-    npy_float64 *result_data_ptr_cpy = (npy_float64 *)result_data_ptr;
+                npy_float64 *result_data_ptr_cpy = (npy_float64 *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -1202,7 +1100,7 @@ void Broadcast_Standard_float64_add(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1264,7 +1162,7 @@ void Broadcast_Standard_float128_add(char *a_data_ptr, char *b_data_ptr, char *r
     npy_longdouble *a_data_ptr_saved = (npy_longdouble *)a_data_ptr;
     npy_longdouble *result_data_ptr_saved = (npy_longdouble *)result_data_ptr;
     npy_longdouble *result_data_ptr_ = (npy_longdouble *)result_data_ptr;
-    npy_longdouble *result_data_ptr_cpy = (npy_longdouble *)result_data_ptr;
+                    npy_longdouble *result_data_ptr_cpy = (npy_longdouble *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -1283,7 +1181,7 @@ void Broadcast_Standard_float128_add(char *a_data_ptr, char *b_data_ptr, char *r
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1346,7 +1244,7 @@ void Broadcast_Standard_int8_sub(char *a_data_ptr, char *b_data_ptr, char *resul
     npy_int8 *a_data_ptr_saved = (npy_int8 *)a_data_ptr;
     npy_int8 *result_data_ptr_saved = (npy_int8 *)result_data_ptr;
     npy_int8 *result_data_ptr_ = (npy_int8 *)result_data_ptr;
-    npy_int8 *result_data_ptr_cpy = (npy_int8 *)result_data_ptr;
+                        npy_int8 *result_data_ptr_cpy = (npy_int8 *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -1365,7 +1263,7 @@ void Broadcast_Standard_int8_sub(char *a_data_ptr, char *b_data_ptr, char *resul
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1446,7 +1344,7 @@ void Broadcast_Standard_int32_sub(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1527,7 +1425,7 @@ void Broadcast_Standard_int64_sub(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1608,7 +1506,7 @@ void Broadcast_Standard_int16_sub(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1689,7 +1587,7 @@ void Broadcast_Standard_float16_sub(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1770,7 +1668,7 @@ void Broadcast_Standard_float32_sub(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1832,7 +1730,7 @@ void Broadcast_Standard_float64_sub(char *a_data_ptr, char *b_data_ptr, char *re
     npy_float64 *a_data_ptr_saved = (npy_float64 *)a_data_ptr;
     npy_float64 *result_data_ptr_saved = (npy_float64 *)result_data_ptr;
     npy_float64 *result_data_ptr_ = (npy_float64 *)result_data_ptr;
-    npy_float64 *result_data_ptr_cpy = (npy_float64 *)result_data_ptr;
+        npy_float64 *result_data_ptr_cpy = (npy_float64 *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -1851,7 +1749,7 @@ void Broadcast_Standard_float64_sub(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1913,7 +1811,7 @@ void Broadcast_Standard_float128_sub(char *a_data_ptr, char *b_data_ptr, char *r
     npy_longdouble *a_data_ptr_saved = (npy_longdouble *)a_data_ptr;
     npy_longdouble *result_data_ptr_saved = (npy_longdouble *)result_data_ptr;
     npy_longdouble *result_data_ptr_ = (npy_longdouble *)result_data_ptr;
-    npy_longdouble *result_data_ptr_cpy = (npy_longdouble *)result_data_ptr;
+            npy_longdouble *result_data_ptr_cpy = (npy_longdouble *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -1932,7 +1830,7 @@ void Broadcast_Standard_float128_sub(char *a_data_ptr, char *b_data_ptr, char *r
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -1995,7 +1893,7 @@ void Broadcast_Standard_uint8_div(char *a_data_ptr, char *b_data_ptr, char *resu
     npy_uint8 *a_data_ptr_saved = (npy_uint8 *)a_data_ptr;
     npy_uint8 *result_data_ptr_saved = (npy_uint8 *)result_data_ptr;
     npy_uint8 *result_data_ptr_ = (npy_uint8 *)result_data_ptr;
-    npy_uint8 *result_data_ptr_cpy = (npy_uint8 *)result_data_ptr;
+                npy_uint8 *result_data_ptr_cpy = (npy_uint8 *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -2014,7 +1912,7 @@ void Broadcast_Standard_uint8_div(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2076,7 +1974,7 @@ void Broadcast_Standard_uint16_div(char *a_data_ptr, char *b_data_ptr, char *res
     npy_uint16 *a_data_ptr_saved = (npy_uint16 *)a_data_ptr;
     npy_uint16 *result_data_ptr_saved = (npy_uint16 *)result_data_ptr;
     npy_uint16 *result_data_ptr_ = (npy_uint16 *)result_data_ptr;
-    npy_uint16 *result_data_ptr_cpy = (npy_uint16 *)result_data_ptr;
+                    npy_uint16 *result_data_ptr_cpy = (npy_uint16 *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -2095,7 +1993,7 @@ void Broadcast_Standard_uint16_div(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2157,7 +2055,7 @@ void Broadcast_Standard_uint32_div(char *a_data_ptr, char *b_data_ptr, char *res
     npy_uint32 *a_data_ptr_saved = (npy_uint32 *)a_data_ptr;
     npy_uint32 *result_data_ptr_saved = (npy_uint32 *)result_data_ptr;
     npy_uint32 *result_data_ptr_ = (npy_uint32 *)result_data_ptr;
-    npy_uint32 *result_data_ptr_cpy = (npy_uint32 *)result_data_ptr;
+                        npy_uint32 *result_data_ptr_cpy = (npy_uint32 *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -2176,7 +2074,7 @@ void Broadcast_Standard_uint32_div(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2238,7 +2136,7 @@ void Broadcast_Standard_uint64_div(char *a_data_ptr, char *b_data_ptr, char *res
     npy_uint64 *a_data_ptr_saved = (npy_uint64 *)a_data_ptr;
     npy_uint64 *result_data_ptr_saved = (npy_uint64 *)result_data_ptr;
     npy_uint64 *result_data_ptr_ = (npy_uint64 *)result_data_ptr;
-    npy_uint64 *result_data_ptr_cpy = (npy_uint64 *)result_data_ptr;
+                            npy_uint64 *result_data_ptr_cpy = (npy_uint64 *)result_data_ptr;
     npy_intp k = 0;
     for (int i = 0; i < ndim; i++)
     {
@@ -2257,7 +2155,7 @@ void Broadcast_Standard_uint64_div(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2338,7 +2236,7 @@ void Broadcast_Standard_int8_div(char *a_data_ptr, char *b_data_ptr, char *resul
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2419,7 +2317,7 @@ void Broadcast_Standard_int32_div(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2500,7 +2398,7 @@ void Broadcast_Standard_int64_div(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2581,7 +2479,7 @@ void Broadcast_Standard_int16_div(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2662,7 +2560,7 @@ void Broadcast_Standard_float16_div(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2743,7 +2641,7 @@ void Broadcast_Standard_float32_div(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2824,7 +2722,7 @@ void Broadcast_Standard_float64_div(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2905,7 +2803,7 @@ void Broadcast_Standard_float128_div(char *a_data_ptr, char *b_data_ptr, char *r
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -2987,7 +2885,7 @@ void Broadcast_Standard_uint8_mul(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3068,7 +2966,7 @@ void Broadcast_Standard_uint16_mul(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3149,7 +3047,7 @@ void Broadcast_Standard_uint32_mul(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3230,7 +3128,7 @@ void Broadcast_Standard_uint64_mul(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3311,7 +3209,7 @@ void Broadcast_Standard_int8_mul(char *a_data_ptr, char *b_data_ptr, char *resul
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3392,7 +3290,7 @@ void Broadcast_Standard_int32_mul(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3473,7 +3371,7 @@ void Broadcast_Standard_int64_mul(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3554,7 +3452,7 @@ void Broadcast_Standard_int16_mul(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3635,7 +3533,7 @@ void Broadcast_Standard_float16_mul(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3716,7 +3614,7 @@ void Broadcast_Standard_float32_mul(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3797,7 +3695,7 @@ void Broadcast_Standard_float64_mul(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3878,7 +3776,7 @@ void Broadcast_Standard_float128_mul(char *a_data_ptr, char *b_data_ptr, char *r
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -3960,7 +3858,7 @@ void Broadcast_Standard_uint8_mod(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -4041,7 +3939,7 @@ void Broadcast_Standard_uint16_mod(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -4122,7 +4020,7 @@ void Broadcast_Standard_uint32_mod(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -4203,7 +4101,7 @@ void Broadcast_Standard_uint64_mod(char *a_data_ptr, char *b_data_ptr, char *res
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -4284,7 +4182,7 @@ void Broadcast_Standard_int8_mod(char *a_data_ptr, char *b_data_ptr, char *resul
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -4365,7 +4263,7 @@ void Broadcast_Standard_int32_mod(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -4446,7 +4344,7 @@ void Broadcast_Standard_int64_mod(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -4527,7 +4425,7 @@ void Broadcast_Standard_int16_mod(char *a_data_ptr, char *b_data_ptr, char *resu
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -4608,7 +4506,7 @@ void Broadcast_Standard_float16_mod(char *a_data_ptr, char *b_data_ptr, char *re
 #pragma omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)
     {
         int thread_id = omp_get_thread_num();
-        npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
+                npy_intp start_index = thread_id * (left_prod / num_threads) + min(thread_id, left_prod % num_threads);
         npy_intp end_index = start_index + left_prod / num_threads + (thread_id < left_prod % num_threads ? 1 : 0);
         result_data_ptr_ = result_data_ptr_cpy;
         result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;
@@ -4657,7 +4555,7 @@ void Broadcast_Standard_float16_mod(char *a_data_ptr, char *b_data_ptr, char *re
     free(shape_copy);
 }
 
-inline BroadcastFunction OperationPicker(int npy_type, int operation)
+BroadcastFunction OperationPicker(int npy_type, int operation)
 {
     switch (npy_type)
     {
@@ -4840,5 +4738,4 @@ inline BroadcastFunction OperationPicker(int npy_type, int operation)
             return Broadcast_Standard_float128_div;
         }
     }
-    return NULL;
 }
