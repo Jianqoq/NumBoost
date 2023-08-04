@@ -8,7 +8,6 @@
 #include "structmember.h"
 #include "tensor.h"
 #include "operators.h"
-#include <windows.h>
 #include "set_Tensor_properties.h"
 
 static Dict *dict = NULL;
@@ -23,7 +22,6 @@ Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT = NULL;
 Tensordot_Dict *TENSORDOT_DICT = NULL;
 Slice_Dict *SLICE_DICT = NULL;
 Zeros_Array_Dict *ZEROS_ARRAY_DICT = NULL;
-PTP_WORK *WORKITEMS = NULL;
 
 void store_for_slicebackward(Tensor *key, PyObject *slice_obj, npy_intp *ptr, int nd, Tensor *parent)
 {
@@ -982,8 +980,8 @@ void init_map()
 PyMODINIT_FUNC PyInit_Numboost(void)
 {
     Py_Initialize();
-    DWORD max_threads = omp_get_max_threads();
-    omp_set_num_threads((int)max_threads);
+    int max_threads = omp_get_max_threads();
+    omp_set_num_threads(max_threads);
     if (import_xla_ops(&xla_ops) == NULL)
         return NULL;
     if (import_jnp_methods(&JNP_METHOD) == NULL)
