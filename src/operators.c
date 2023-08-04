@@ -6,9 +6,11 @@
 #include "set_Tensor_properties.h"
 #include <Python.h>
 #include "broadcast.h"
+#include "mkl.h"
+#include "op.h"
+#include "binary_func.h"
 extern XLA_OPS *xla_ops;
 extern jnp_method *JNP_METHOD;
-extern BroadcastThreadpool* THREADPOOL;
 extern bool TRACK;
 
 PyObject *
@@ -217,14 +219,16 @@ tensor_add(PyObject *self, PyObject *other)
     {
         tmp = (Tensor *)other;
         PyArrayObject *b = (PyArrayObject *)tmp->data;
+        int type = ((PyArrayObject_fields *)a)->descr->type_num;
         bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
         if (!equal)
         {
-            int type = ((PyArrayObject_fields *)a)->descr->type_num;
-            BroadCast(a, b, numpy_result, +, ADD, type);
+            BroadCast(a, b, &numpy_result, ADD, type);
         }
         else
-            numpy_result = PyNumber_Add(_self->data, tmp->data);
+        {
+            BinaryOp_OperationPicker(type, ADD)(a, b, &numpy_result);
+        }
         if (numpy_result == NULL)
         {
             return NULL;
@@ -305,14 +309,16 @@ tensor_mul(PyObject *self, PyObject *other)
     {
         tmp = (Tensor *)other;
         PyArrayObject *b = (PyArrayObject *)tmp->data;
+        int type = ((PyArrayObject_fields *)a)->descr->type_num;
         bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
         if (!equal)
         {
-            int type = ((PyArrayObject_fields *)a)->descr->type_num;
-            BroadCast(a, b, numpy_result, *, MUL, type);
+            BroadCast(a, b, numpy_result, MUL, type);
         }
         else
-            numpy_result = PyNumber_Multiply(_self->data, tmp->data);
+        {
+            BinaryOp_OperationPicker(type, MUL)(a, b, &numpy_result);
+        }
         if (numpy_result == NULL)
         {
             return NULL;
@@ -393,14 +399,16 @@ tensor_div(PyObject *self, PyObject *other)
         tmp = (Tensor *)other;
         PyArrayObject *b = (PyArrayObject *)tmp->data;
         PyArrayObject *a = (PyArrayObject *)_self->data;
+        int type = ((PyArrayObject_fields *)a)->descr->type_num;
         bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
         if (!equal)
         {
-            int type = ((PyArrayObject_fields *)a)->descr->type_num;
-            BroadCast(a, b, numpy_result, /, DIV, type);
+            BroadCast(a, b, numpy_result, DIV, type);
         }
         else
-            numpy_result = PyNumber_TrueDivide(_self->data, tmp->data);
+        {
+            BinaryOp_OperationPicker(type, DIV)(a, b, &numpy_result);
+        }
         if (numpy_result == NULL)
         {
             return NULL;
@@ -542,14 +550,16 @@ tensor_sub(PyObject *self, PyObject *other)
     {
         tmp = (Tensor *)other;
         PyArrayObject *b = (PyArrayObject *)tmp->data;
+        int type = ((PyArrayObject_fields *)a)->descr->type_num;
         bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
         if (!equal)
         {
-            int type = ((PyArrayObject_fields *)a)->descr->type_num;
-            BroadCast(a, b, numpy_result, -, SUB, type);
+            BroadCast(a, b, numpy_result, SUB, type);
         }
         else
-            numpy_result = PyNumber_Subtract(_self->data, tmp->data);
+        {
+            BinaryOp_OperationPicker(type, SUB)(a, b, &numpy_result);
+        }
         if (numpy_result == NULL)
         {
             return NULL;
