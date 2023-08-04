@@ -12,6 +12,7 @@
 #include "set_Tensor_properties.h"
 #include "tensor.h"
 #include "operators.h"
+#include "type_convertor.h"
 extern np_method *NP_METHOD;
 extern Array_Shape *ARRAY_SHAPE;
 extern Power_Dict *POWER_DICT;
@@ -104,7 +105,7 @@ npy_intp get_shape_len(Tensor *key)
     if (s == NULL)
     {
         PyErr_SetString(PyExc_KeyError, "Array shape not found in dict");
-        return - 1;
+        return -1;
     }
     return s->len;
 }
@@ -391,7 +392,7 @@ Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *
 }
 
 inline void tensordot_axes_(int ndim, long *axes_, long n_len, long *_len, npy_intp *shape,
-                       npy_intp *newshape, npy_intp **newaxes, npy_intp **oldshape, long *axes_len, bool a)
+                            npy_intp *newshape, npy_intp **newaxes, npy_intp **oldshape, long *axes_len, bool a)
 {
     long real_len = 0;
     long *__notin = range_excluding_list(0, ndim, axes_, -100, n_len, &real_len);
@@ -785,7 +786,7 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObje
     for (uint8_t i = 1; i < nargs; i++)
     {
         long item = PyLong_AsLong(args[i]);
-        if (item < 0) //axis input cannot be negative
+        if (item < 0) // axis input cannot be negative
             return NULL;
         DEBUG_PRINT("%d ", item);
         dims[i - 1] = item;
@@ -799,7 +800,7 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObje
     }
     PyObject *to_return = new_Tensor_x(tensor, result, "TransposeBackward");
     if (tensor->require_grad)
-        store_array_shape((Tensor*)to_return, dims, length);
+        store_array_shape((Tensor *)to_return, dims, length);
     else
         free(dims);
     return to_return;
@@ -1184,8 +1185,8 @@ Tensor *_sin(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsSin, sinf, tensor, array, out, "SinBackward");
     }
 }
 
@@ -1205,8 +1206,8 @@ Tensor *_cos(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsCos, cosf, tensor, array, out, "CosBackward");
     }
 }
 
@@ -1226,8 +1227,8 @@ Tensor *_tan(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsTan, tanf, tensor, array, out, "TanBackward");
     }
 }
 
@@ -1247,8 +1248,8 @@ Tensor *_asin(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsAsin, asinf, tensor, array, out, "ArcSinBackward");
     }
 }
 
@@ -1268,8 +1269,8 @@ Tensor *_acos(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsAcos, acosf, tensor, array, out, "ArcCosBackward");
     }
 }
 
@@ -1289,8 +1290,8 @@ Tensor *_atan(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsAtan, atanf, tensor, array, out, "ArcTanBackward");
     }
 }
 
@@ -1310,8 +1311,8 @@ Tensor *_sinh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsSinh, sinhf, tensor, array, out, "SinhBackward");
     }
 }
 
@@ -1331,8 +1332,8 @@ Tensor *_cosh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsCosh, coshf, tensor, array, out, "CoshBackward");
     }
 }
 
@@ -1352,8 +1353,8 @@ Tensor *_exp(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsExp, expf, tensor, array, out, "ExpBackward");
     }
 }
 
@@ -1373,8 +1374,8 @@ Tensor *_log10(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsLog10, log10f, tensor, array, out, "Log10Backward");
     }
 }
 
@@ -1394,8 +1395,8 @@ Tensor *_log(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsLn, logf, tensor, array, out, "LogBackward");
     }
 }
 
@@ -1415,8 +1416,8 @@ Tensor *_tanh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsTanh, tanhf, tensor, array, out, "TanhBackward");
     }
 }
 
@@ -1436,8 +1437,8 @@ Tensor *_asinh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsAsinh, asinhf, tensor, array, out, "ArcSinhBackward");
     }
 }
 
@@ -1457,8 +1458,8 @@ Tensor *_acosh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsAcosh, acoshf, tensor, array, out, "ArcCoshBackward");
     }
 }
 
@@ -1478,8 +1479,8 @@ Tensor *_atanh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsTanh, atanhf, tensor, array, out, "ArcTanhBackward");
     }
 }
 
@@ -1499,8 +1500,8 @@ Tensor *_sqrt(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsSqrt, sqrtf, tensor, array, out, "SqrtBackward");
     }
 }
 
@@ -1520,8 +1521,8 @@ Tensor *_arcsinh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsAsinh, asinhf, tensor, array, out, "ArcSinhBackward");
     }
 }
 
@@ -1541,8 +1542,8 @@ Tensor *_arccosh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsAcosh, acoshf, tensor, array, out, "ArcCoshBackward");
     }
 }
 
@@ -1562,8 +1563,8 @@ Tensor *_arctanh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float(vsAtanh, atanhf, tensor, array, out, "ArcTanhBackward");
     }
 }
 
@@ -1641,8 +1642,8 @@ static inline PyObject *internal_npy_cal_oneArgs(void (*vect_func1)(const int, c
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Invalid type");
-        return NULL;
+        type_converter(typenum)(&array);
+        return Generic_function_new_float_internal(vect_func2, func1, array, out);
     }
 }
 

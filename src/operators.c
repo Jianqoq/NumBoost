@@ -313,7 +313,7 @@ tensor_mul(PyObject *self, PyObject *other)
         bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
         if (!equal)
         {
-            BroadCast(a, b, numpy_result, MUL, type);
+            BroadCast(a, b, &numpy_result, MUL, type);
         }
         else
         {
@@ -403,7 +403,7 @@ tensor_div(PyObject *self, PyObject *other)
         bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
         if (!equal)
         {
-            BroadCast(a, b, numpy_result, DIV, type);
+            BroadCast(a, b, &numpy_result, DIV, type);
         }
         else
         {
@@ -554,7 +554,7 @@ tensor_sub(PyObject *self, PyObject *other)
         bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
         if (!equal)
         {
-            BroadCast(a, b, numpy_result, SUB, type);
+            BroadCast(a, b, &numpy_result, SUB, type);
         }
         else
         {
