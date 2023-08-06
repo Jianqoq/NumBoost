@@ -16,7 +16,11 @@ inline npy_float32 float16_cast_float32(npy_float16 value)
     case 0x0000u:
     {
         if (float16_min == 0)
-            return *(npy_float32 *)&float16_sign;
+        {
+            uint32_t *p = &float16_sign;
+            npy_float32 P2 = *((npy_float32 *)p);
+            return P2;
+        }
         else
         {
             while ((float16_min & 0x0400u) == 0)
@@ -28,18 +32,24 @@ inline npy_float32 float16_cast_float32(npy_float16 value)
             uint32_t float32_exp = (uint32_t)((142 - float16_exp) << 23);
             uint32_t float32_min = (uint32_t)((float16_min & 0x03ffu) << 13);
             uint32_t result = float16_sign + float32_exp + float32_min;
-            return *(npy_float32 *)&result;
+            uint32_t *p = &result;
+            npy_float32 P2 = *((npy_float32 *)p);
+            return P2;
         }
     }
     case 0x7c00u:
     {
         uint32_t result = float16_sign + 0x7f800000u + (((uint32_t)(float16_min)) << 13);
-        return *(npy_float32 *)&result;
+        uint32_t *p = &result;
+        npy_float32 P2 = *((npy_float32 *)p);
+        return P2;
     }
     default:
     {
         uint32_t result = (float16_sign + (((uint32_t)(value & 0x7fffu) + 0x1c000u) << 13));
-        return *(npy_float32 *)&result;
+        uint32_t *p = &result;
+        npy_float32 P2 = *((npy_float32 *)p);
+        return P2;
     }
     }
 }
@@ -54,7 +64,11 @@ inline npy_float64 float16_cast_float64(npy_float16 value)
     case 0x0000u:
     {
         if (float16_min == 0)
-            return *(npy_float64 *)&float16_sign;
+        {
+            uint64_t *p = &float16_sign;
+            npy_float64 P2 = *((npy_float64 *)p);
+            return P2;
+        }
         else
         {
             while ((float16_min & 0x0400u) == 0)
@@ -66,25 +80,32 @@ inline npy_float64 float16_cast_float64(npy_float16 value)
             uint64_t float32_exp = ((uint64_t)(1023 - 15 - float16_exp) << 52);
             uint64_t float32_min = ((uint64_t)(float16_min & 0x03ffu) << 42);
             uint64_t result = float16_sign + float32_exp + float32_min;
-            return *(npy_float64 *)&result;
+            uint64_t *p = &result;
+            npy_float64 P2 = *((npy_float64 *)p);
+            return P2;
         }
     }
     case 0x7c00u:
     {
         uint64_t result = float16_sign + 0x7ff0000000000000ULL + (((uint64_t)(float16_min)) << 42);
-        return *(npy_float64 *)&result;
+        uint64_t *p = &result;
+        npy_float64 P2 = *((npy_float64 *)p);
+        return P2;
     }
     default:
     {
         uint64_t result = (float16_sign + (((uint64_t)(value & 0x7fffu) + 0xfc000u) << 42));
-        return *(npy_float64 *)&result;
+        uint64_t *p = &result;
+        npy_float64 P2 = *((npy_float64 *)p);
+        return P2;
     }
     }
 }
 
 inline npy_float16 float32_cast_float16(npy_float32 value)
 {
-    uint32_t b = *(uint32_t *)&value;
+    npy_float32 *p = &value;
+    uint32_t b = *((uint32_t *)p);
     uint32_t float32_m = (uint32_t)(b & 0x007fffffu);
     uint32_t float32_sign = (uint32_t)((b & 0x80000000) >> 16);
     uint32_t e = (b & 0x7F800000);
@@ -144,7 +165,8 @@ inline npy_float16 float32_cast_float16(npy_float32 value)
 
 inline npy_float16 float64_cast_float16(npy_float64 value)
 {
-    uint64_t b = *(uint64_t *)&value;
+        npy_float64 *p = &value;
+    uint64_t b = *((uint64_t *)p);
     uint64_t float64_m = (uint64_t)(b & 0x000fffffffffffffULL);
     uint64_t float64_sign = (uint64_t)((b & 0x8000000000000000ULL) >> 48);
     uint64_t e = (b & 0x7ff0000000000000ULL);
@@ -204,48 +226,40 @@ inline npy_float16 float64_cast_float16(npy_float64 value)
 
 inline npy_float16 int8_cast_float16(npy_int8 value)
 {
-    npy_float32 f = (npy_float32)value;
     return float32_cast_float16((npy_float32)value);
 }
 
 inline npy_float16 uint8_cast_float16(npy_uint8 value)
 {
-    npy_float32 f = (npy_float32)value;
     return float32_cast_float16((npy_float32)value);
 }
 
 inline npy_float16 int16_cast_float16(npy_int16 value)
 {
-    npy_float32 f = (npy_float32)value;
     return float32_cast_float16((npy_float32)value);
 }
 
 inline npy_float16 uint16_cast_float16(npy_uint16 value)
 {
-    npy_float32 f = (npy_float32)value;
     return float32_cast_float16((npy_float32)value);
 }
 
 inline npy_float16 int32_cast_float16(npy_int32 value)
 {
-    npy_float32 f = (npy_float32)value;
     return float32_cast_float16((npy_float32)value);
 }
 
 inline npy_float16 uint32_cast_float16(npy_uint32 value)
 {
-    npy_float32 f = (npy_float32)value;
     return float32_cast_float16((npy_float32)value);
 }
 
 inline npy_float16 int64_cast_float16(npy_int64 value)
 {
-    npy_float32 f = (npy_float32)value;
     return float32_cast_float16((npy_float32)value);
 }
 
 inline npy_float16 uint64_cast_float16(npy_uint64 value)
 {
-    npy_float64 f = (npy_float64)value;
     return float64_cast_float16((npy_float64)value);
 }

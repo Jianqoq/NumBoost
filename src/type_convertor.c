@@ -2775,7 +2775,7 @@ inline void As_Type(PyArrayObject **a, PyArrayObject **result, int self_type, in
     switch (target_type)
     {
     case NPY_BOOL:
-        convert_func = Any_to_Bool(self_type, result);
+        convert_func = Any_to_Bool(self_type);
         if (convert_func == NULL)
         {
             PyErr_SetString(PyExc_TypeError, "Cannot convert to int64");

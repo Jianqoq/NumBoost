@@ -34,23 +34,20 @@ else:
     if os.path.exists('Numboost.cpython-38-x86_64-linux-gnu.so'):
         os.remove('Numboost.cpython-38-x86_64-linux-gnu.so')
 
-# if file exists, remove it
-npymath_lib_path = os.path.join(os.path.dirname(np.__file__), 'core', 'lib')
-
 mymodule = Extension('Numboost',
                      sources=['utils.c', 'tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
                               'set_Tensor_properties.c', 'methods.c', 'binaray_backward_fn.c', 'pcg_basic.c',
-                              'import_methods.c', 'broadcast.c', 'shape.c', 'binary_func.c', 'type_convertor.c'],
+                              'import_methods.c', 'broadcast.c', 'shape.c', 'binary_func.c', 'type_convertor.c', 'tensor_methods.c'],
                      include_dirs=[
                          numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',
                          'mkl-C/mkl/latest/include', r'C:\Users\123\Downloads\numpy-main\numpy\core\include\numpy'],
                      library_dirs=[
                          'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
                          r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64',
-                         r'/mkl-C/mkl/latest/lib/intel64', r'C:\Users\123\anaconda3\Lib\site-packages\numpy\core\lib'
+                         r'/mkl-C/mkl/latest/lib/intel64'
                      ],
                      libraries=['mkl_rt'] if platform.system() == 'Windows' else [
-                         'mkl_rt', 'gomp', 'npymath'],
+                         'mkl_rt', 'gomp'],
                      language='c',
                      extra_compile_args=args,
                      extra_link_args=extra_link_args,

@@ -30,10 +30,13 @@ extern XLA_OPS *xla_ops;
 extern PyTypeObject Tensor_type;
 #endif
 
+#ifndef ARRAYOBJECT_H
+#define ARRAYOBJECT_H
+#include "numpy/arrayobject.h"
+#endif
+
 #ifndef TENSOR_H
 #define TENSOR_H
-#include "numpy/arrayobject.h"
-
 typedef struct
 {
     PyObject_HEAD
