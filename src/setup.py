@@ -44,9 +44,9 @@ mymodule = Extension('Numboost',
                      library_dirs=[
                          'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
                          r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64',
-                         r'/mkl-C/mkl/latest/lib/intel64'
+                         r'/mkl-C/mkl/latest/lib/intel64', r'C:\Users\123\anaconda3\Lib\site-packages\numpy\core\lib'
                      ],
-                     libraries=['mkl_rt'] if platform.system() == 'Windows' else [
+                     libraries=['mkl_rt', 'npymath'] if platform.system() == 'Windows' else [
                          'mkl_rt', 'gomp'],
                      language='c',
                      extra_compile_args=args,

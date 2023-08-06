@@ -1366,7 +1366,7 @@ void float16_to_int64(PyArrayObject **array, PyArrayObject **result)
 #pragma omp parallel for
     for (i = 0; i < size; i++)
     {
-        array_data[i] = (npy_int64)data[i];
+        array_data[i] = float16_cast_int64(data[i]);
     }
 
     if (result != NULL)
@@ -1655,7 +1655,7 @@ void float16_to_int32(PyArrayObject **array, PyArrayObject **result)
 #pragma omp parallel for
     for (i = 0; i < size; i++)
     {
-        array_data[i] = (npy_int32)data[i];
+        array_data[i] = float16_cast_int32(data[i]);
     }
 
     if (result != NULL)
@@ -2008,7 +2008,7 @@ void float16_to_int16(PyArrayObject **array, PyArrayObject **result)
 #pragma omp parallel for
     for (i = 0; i < size; i++)
     {
-        array_data[i] = (npy_int16)data[i];
+        array_data[i] = float16_cast_int16(data[i]);
     }
 
     if (result != NULL)

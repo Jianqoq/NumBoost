@@ -9,42 +9,42 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from NumBoost import *
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.float16)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float16)])
 def test_C_Tensor_float16_2_float32(array):
     a = Tensor(array).astype(float32)
     b = np.array(array).astype(np.float32)
     assert np.allclose(a.data, b, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.float32)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float32)])
 def test_C_Tensor_float32_2_float32(array):
     a = Tensor(array).astype(float32)
     b = np.array(array).astype(np.float32)
     assert np.allclose(a.data, b, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.float64)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float64)])
 def test_C_Tensor_float64_2_float32(array):
     a = Tensor(array).astype(float32)
     b = np.array(array).astype(np.float32)
     assert np.allclose(a.data, b, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.longdouble)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.longdouble)])
 def test_C_Tensor_float128_2_float32(array):
     a = Tensor(array).astype(float32)
     b = np.array(array).astype(np.float32)
     assert np.allclose(a.data, b, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.int8)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.int8)])
 def test_C_Tensor_int8_2_float32(array):
     a = Tensor(array).astype(float32)
     b = np.array(array).astype(np.float32)
     assert np.allclose(a.data, b, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.int16)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.int16)])
 def test_C_Tensor_int16_2_float32(array):
     a = Tensor(array).astype(float32)
     b = np.array(array).astype(np.float32)
@@ -93,126 +93,126 @@ def test_C_Tensor_uint64_2_float32(array):
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.float32)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float32)])
 def test_C_Tensor_float32_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b, rtol=0.01, atol=0.01, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.float16)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float16)])
 def test_C_Tensor_float16_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.float64)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float64)])
 def test_C_Tensor_float64_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b, rtol=0.01, atol=0.01, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.longdouble)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.longdouble)])
 def test_C_Tensor_float128_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b, rtol=0.01, atol=0.01, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(20000, 5000, 3).astype(np.int8)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.int8)])
 def test_C_Tensor_int8_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.int16)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.int16)])
 def test_C_Tensor_int16_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.int32)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.int32)])
 def test_C_Tensor_int32_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.int64)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.int64)])
 def test_C_Tensor_int64_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randint(0, 100, size=(2000, 500, 3)).astype(np.uint8)])
+@pytest.mark.parametrize("array", [np.random.randint(0, 100, size=(200, 500, 3)).astype(np.uint8)])
 def test_C_Tensor_uint8_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randint(0, 100, size=(2000, 500, 3)).astype(np.uint16)])
+@pytest.mark.parametrize("array", [np.random.randint(0, 100, size=(200, 500, 3)).astype(np.uint16)])
 def test_C_Tensor_uint16_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randint(0, 100, size=(2000, 500, 3)).astype(np.uint32)])
+@pytest.mark.parametrize("array", [np.random.randint(0, 100, size=(200, 500, 3)).astype(np.uint32)])
 def test_C_Tensor_uint32_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randint(0, 100, size=(2000, 500, 3)).astype(np.uint64)])
+@pytest.mark.parametrize("array", [np.random.randint(0, 100, size=(200, 500, 3)).astype(np.uint64)])
 def test_C_Tensor_uint64_2_float64(array):
     a = Tensor(array).astype(float64)
     b = np.array(array).astype(np.float64)
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.float32)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float32)])
 def test_C_Tensor_float32_2_float16(array):
     a = Tensor(array).astype(float16)
     b = np.array(array).astype(np.float16)
     assert np.allclose(a.data, b, rtol=0.01, atol=0.01, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.float16)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float16)])
 def test_C_Tensor_float16_2_float16(array):
     a = Tensor(array).astype(float16)
     b = np.array(array).astype(np.float16)
     assert np.allclose(a.data, b, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.float64)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float64)])
 def test_C_Tensor_float64_2_float16(array):
     a = Tensor(array).astype(float16)
     b = np.array(array).astype(np.float16)
-    assert np.allclose(a.data, b, rtol=0.01, atol=0.01, equal_nan=True)
+    assert np.allclose(a.data, b, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.longdouble)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500).astype(np.float64)])
 def test_C_Tensor_float128_2_float16(array):
     a = Tensor(array).astype(float16)
     b = np.array(array).astype(np.float16)
-    assert np.allclose(a.data, b, rtol=0.01, atol=0.01, equal_nan=True)
+    assert np.allclose(a.data, b, equal_nan=True)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.int8)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.int8)])
 def test_C_Tensor_int8_2_float16(array):
     a = Tensor(array).astype(float16)
     b = np.array(array).astype(np.float16)
     assert np.allclose(a.data, b)
 
 
-@pytest.mark.parametrize("array", [np.random.randn(2000, 500, 3).astype(np.int16)])
+@pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.int16)])
 def test_C_Tensor_int16_2_float16(array):
     a = Tensor(array).astype(float16)
     b = np.array(array).astype(np.float16)

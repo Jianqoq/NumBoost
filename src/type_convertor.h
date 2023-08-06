@@ -29,8 +29,8 @@ inline npy_float32 float16_cast_float32(npy_float16 value)
                 float16_exp++;
             }
             float16_exp--;
-            uint32_t float32_exp = (uint32_t)((142 - float16_exp) << 23);
-            uint32_t float32_min = (uint32_t)((float16_min & 0x03ffu) << 13);
+            uint32_t float32_exp = ((uint32_t)(127 - 15 - float16_exp) << 23);
+            uint32_t float32_min = ((((uint32_t)float16_min) & 0x03ffu) << 13);
             uint32_t result = float16_sign + float32_exp + float32_min;
             uint32_t *p = &result;
             npy_float32 P2 = *((npy_float32 *)p);
@@ -50,6 +50,86 @@ inline npy_float32 float16_cast_float32(npy_float16 value)
         uint32_t *p = &result;
         npy_float32 P2 = *((npy_float32 *)p);
         return P2;
+    }
+    }
+}
+
+inline npy_int16 float16_cast_int16(npy_float16 value)
+{
+    uint16_t float16_exp = (value & 0x7c00u) >> 10;
+    switch (float16_exp)
+    {
+    case 0x0000u:
+        return (value & 0x8000u) ? -0 : 0;
+    case 0x7c00u:
+        return 32768;
+    default:
+    {
+        int16_t exponent = float16_exp - 15;
+        if (exponent < 0)
+        {
+            npy_int16 result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
+            return result;
+        }
+        else
+        {
+            npy_int16 result = ((((value & 0x03ffu) << exponent) >> 10) + (1 << exponent)) * ((value & 0x8000u) ? -1 : 1);
+            return result;
+        }
+    }
+    }
+}
+
+inline npy_int32 float16_cast_int32(npy_float16 value)
+{
+    uint16_t float16_exp = (value & 0x7c00u) >> 10;
+    switch (float16_exp)
+    {
+    case 0x0000u:
+        return (value & 0x8000u) ? -0 : 0;
+    case 0x7c00u:
+        return 2147483647;
+    default:
+    {
+        uint16_t float16_sign = (value & 0x8000u);
+        int16_t exponent = float16_exp - 15;
+        if (exponent < 0)
+        {
+            npy_int32 result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
+            return result;
+        }
+        else
+        {
+            npy_int32 result = ((((value & 0x03ffu) << exponent) >> 10) + (1 << exponent)) * ((value & 0x8000u) ? -1 : 1);
+            return result;
+        }
+    }
+    }
+}
+
+inline npy_int64 float16_cast_int64(npy_float16 value)
+{
+    uint16_t float16_exp = (value & 0x7c00u) >> 10;
+    switch (float16_exp)
+    {
+    case 0x0000u:
+        return (value & 0x8000u) ? -0 : 0;
+    case 0x7c00u:
+        return 9223372036854775807;
+    default:
+    {
+        uint16_t float16_sign = (value & 0x8000u);
+        int16_t exponent = float16_exp - 15;
+        if (exponent < 0)
+        {
+            npy_int64 result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
+            return result;
+        }
+        else
+        {
+            npy_int64 result = ((1 + ((value & 0x03ffu) >> 10)) << exponent) * ((value & 0x8000u) ? -1 : 1);
+            return result;
+        }
     }
     }
 }
@@ -165,7 +245,7 @@ inline npy_float16 float32_cast_float16(npy_float32 value)
 
 inline npy_float16 float64_cast_float16(npy_float64 value)
 {
-        npy_float64 *p = &value;
+    npy_float64 *p = &value;
     uint64_t b = *((uint64_t *)p);
     uint64_t float64_m = (uint64_t)(b & 0x000fffffffffffffULL);
     uint64_t float64_sign = (uint64_t)((b & 0x8000000000000000ULL) >> 48);
