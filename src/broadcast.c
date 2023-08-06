@@ -1,6 +1,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #define PY_SSIZE_T_CLEAN
+#define min(a, b) ((a) < (b) ? (a) : (b))
 #include "broadcast.h"
 #include "omp.h"
 #include "op.h"
