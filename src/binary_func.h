@@ -5,4 +5,4 @@
 
 typedef void (*BinaryFunc)(PyArrayObject *a, PyArrayObject *b, PyObject **result);
 
-BinaryFunc BinaryOp_OperationPicker(int npy_type, int operation);
+BinaryFunc BinaryOp_Picker(int npy_type, int operation);

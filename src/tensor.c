@@ -8,6 +8,7 @@
 #include "structmember.h"
 #include "tensor.h"
 #include "operators.h"
+#include "type_convertor.h"
 #include "set_Tensor_properties.h"
 
 static Dict *dict = NULL;
@@ -594,6 +595,21 @@ static int Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     return 0;
 }
 
+PyObject *astype(Tensor *self, PyObject *const *args, size_t nargsf)
+{
+    int tp = (int)PyLong_AsLong(args[0]);
+    PyArrayObject *arr = NULL;
+    as_type(&((PyArrayObject *)(self->data)), &arr, tp);
+    if (self->data == NULL || arr == NULL)
+        return NULL;
+    Tensor * result = Tensor__new__(&Tensor_type, (PyObject*)arr);
+    if (PyErr_Occurred())
+        return NULL;
+    result->require_grad = self->require_grad;
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 PyMemberDef properties[] = {
     {"data", T_OBJECT, offsetof(Tensor, data), 0, "data"},
     {"x", T_OBJECT, offsetof(Tensor, x), 0, "x"},
@@ -881,6 +897,7 @@ static PyMethodDef Tensor_methods[] = {
     {"reshape", (PyCFunction)self_reshape, METH_FASTCALL, "Method docstring"},
     {"transpose", (PyCFunction)self_transpose, METH_FASTCALL, "Method docstring"},
     {"permute", (PyCFunction)self_transpose, METH_FASTCALL, "Method docstring"},
+    {"astype", (PyCFunction)astype, METH_FASTCALL, "Method docstring"},
     {NULL} /* Sentinel */
 };
 

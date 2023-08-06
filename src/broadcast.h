@@ -29,45 +29,4 @@ void _BroadCast(PyArrayObject *a, PyArrayObject *b, PyObject **array_result, int
 void BroadCast_Core(int ndim, npy_intp *shape_a, npy_intp *shape_b, PyArrayObject *bigger, PyArrayObject *to_broadcast, PyArrayObject *result,
                     npy_intp *strides_a, npy_intp *strides_b, npy_intp *shape, int npy_type, int enum_op);
 
-#define BroadCast(a, b, result, simd_op, type)       \
-    {                                                \
-        switch (type)                                \
-        {                                            \
-        case NPY_BOOL:                               \
-            _BroadCast(a, b, result, type, simd_op); \
-            break;                                   \
-        case NPY_BYTE:                               \
-            break;                                   \
-        case NPY_UBYTE:                              \
-            break;                                   \
-        case NPY_SHORT:                              \
-            break;                                   \
-        case NPY_USHORT:                             \
-            break;                                   \
-        case NPY_INT:                                \
-            _BroadCast(a, b, result, type, simd_op); \
-            break;                                   \
-        case NPY_UINT:                               \
-            break;                                   \
-        case NPY_LONG:                               \
-            _BroadCast(a, b, result, type, simd_op); \
-            break;                                   \
-        case NPY_ULONG:                              \
-            break;                                   \
-        case NPY_LONGLONG:                           \
-            _BroadCast(a, b, result, type, simd_op); \
-            break;                                   \
-        case NPY_ULONGLONG:                          \
-            _BroadCast(a, b, result, type, simd_op); \
-            break;                                   \
-        case NPY_FLOAT:                              \
-            break;                                   \
-        case NPY_DOUBLE:                             \
-            break;                                   \
-        case NPY_LONGDOUBLE:                         \
-            _BroadCast(a, b, result, type, simd_op); \
-            break;                                   \
-        default:                                     \
-            break;                                   \
-        }                                            \
-    }
+#define BroadCast(a, b, result, op, type) _BroadCast(a, b, result, type, op);

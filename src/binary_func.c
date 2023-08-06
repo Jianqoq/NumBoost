@@ -5,6 +5,7 @@
 #include "mkl.h"
 #include "op.h"
 #include "binary_func.h"
+#include "type_convertor.h"
 
 void add_uint8(PyArrayObject *a, PyArrayObject *b, PyObject **result)
 {
@@ -117,6 +118,25 @@ void add_uint64(PyArrayObject *a, PyArrayObject *b, PyObject **result)
 #pragma omp parallel for
     for (i = 0; i < size; i++)
         numpy_ptr[i] = a_ptr[i] + b_ptr[i];
+    *result = (PyObject *)numpy_result;
+}
+
+void add_float16(PyArrayObject *a, PyArrayObject *b, PyObject **result)
+{
+    npy_float16 *a_ptr = (npy_float16 *)PyArray_DATA(a);
+    npy_float16 *b_ptr = (npy_float16 *)PyArray_DATA(b);
+    npy_intp size = PyArray_SIZE(a);
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), PyArray_SHAPE(a), PyArray_TYPE(a), 0);
+    npy_float16 *numpy_ptr = (npy_float16 *)PyArray_DATA(numpy_result);
+    npy_intp i;
+#pragma omp parallel for
+    for (i = 0; i < size; i++)
+    {
+        npy_float32 a = float16_cast_float32(a_ptr[i]);
+        npy_float32 b = float16_cast_float32(b_ptr[i]);
+        npy_float16 result = float32_cast_float16(a + b);
+        numpy_ptr[i] = result;
+    }
     *result = (PyObject *)numpy_result;
 }
 
@@ -361,7 +381,7 @@ void div_int16(PyArrayObject *a, PyArrayObject *b, PyObject **result)
     npy_int16 *a_ptr = (npy_int16 *)PyArray_DATA(a);
     npy_int16 *b_ptr = (npy_int16 *)PyArray_DATA(b);
     npy_intp size = PyArray_SIZE(a);
-    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), PyArray_SHAPE(a), NPY_FLOAT32, 0);
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), PyArray_SHAPE(a), NPY_INT16, 0);
     npy_int16 *numpy_ptr = (npy_int16 *)PyArray_DATA(numpy_result);
     npy_intp i;
 #pragma omp parallel for
@@ -399,7 +419,7 @@ void div_int32(PyArrayObject *a, PyArrayObject *b, PyObject **result)
     npy_int32 *a_ptr = (npy_int32 *)PyArray_DATA(a);
     npy_int32 *b_ptr = (npy_int32 *)PyArray_DATA(b);
     npy_intp size = PyArray_SIZE(a);
-    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), PyArray_SHAPE(a), NPY_FLOAT32, 0);
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), PyArray_SHAPE(a), NPY_INT32, 0);
     npy_int32 *numpy_ptr = (npy_int32 *)PyArray_DATA(numpy_result);
     npy_intp i;
 #pragma omp parallel for
@@ -456,7 +476,7 @@ void div_uint64(PyArrayObject *a, PyArrayObject *b, PyObject **result)
     npy_uint64 *a_ptr = (npy_uint64 *)PyArray_DATA(a);
     npy_uint64 *b_ptr = (npy_uint64 *)PyArray_DATA(b);
     npy_intp size = PyArray_SIZE(a);
-    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), PyArray_SHAPE(a), NPY_FLOAT32, 0);
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), PyArray_SHAPE(a), NPY_UINT64, 0);
     npy_uint64 *numpy_ptr = (npy_uint64 *)PyArray_DATA(numpy_result);
     npy_intp i;
 #pragma omp parallel for
@@ -793,7 +813,7 @@ void mod_float64(PyArrayObject *a, PyArrayObject *b, PyObject **result)
     *result = (PyObject *)numpy_result;
 }
 
-BinaryFunc BinaryOp_OperationPicker(int npy_type, int operation)
+BinaryFunc BinaryOp_Picker(int npy_type, int operation)
 {
     switch (npy_type)
     {
@@ -977,6 +997,14 @@ BinaryFunc BinaryOp_OperationPicker(int npy_type, int operation)
             return mul_float64;
         case DIV:
             return div_float64;
+        }
+    case NPY_HALF:
+        switch (operation)
+        {
+        case ADD:
+            return add_float16;
+        case SUB:
+            return sub_float16;
         }
     }
 }

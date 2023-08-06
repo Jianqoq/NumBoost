@@ -227,7 +227,7 @@ tensor_add(PyObject *self, PyObject *other)
         }
         else
         {
-            BinaryOp_OperationPicker(type, ADD)(a, b, &numpy_result);
+            BinaryOp_Picker(type, ADD)(a, b, &numpy_result);
         }
         if (numpy_result == NULL)
         {
@@ -317,7 +317,7 @@ tensor_mul(PyObject *self, PyObject *other)
         }
         else
         {
-            BinaryOp_OperationPicker(type, MUL)(a, b, &numpy_result);
+            BinaryOp_Picker(type, MUL)(a, b, &numpy_result);
         }
         if (numpy_result == NULL)
         {
@@ -407,7 +407,7 @@ tensor_div(PyObject *self, PyObject *other)
         }
         else
         {
-            BinaryOp_OperationPicker(type, DIV)(a, b, &numpy_result);
+            BinaryOp_Picker(type, DIV)(a, b, &numpy_result);
         }
         if (numpy_result == NULL)
         {
@@ -558,7 +558,7 @@ tensor_sub(PyObject *self, PyObject *other)
         }
         else
         {
-            BinaryOp_OperationPicker(type, SUB)(a, b, &numpy_result);
+            BinaryOp_Picker(type, SUB)(a, b, &numpy_result);
         }
         if (numpy_result == NULL)
         {
