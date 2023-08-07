@@ -1,7 +1,11 @@
 # NumBoost
+Platform: Linux, Windows
+Python: 3.9+
+Compiler: GCC, MSVC
+Feature: Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation
 
 Known bug:
-1. np.longdouble cast to float16 will cause error even though longdouble is 64bit. np.64bit type directly cast to float 16 has no issue
+1. np.longdouble cast to float16 will cause error even though longdouble is 64bit. np.float64 type directly cast to np.float16 has no issue
 
 # To do
 1. ~~add tensordot(forward, backward)~~
