@@ -168,7 +168,6 @@ inline npy_int32 half_cast_long(npy_half value)
         return 2147483647;
     default:
     {
-        uint16_t float16_sign = (value & 0x8000u);
         int16_t exponent = float16_exp - 15;
         if (exponent < 0)
         {

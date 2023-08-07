@@ -182,7 +182,6 @@ void Any_to_Bool(PyArrayObject **array, PyArrayObject **result, int type)
 
 inline void As_Type(PyArrayObject **a, PyArrayObject **result, int self_type, int target_type)
 {
-    ConvertFunc *convert_func = NULL;
     switch (target_type)
     {
     As_Type_Cases(Bool, NPY_BOOL)
