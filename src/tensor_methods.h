@@ -24,4 +24,4 @@ Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf, PyObj
 
 Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 
-PyObject *_Generic_backward(PyObject *self, PyObject *args);
+PyObject *backward(PyObject *self, PyObject *args);

@@ -345,7 +345,9 @@ static void store_tensor_need_grad(long long index, Tensor *tensor)
     }
 }
 
-PyObject *_Generic_backward(PyObject *self, PyObject *args)
+
+PyObject *
+backward(PyObject *self, PyObject *args)
 {
     DEBUG_PRINT("Generic_backward start\n");
     // Declare variables
@@ -491,4 +493,4 @@ PyObject *_Generic_backward(PyObject *self, PyObject *args)
     DEBUG_PRINT("finished cleaning up\n");
     Py_INCREF(Py_None);
     return Py_None;
-};
+}

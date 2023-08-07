@@ -10,6 +10,7 @@
 #include "operators.h"
 #include "type_convertor.h"
 #include "tensor_methods.h"
+#include "clinic/tensor_methods.c.h"
 
 static Dict *dict = NULL;
 XLA_OPS *xla_ops = NULL;
@@ -341,6 +342,19 @@ static int Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     Py_VISIT(self->grad);
     return 0;
 }
+static void store_tensor_need_grad(long long index, Tensor *tensor)
+{
+    Tensor_need_grad_Dict *entry = NULL;
+    if (TENSOR_NEED_GRAD_DICT != NULL)
+        HASH_FIND_PTR(TENSOR_NEED_GRAD_DICT, &tensor, entry);
+    if (entry == NULL)
+    {
+        Tensor_need_grad_Dict *entry = (Tensor_need_grad_Dict *)malloc(sizeof(Tensor_need_grad_Dict));
+        entry->tensor = tensor;
+        entry->index = index;
+        HASH_ADD_PTR(TENSOR_NEED_GRAD_DICT, tensor, entry);
+    }
+}
 
 PyMemberDef properties[] = {
     {"data", T_OBJECT, offsetof(Tensor, data), 0, "data"},
@@ -406,7 +420,7 @@ static PyMappingMethods Tensor_as_mapping = {
 };
 
 static PyMethodDef Tensor_methods[] = {
-    {"backward", (PyCFunction)_Generic_backward, METH_VARARGS, "Backward method"},
+    {"backward", (PyCFunction)backward, METH_VARARGS, backward__doc__},
     {"reshape", (PyCFunction)self_reshape, METH_FASTCALL, "Method docstring"},
     {"transpose", (PyCFunction)self_transpose, METH_FASTCALL, "Method docstring"},
     {"permute", (PyCFunction)self_transpose, METH_FASTCALL, "Method docstring"},
