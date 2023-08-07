@@ -4,6 +4,7 @@ import jax
 from jax._src import sharding_impls
 from jax._src.lax.lax import xc
 from contextlib import contextmanager
+from NumBoost_type import *
 cache = {}
 
 
@@ -51,3 +52,5 @@ def enable_track():
         yield
     finally:
         set_track(0)
+
+
