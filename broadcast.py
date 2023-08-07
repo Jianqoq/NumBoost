@@ -55,7 +55,7 @@ os.environ['XLA_FLAGS'] = '--xla_force_host_platform_device_count=1'
 
 if platform.system() == 'Windows':
     os.add_dll_directory(r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
-from NumBoost import Tensor
+from num_boost import Tensor
 
 
 a = Tensor(np.arange(10).reshape((1, 2, 5)))

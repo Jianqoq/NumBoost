@@ -1,4 +1,4 @@
 from typing import Any
-from NumBoost import Tensor
+from num_boost import Tensor
 
 def random(*shape) -> Tensor: ...

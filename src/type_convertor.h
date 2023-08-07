@@ -1,10 +1,10 @@
 #include <numpy/arrayobject.h>
 
-typedef void(ConvertFunc)(PyArrayObject **array, PyArrayObject **result);
-
 void Any_to_Float(PyArrayObject **array, PyArrayObject **result, int type);
 
 void as_type(PyArrayObject **a, PyArrayObject **result, int target_type);
+
+int div_result_type_pick(int npy_enum);
 
 inline npy_half float_cast_half(npy_float32 value)
 {

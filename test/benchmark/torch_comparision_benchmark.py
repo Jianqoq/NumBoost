@@ -8,7 +8,7 @@ import torch
 if platform.system() == 'Windows':
     os.add_dll_directory(r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from NumBoost import Tensor
+from num_boost import Tensor
 
 
 def C_Tensor_addition(arr):

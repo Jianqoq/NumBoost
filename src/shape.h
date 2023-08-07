@@ -73,10 +73,9 @@ inline bool shape_smaller(npy_intp *a_shape, npy_intp *b_shape, int a_ndim, int 
         return false;
     else
     {
-        npy_int prod_a = 1;
-        npy_int prod_b = 1;
+        npy_intp prod_a = 1;
+        npy_intp prod_b = 1;
         for (int i = 0; i < a_ndim; i++)
-
         {
             prod_a *= a_shape[i];
             prod_b *= b_shape[i];
