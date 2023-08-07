@@ -1185,7 +1185,7 @@ Tensor *_sin(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsSin, sinf, tensor, array, out, "SinBackward");
     }
 }
@@ -1206,7 +1206,7 @@ Tensor *_cos(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsCos, cosf, tensor, array, out, "CosBackward");
     }
 }
@@ -1227,7 +1227,7 @@ Tensor *_tan(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsTan, tanf, tensor, array, out, "TanBackward");
     }
 }
@@ -1248,7 +1248,7 @@ Tensor *_asin(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsAsin, asinf, tensor, array, out, "ArcSinBackward");
     }
 }
@@ -1269,7 +1269,7 @@ Tensor *_acos(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsAcos, acosf, tensor, array, out, "ArcCosBackward");
     }
 }
@@ -1290,7 +1290,7 @@ Tensor *_atan(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsAtan, atanf, tensor, array, out, "ArcTanBackward");
     }
 }
@@ -1311,7 +1311,7 @@ Tensor *_sinh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsSinh, sinhf, tensor, array, out, "SinhBackward");
     }
 }
@@ -1332,7 +1332,7 @@ Tensor *_cosh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsCosh, coshf, tensor, array, out, "CoshBackward");
     }
 }
@@ -1353,7 +1353,7 @@ Tensor *_exp(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsExp, expf, tensor, array, out, "ExpBackward");
     }
 }
@@ -1374,7 +1374,7 @@ Tensor *_log10(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsLog10, log10f, tensor, array, out, "Log10Backward");
     }
 }
@@ -1395,7 +1395,7 @@ Tensor *_log(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsLn, logf, tensor, array, out, "LogBackward");
     }
 }
@@ -1416,7 +1416,7 @@ Tensor *_tanh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsTanh, tanhf, tensor, array, out, "TanhBackward");
     }
 }
@@ -1437,7 +1437,7 @@ Tensor *_asinh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsAsinh, asinhf, tensor, array, out, "ArcSinhBackward");
     }
 }
@@ -1458,7 +1458,7 @@ Tensor *_acosh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsAcosh, acoshf, tensor, array, out, "ArcCoshBackward");
     }
 }
@@ -1479,7 +1479,7 @@ Tensor *_atanh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsTanh, atanhf, tensor, array, out, "ArcTanhBackward");
     }
 }
@@ -1500,7 +1500,7 @@ Tensor *_sqrt(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsSqrt, sqrtf, tensor, array, out, "SqrtBackward");
     }
 }
@@ -1521,7 +1521,7 @@ Tensor *_arcsinh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsAsinh, asinhf, tensor, array, out, "ArcSinhBackward");
     }
 }
@@ -1542,7 +1542,7 @@ Tensor *_arccosh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsAcosh, acoshf, tensor, array, out, "ArcCoshBackward");
     }
 }
@@ -1563,7 +1563,7 @@ Tensor *_arctanh(PyObject *self, PyObject *const *args, size_t nargsf)
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float(vsAtanh, atanhf, tensor, array, out, "ArcTanhBackward");
     }
 }
@@ -1642,7 +1642,7 @@ static inline PyObject *internal_npy_cal_oneArgs(void (*vect_func1)(const int, c
     }
     else
     {
-        Any_to_Float32(typenum)(&array, NULL);
+        Any_to_Float(&array, NULL, typenum);
         return Generic_function_new_float_internal(vect_func2, func1, array, out);
     }
 }
