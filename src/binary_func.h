@@ -116,9 +116,7 @@ void BinaryOp_Picker(int operation, PyArrayObject *a, PyArrayObject *b, PyObject
             break;                                                                                         \
         }                                                                                                  \
         if (div_by_zero)                                                                                   \
-        {                                                                                                  \
             fprintf(stderr, "RuntimeWarning: divide by zero encountered in divide\n");                     \
-        }                                                                                                  \
     }
 
 #define BINARY_OPERATION_VEC(a, b, result, vec_func, data_type, npy_enum)                                             \

@@ -26,9 +26,7 @@ inline npy_half float_cast_half(npy_float32 value)
                 uint16_t ret = (uint16_t)(0x7c00u + (float32_m >> 13));
                 /* ...but make sure it stays a NaN */
                 if (ret == 0x7c00u)
-                {
                     ret++;
-                }
                 return (uint16_t)(float32_sign + ret);
             }
             else
@@ -67,6 +65,10 @@ inline npy_half float_cast_half(npy_float32 value)
     return (uint16_t)float32_sign + h_sig;
 }
 
+inline npy_half bool_cast_half(npy_bool value)
+{
+    return value ? (npy_half)0x3c00u : (npy_half)0x0000u;
+}
 #define DEFINE_HALF_CAST_FUNC(FROM_TYPE, FUNC_NAME) \
     inline npy_half FUNC_NAME(FROM_TYPE value)      \
     {                                               \
@@ -131,7 +133,7 @@ inline npy_float32 half_cast_float(npy_half value)
     }
 }
 
-inline npy_int16 half_cast_short(npy_half value)
+inline npy_uint half_cast_uint(npy_half value)
 {
     uint16_t float16_exp = (value & 0x7c00u) >> 10;
     switch (float16_exp)
@@ -145,19 +147,19 @@ inline npy_int16 half_cast_short(npy_half value)
         int16_t exponent = float16_exp - 15;
         if (exponent < 0)
         {
-            npy_int16 result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
+            npy_uint result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
             return result;
         }
         else
         {
-            npy_int16 result = ((((value & 0x03ffu) << exponent) >> 10) + (1 << exponent)) * ((value & 0x8000u) ? -1 : 1);
+            npy_uint result = ((((value & 0x03ffu) << exponent) >> 10) + (1 << exponent)) * ((value & 0x8000u) ? -1 : 1);
             return result;
         }
     }
     }
 }
 
-inline npy_int32 half_cast_long(npy_half value)
+inline npy_int half_cast_int(npy_half value)
 {
     uint16_t float16_exp = (value & 0x7c00u) >> 10;
     switch (float16_exp)
@@ -165,25 +167,35 @@ inline npy_int32 half_cast_long(npy_half value)
     case 0x0000u:
         return (value & 0x8000u) ? -0 : 0;
     case 0x7c00u:
-        return 2147483647;
+        return 32768;
     default:
     {
         int16_t exponent = float16_exp - 15;
         if (exponent < 0)
         {
-            npy_int32 result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
+            npy_int result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
             return result;
         }
         else
         {
-            npy_int32 result = ((((value & 0x03ffu) << exponent) >> 10) + (1 << exponent)) * ((value & 0x8000u) ? -1 : 1);
+            npy_int result = ((((value & 0x03ffu) << exponent) >> 10) + (1 << exponent)) * ((value & 0x8000u) ? -1 : 1);
             return result;
         }
     }
     }
 }
 
-inline npy_int64 half_cast_longlong(npy_half value)
+inline npy_byte half_cast_byte(npy_half value)
+{
+    return ((npy_byte)half_cast_int(value));
+}
+
+inline npy_ubyte half_cast_ubyte(npy_half value)
+{
+    return ((npy_ubyte)half_cast_uint(value));
+}
+
+inline npy_short half_cast_short(npy_half value)
 {
     uint16_t float16_exp = (value & 0x7c00u) >> 10;
     switch (float16_exp)
@@ -191,22 +203,27 @@ inline npy_int64 half_cast_longlong(npy_half value)
     case 0x0000u:
         return (value & 0x8000u) ? -0 : 0;
     case 0x7c00u:
-        return 9223372036854775807;
+        return 32768;
     default:
     {
         int16_t exponent = float16_exp - 15;
         if (exponent < 0)
         {
-            npy_int64 result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
+            npy_short result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
             return result;
         }
         else
         {
-            npy_int64 result = ((1 + ((value & 0x03ffu) >> 10)) << exponent) * ((value & 0x8000u) ? -1 : 1);
+            npy_short result = ((((value & 0x03ffu) << exponent) >> 10) + (1 << exponent)) * ((value & 0x8000u) ? -1 : 1);
             return result;
         }
     }
     }
+}
+
+inline npy_ushort half_cast_ushort(npy_half value)
+{
+    return ((npy_ushort)half_cast_short(value));
 }
 
 inline npy_double half_cast_double(npy_half value)
@@ -255,6 +272,16 @@ inline npy_double half_cast_double(npy_half value)
         return P2;
     }
     }
+}
+
+inline npy_long half_cast_long(npy_half value)
+{
+    return (npy_long)half_cast_double(value);
+}
+
+inline npy_longlong half_cast_longlong(npy_half value)
+{
+    return ((npy_longlong)half_cast_double(value));
 }
 
 inline npy_half double_cast_half(npy_float64 value)
@@ -323,6 +350,16 @@ inline npy_half ulonglong_cast_half(npy_ulonglong value)
     return longlong_cast_half((npy_double)value);
 }
 
+inline npy_ulong half_cast_ulong(npy_half value)
+{
+    return ((npy_ulong)half_cast_long(value));
+}
+
+inline npy_double half_cast_ulonglong(npy_half value)
+{
+    return (half_cast_double(value));
+}
+
 #define CAST_ARRAY(source, result, source_type, to_type, npy_enum)                              \
     {                                                                                           \
         npy_intp ndims = PyArray_NDIM(*source);                                                 \
@@ -378,7 +415,7 @@ inline npy_half ulonglong_cast_half(npy_ulonglong value)
         }                                                                                       \
     }
 
-#define CAST_ARRAY_BOOL(source, result, source_type, to_type)                                   \
+#define CAST_ARRAY_BOOL(source, result, source_type)                                            \
     {                                                                                           \
         npy_intp ndims = PyArray_NDIM(*source);                                                 \
         npy_intp *shape = PyArray_SHAPE(*source);                                               \
@@ -390,7 +427,7 @@ inline npy_half ulonglong_cast_half(npy_ulonglong value)
             *array = NULL;                                                                      \
             return;                                                                             \
         }                                                                                       \
-        to_type *array_data = (to_type *)PyArray_DATA(array_);                                  \
+        npy_bool *array_data = (npy_bool *)PyArray_DATA(array_);                                \
         source_type *data = (source_type *)PyArray_DATA(*source);                               \
         npy_intp i;                                                                             \
         _Pragma("omp parallel for") for (i = 0; i < size; i++)                                  \
@@ -409,9 +446,9 @@ inline npy_half ulonglong_cast_half(npy_ulonglong value)
         CAST_ARRAY(array, result, FROM, TO, TO_ENUM) \
         break;
 
-#define CAST_ARRAY_CASE_BOOL(TYPE, FROM, TO)     \
-    case TYPE:                                   \
-        CAST_ARRAY_BOOL(array, result, FROM, TO) \
+#define CAST_ARRAY_CASE_BOOL(TYPE, FROM)     \
+    case TYPE:                               \
+        CAST_ARRAY_BOOL(array, result, FROM) \
         break;
 
 #define F_CAST_ARRAY_CASE(TYPE, FROM, TO, TO_ENUM, F_CAST_FUNC)     \
