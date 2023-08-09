@@ -7,8 +7,8 @@ if platform.system() == 'Windows':
     os.add_dll_directory(r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from num_boost import *
-
-
+#
+#
 def assert_operation(a, b, array):
     assert np.allclose(a.data, b, equal_nan=True)
     a_ = Tensor(array)

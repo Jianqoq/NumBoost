@@ -226,58 +226,6 @@ inline npy_ushort half_cast_ushort(npy_half value)
     return ((npy_ushort)half_cast_short(value));
 }
 
-inline npy_long half_cast_long(npy_half value)
-{
-    uint16_t float16_exp = (value & 0x7c00u) >> 10;
-    switch (float16_exp)
-    {
-    case 0x0000u:
-        return (value & 0x8000u) ? -0 : 0;
-    case 0x7c00u:
-        return 2147483647;
-    default:
-    {
-        int16_t exponent = float16_exp - 15;
-        if (exponent < 0)
-        {
-            npy_long result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
-            return result;
-        }
-        else
-        {
-            npy_long result = ((((value & 0x03ffu) << exponent) >> 10) + (1 << exponent)) * ((value & 0x8000u) ? -1 : 1);
-            return result;
-        }
-    }
-    }
-}
-
-inline npy_longlong half_cast_longlong(npy_half value)
-{
-    uint16_t float16_exp = (value & 0x7c00u) >> 10;
-    switch (float16_exp)
-    {
-    case 0x0000u:
-        return (value & 0x8000u) ? -0 : 0;
-    case 0x7c00u:
-        return 9223372036854775807;
-    default:
-    {
-        int16_t exponent = float16_exp - 15;
-        if (exponent < 0)
-        {
-            npy_longlong result = ((((value & 0x03ffu) >> -exponent) >> 10) + (1 >> -exponent)) * ((value & 0x8000u) ? -1 : 1);
-            return result;
-        }
-        else
-        {
-            npy_longlong result = ((1 + ((value & 0x03ffu) >> 10)) << exponent) * ((value & 0x8000u) ? -1 : 1);
-            return result;
-        }
-    }
-    }
-}
-
 inline npy_double half_cast_double(npy_half value)
 {
     uint16_t float16_exp = value & 0x7c00u;
@@ -324,6 +272,16 @@ inline npy_double half_cast_double(npy_half value)
         return P2;
     }
     }
+}
+
+inline npy_long half_cast_long(npy_half value)
+{
+    return (npy_long)half_cast_double(value);
+}
+
+inline npy_longlong half_cast_longlong(npy_half value)
+{
+    return ((npy_longlong)half_cast_double(value));
 }
 
 inline npy_half double_cast_half(npy_float64 value)
@@ -397,9 +355,9 @@ inline npy_ulong half_cast_ulong(npy_half value)
     return ((npy_ulong)half_cast_long(value));
 }
 
-inline npy_ulong half_cast_ulonglong(npy_half value)
+inline npy_double half_cast_ulonglong(npy_half value)
 {
-    return ((npy_ulonglong)half_cast_long(value));
+    return (half_cast_double(value));
 }
 
 #define CAST_ARRAY(source, result, source_type, to_type, npy_enum)                              \

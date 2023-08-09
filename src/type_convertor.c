@@ -181,6 +181,8 @@ void Any_to_UByte(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Uint(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    printf("%d\n", sizeof(npy_uint));
+    printf("type: %d\n", type);
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_uint, NPY_UINT)
