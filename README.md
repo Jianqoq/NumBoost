@@ -23,16 +23,18 @@ Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, h
 8. vectorization
 9. bool calculation support
 10. complex calculation support
-11. add __setitem__ for Tensor
-12. add concat(forward, backward)
-13. add stack(forward, backward)
-14. add split(forward, backward)
-15. add mean(forward, backward)
-16. add trace(forward, backward)
-17. remove redundant calculation in backward(add require grad check)
-18. implement shape prediction instead of doing real calculation in jax tracing
-19. implement broadcast detection based on shape
-20. let cache can handle more scenario at the same function need to be jit
-21. Proof of concept(POC) Object Pool for Tensor
-22. Better Tensor dealloc(directly use switch to free dict)
-23. To be determined(TBD)
+11. backward node fusion
+12. Runtime dynamic computation graph analysis and optimization
+13. add __setitem__ for Tensor
+14. add concat(forward, backward)
+15. add stack(forward, backward)
+16. add split(forward, backward)
+17. add mean(forward, backward)
+18. add trace(forward, backward)
+19. remove redundant calculation in backward(add require grad check)
+20. implement shape prediction instead of doing real calculation in jax tracing
+21. implement broadcast detection based on shape
+22. let cache can handle more scenario at the same function need to be jit
+23. Proof of concept(POC) Object Pool for Tensor
+24. Better Tensor dealloc(directly use switch to free dict)
+25. To be determined(TBD)
