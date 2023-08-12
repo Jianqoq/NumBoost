@@ -170,7 +170,7 @@ Tensor *random_(PyObject *self, PyObject *const *args, size_t nargsf)
             data[i] = pcg32_random_r(rng) / uint32_max;
         }
     }
-    Tensor *tensor = Tensor__new__(&Tensor_type, (PyObject *)arr);
+    Tensor *tensor = Tensor__new__(Tensor_type, (PyObject *)arr);
     Py_DECREF(arr);
     return tensor;
 }
@@ -204,7 +204,7 @@ Tensor *randn_(PyObject *self, PyObject *const *args, size_t nargsf)
             data[i] = RNOR;
         }
     }
-    Tensor *tensor = (Tensor *)Tensor__new__(&Tensor_type, (PyObject *)arr);
+    Tensor *tensor = (Tensor *)Tensor__new__(Tensor_type, (PyObject *)arr);
     Py_DECREF(arr);
     return tensor;
 }
@@ -253,9 +253,9 @@ PyInit_rand(void)
     zigset(5);
     PyObject *m;
     m = PyModule_Create(&custommodule);
-    if (PyType_Ready(&Tensor_type) < 0)
+    if (PyType_Ready(Tensor_type) < 0)
         return NULL;
-    Py_INCREF(&Tensor_type);
+    Py_INCREF(Tensor_type);
     if (m == NULL)
         return NULL;
     return m;

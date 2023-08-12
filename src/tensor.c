@@ -24,6 +24,7 @@ Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT = NULL;
 Tensordot_Dict *TENSORDOT_DICT = NULL;
 Slice_Dict *SLICE_DICT = NULL;
 Zeros_Array_Dict *ZEROS_ARRAY_DICT = NULL;
+extern PyTypeObject TensorIterator_type;
 
 void store_for_slicebackward(Tensor *key, PyObject *slice_obj, npy_intp *ptr, int nd, Tensor *parent)
 {
@@ -342,6 +343,7 @@ static int Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     Py_VISIT(self->grad);
     return 0;
 }
+
 static void store_tensor_need_grad(long long index, Tensor *tensor)
 {
     Tensor_need_grad_Dict *entry = NULL;
@@ -469,7 +471,11 @@ static PyModuleDef custommodule = {
     .m_methods = module_methods,
 };
 
-PyTypeObject Tensor_type = {
+static PySequenceMethods sequence_methods = {
+    .sq_length = (lenfunc)__len__,
+};
+
+PyTypeObject Tensor_type_ = {
     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "Tensor",
     .tp_doc = "Tensor objects",
     .tp_basicsize = sizeof(Tensor),
@@ -487,7 +493,13 @@ PyTypeObject Tensor_type = {
     .tp_repr = (reprfunc)__repr__,
     .tp_getset = Tensor_getsetters,
     .tp_as_mapping = &Tensor_as_mapping,
+    .tp_iter = (getiterfunc)__iter__,
+    .tp_richcompare = (richcmpfunc)rich_compare,
+    .tp_as_sequence = &sequence_methods,
+    .tp_hash = (hashfunc)__hash__,
 };
+
+PyTypeObject *Tensor_type = &Tensor_type_;
 
 void init_map()
 {
@@ -535,16 +547,22 @@ PyMODINIT_FUNC PyInit_Numboost(void)
         return NULL;
     import_array();
     init_map();
-    PyObject *m;
-    if (PyType_Ready(&Tensor_type) < 0)
-        return NULL;
-
-    m = PyModule_Create(&custommodule);
+    PyObject *m = PyModule_Create(&custommodule);
     if (m == NULL)
         return NULL;
-    if (PyModule_AddObject(m, "Tensor", (PyObject *)&Tensor_type))
+    if (PyType_Ready(&TensorIterator_type) < 0)
+        return NULL;
+    if (PyModule_AddObject(m, "TensorIterator", (PyObject *)&TensorIterator_type))
     {
-        Py_DECREF(&Tensor_type);
+        Py_DECREF(&TensorIterator_type);
+        Py_DECREF(m);
+        return NULL;
+    };
+    if (PyType_Ready(Tensor_type) < 0)
+        return NULL;
+    if (PyModule_AddObject(m, "Tensor", (PyObject *)Tensor_type))
+    {
+        Py_DECREF(Tensor_type);
         Py_DECREF(m);
         return NULL;
     };

@@ -119,6 +119,22 @@ void BinaryOp_Picker(int operation, PyArrayObject *a, PyArrayObject *b, PyObject
             fprintf(stderr, "RuntimeWarning: divide by zero encountered in divide\n");                     \
     }
 
+#define BINARY_OPERATION_FUSE(a, b, result, op, data_type, npy_enum)                                       \
+    {                                                                                                      \
+        data_type *a_ptr = (data_type *)PyArray_DATA(a);                                                   \
+        data_type *b_ptr = (data_type *)PyArray_DATA(b);                                                   \
+        npy_intp size = PyArray_SIZE(a);                                                                   \
+        npy_intp *shape = PyArray_SHAPE(a);                                                                \
+        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
+        data_type *numpy_ptr = (data_type *)PyArray_DATA(numpy_result);                                    \
+        npy_intp i;                                                                                        \
+        _Pragma("omp parallel for") for (i = 0; i < size; i++)                                             \
+        {                                                                                                  \
+            result_ptr[i] = a_ptr[i] op b_ptr[i];                                                          \
+        }                                                                                                  \
+        *result = (PyObject *)numpy_result;                                                                \
+    }
+
 #define BINARY_OPERATION_VEC(a, b, result, vec_func, data_type, npy_enum)                                             \
     {                                                                                                                 \
         data_type *a_ptr = (data_type *)PyArray_DATA(a);                                                              \

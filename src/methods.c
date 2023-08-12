@@ -1582,7 +1582,7 @@ Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf)
     {
         tensor = (Tensor *)args[0];
         power = args[1];
-        if (Py_IS_TYPE(args[1], &Tensor_type))
+        if (Py_IS_TYPE(args[1], Tensor_type))
         {
             Tensor *tmp = (Tensor *)args[1];
             power = tmp->data;
@@ -1592,7 +1592,7 @@ Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf)
     {
         tensor = (Tensor *)args[0];
         power = args[1];
-        if (Py_IS_TYPE(args[1], &Tensor_type))
+        if (Py_IS_TYPE(args[1], Tensor_type))
         {
             Tensor *tmp = (Tensor *)args[1];
             power = tmp->data;

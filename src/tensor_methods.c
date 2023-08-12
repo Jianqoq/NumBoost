@@ -8,6 +8,7 @@
 #include "uthash.h"
 extern jnp_method *JNP_METHOD;
 extern Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT;
+extern PyTypeObject TensorIterator_type;
 
 PyObject *astype(Tensor *self, PyObject *const *args, size_t nargsf)
 {
@@ -17,13 +18,14 @@ PyObject *astype(Tensor *self, PyObject *const *args, size_t nargsf)
     as_type(&self_data, &arr, tp);
     if (self->data == NULL || arr == NULL)
         return NULL;
-    PyObject *result = Tensor__new__(&Tensor_type, (PyObject *)arr);
+    PyObject *result = Tensor__new__(Tensor_type, (PyObject *)arr);
     ((Tensor *)result)->require_grad = self->require_grad;
     return (PyObject *)result;
 }
 
 PyObject *__str__(Tensor *self)
 {
+    DEBUG_PRINT("Calling __str__\n");
     char *result, *dest, *prefix = "Tensor(", *end = ")\n";
     if (TRACK)
     {
@@ -61,15 +63,23 @@ PyObject *__str__(Tensor *self)
         count++;
     }
     result[index++] = '\0';
-
     if (!strcmp(self->grad_fn, ""))
     {
-        const char *string_array[] = {(const char *)prefix,
-                                      (const char *)result,
-                                      ", dtype=",
-                                      PyArray_DESCR((PyArrayObject *)self->data)->typeobj->tp_name,
-                                      ", requires_grad=",
-                                      (const char *)require_grad, end};
+        char *string_array[7] = {prefix,
+                                 result,
+                                 ", dtype=",
+                                 "",
+                                 ", requires_grad=",
+                                 require_grad,
+                                 end};
+        if (PyArray_IsAnyScalar(self->data))
+        {
+            string_array[3] = (char*)(PyArray_DescrFromScalar(self->data)->typeobj->tp_name);
+        }
+        else
+        {
+            string_array[3] = (char*)(PyArray_DESCR((PyArrayObject *)self->data)->typeobj->tp_name);
+        }
         uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
         uint64_t string_total_len = 1;
         for (uint64_t i = 0; i < string_array_len; i++)
@@ -111,28 +121,72 @@ PyObject *__str__(Tensor *self)
     free(dest);
     free(result);
     Py_DECREF(py_str);
+    DEBUG_PRINT("Finished calling __str__\n");
     return representation;
 }
 
 PyObject *__repr__(Tensor *self)
 {
+    DEBUG_PRINT("Calling __repr__ done\n");
     return __str__(self);
 }
 
-PyObject *__len__(Tensor *self)
+Py_ssize_t __len__(Tensor *self)
 {
-    return PyLong_FromLongLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
+    if (PyArray_IsAnyScalar(self->data))
+        return (Py_ssize_t)1;
+    npy_intp *shape = PyArray_SHAPE((PyArrayObject *)self->data);
+    if (shape == NULL)
+        return 1;
+    npy_intp size = shape[0];
+    return (Py_ssize_t)size;
 }
 
 PyObject *__iter__(Tensor *self)
 {
-    Py_INCREF(Py_None);
-    return Py_None;
+    return (PyObject *)iterator_new(&TensorIterator_type, self);
 }
 
-PyObject *__max__(Tensor *self)
+PyObject *rich_compare(Tensor *self, PyObject *other, int op)
 {
-    return PyLong_FromLongLong(((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
+    PyArray_Descr *descr = NULL;
+    int ndim = 0;
+    if (PyArray_IsAnyScalar(self->data))
+    {
+        descr = PyArray_DescrFromScalar(self->data);
+        ndim = 0;
+    }
+    else
+    {
+        descr = ((PyArrayObject_fields *)((PyArrayObject *)self->data))->descr;
+        ndim = ((PyArrayObject_fields *)((PyArrayObject *)self->data))->nd;
+    }
+    if (ndim > 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "The truth value of an array with more than one dimension is ambiguous. Use a.any() or a.all()");
+        return NULL;
+    }
+    bool result = false;
+    switch (descr->type_num)
+    {
+        Compare(NPY_BOOL, npy_bool, self, other, result, descr, op);
+        Compare(NPY_BYTE, npy_byte, self, other, result, descr, op);
+        Compare(NPY_UBYTE, npy_ubyte, self, other, result, descr, op);
+        Compare(NPY_SHORT, npy_short, self, other, result, descr, op);
+        Compare(NPY_USHORT, npy_ushort, self, other, result, descr, op);
+        Compare(NPY_INT, npy_int, self, other, result, descr, op);
+        Compare(NPY_UINT, npy_uint, self, other, result, descr, op);
+        Compare(NPY_LONG, npy_long, self, other, result, descr, op);
+        Compare(NPY_ULONG, npy_ulong, self, other, result, descr, op);
+        Compare(NPY_LONGLONG, npy_longlong, self, other, result, descr, op);
+        Compare(NPY_ULONGLONG, npy_ulonglong, self, other, result, descr, op);
+        Compare(NPY_FLOAT, npy_float, self, other, result, descr, op);
+        Compare(NPY_DOUBLE, npy_double, self, other, result, descr, op);
+    }
+    if (result)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
 }
 
 PyObject *__min__(Tensor *self)
@@ -162,27 +216,32 @@ PyObject *get_item(Tensor *self, PyObject *item)
 
 Tensor *T(Tensor *self)
 {
-    DEBUG_PRINT("Transposing tensor in T\n");
+    DEBUG_PRINT("Calling T\n");
+    if (PyArray_IsAnyScalar(self->data))
+    {
+        Tensor *to_return = (Tensor *)Tensor_Empty(self->data);
+        if (self->require_grad)
+        {
+            npy_intp *new_axes = (npy_intp *)malloc(sizeof(npy_intp) * 1);
+            new_axes[0] = 0;
+            store_array_shape(to_return, new_axes, 0);
+        }
+        return to_return;
+    }
     npy_intp ndim = ((PyArrayObject_fields *)self->data)->nd;
     npy_intp *new_axes = (npy_intp *)malloc(sizeof(npy_intp) * ndim);
     for (int i = 0; i < ndim; i++)
         new_axes[i] = ndim - i - 1;
-#if DEBUG
-    printf("New Shape: ");
-    for (int i = 0; i < ndim; i++)
-        printf("%ld ", new_axes[i]);
-    printf("\n");
-#endif
     PyArray_Dims new_dims = {new_axes, (int)ndim};
     PyObject *transposed = PyArray_Transpose((PyArrayObject *)self->data, &new_dims);
     if (transposed == NULL)
         return NULL;
-    DEBUG_PRINT("Transposed tensor in T\n");
     Tensor *to_return = (Tensor *)new_Tensor_x(self, transposed, "TransposeBackward");
     if (self->require_grad)
         store_array_shape(to_return, new_axes, ndim);
     else
         free(new_axes);
+    DEBUG_PRINT("Finished calling T\n");
     return to_return;
 }
 
@@ -307,7 +366,6 @@ PyObject *collect_gradients_and_cleanup(PyObject *list)
 {
     Tensor_need_grad_Dict *gradient_entry, *gradient_tmp;
     PyObject *to_return = NULL;
-
     DEBUG_PRINT("Collecting gradients and cleaning up, dict length %d.\n", HASH_COUNT(TENSOR_NEED_GRAD_DICT));
     if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) == 1)
     {
@@ -331,6 +389,7 @@ PyObject *collect_gradients_and_cleanup(PyObject *list)
     Py_DECREF(list);
     return to_return;
 }
+
 static void store_tensor_need_grad(long long index, Tensor *tensor)
 {
     Tensor_need_grad_Dict *entry = NULL;
@@ -345,6 +404,10 @@ static void store_tensor_need_grad(long long index, Tensor *tensor)
     }
 }
 
+Py_hash_t __hash__(Tensor *self)
+{
+    return (Py_hash_t)self;
+}
 
 PyObject *
 backward(PyObject *self, PyObject *args)
@@ -464,7 +527,7 @@ backward(PyObject *self, PyObject *args)
             }
         }
         // Handle the tensor y
-        if (Py_IS_TYPE(tensor->y, &Tensor_type))
+        if (Py_IS_TYPE(tensor->y, Tensor_type))
         {
             bool require_grad = ((Tensor *)tensor->y)->require_grad;
             if (current_grad2 != NULL && require_grad)
@@ -482,13 +545,13 @@ backward(PyObject *self, PyObject *args)
     // Cleanup
     DEBUG_PRINT("Cleaning up\n");
     freeStack(stack);
-    Py_DECREF(list);
     DEBUG_PRINT("finished cleaning up on tensordot data\n");
     // If tracking, return the gradients as a tuple
     if (TRACK)
     {
         return collect_gradients_and_cleanup(list);
     }
+    Py_DECREF(list);
     // If not tracking, just cleanup and return None
     DEBUG_PRINT("finished cleaning up\n");
     Py_INCREF(Py_None);
