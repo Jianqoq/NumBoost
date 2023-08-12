@@ -25,10 +25,8 @@ PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf);
 extern XLA_OPS *xla_ops;
 #endif
 
-#ifndef tensor_type
-#define tensor_type
-extern PyTypeObject Tensor_type;
-#endif
+#include "object.h"
+extern PyTypeObject *Tensor_type;
 
 #ifndef ARRAYOBJECT_H
 #define ARRAYOBJECT_H
@@ -54,6 +52,19 @@ typedef struct
 
 } Tensor;
 #endif
+
+#ifndef ITOR_H
+#define ITOR_H
+typedef struct
+{
+    PyObject_HEAD
+        PyObject *data_iter;
+    int ndim;
+} TensorIteratorObject;
+#endif
+
+TensorIteratorObject *iterator_new(PyTypeObject *type, Tensor *self);
+PyObject *iterator_next(TensorIteratorObject *self);
 
 #ifndef TENSOR_CORE
 #define TENSOR_CORE
@@ -233,7 +244,7 @@ void store_tensordot_data(Tensor *key, Tensordot_Metadata *metadata);
 Tensordot_Metadata *get_tensordot_data(Tensor *key);
 void free_tensordot_data();
 
-void store_for_slicebackward(Tensor *key, PyObject *slice_obj, npy_intp *ptr, int nd, Tensor*parent);
+void store_for_slicebackward(Tensor *key, PyObject *slice_obj, npy_intp *ptr, int nd, Tensor *parent);
 void get_slice_objs(Tensor *key, npy_intp **origin_shape, PyObject **slice_obj, int *nd, PyObject **zeros_array);
 void free_slice_objs(Tensor *key);
 

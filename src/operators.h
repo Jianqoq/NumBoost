@@ -4,7 +4,7 @@
 #include "tensor.h"
 #endif
 
-PyObject * __new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y, const char *grad_fn);
+PyObject *__new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y, const char *grad_fn);
 
 PyObject *
 new_Tensor(Tensor *tensor, Tensor *tensor2, PyObject *data, const char *grad_fn);
@@ -17,6 +17,8 @@ new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn);
 
 PyObject *
 Tensor__new__(PyTypeObject *type, PyObject *data);
+
+PyObject *Tensor_Empty(PyObject *data);
 
 PyObject *tensor_add(PyObject *self, PyObject *other);
 PyObject *tensor_iadd(PyObject *self, PyObject *other);

@@ -1,3 +1,5 @@
+#ifndef OP_H
+#define OP_H
 typedef enum
 {
     ADD,
@@ -7,3 +9,4 @@ typedef enum
     MOD,
     POW,
 } op_type;
+#endif

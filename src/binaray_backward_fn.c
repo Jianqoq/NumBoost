@@ -62,7 +62,7 @@ void check_shape(PyArrayObject *grad, PyObject *origin_data, PyObject **out, con
             dims2[i] = fields2->dimensions[i];
         }
     }
-    else if (type == &Tensor_type)
+    else if (type == Tensor_type)
     {
         Tensor *tensor = (Tensor *)origin_data;
         PyArrayObject_fields *fields2 = (PyArrayObject_fields *)tensor->data;
@@ -167,7 +167,7 @@ void check_jaxpr_shape(PyArrayObject *predict_data, PyObject *origin_data, PyObj
             dims2[i] = fields2->dimensions[i];
         }
     }
-    else if (type == &Tensor_type)
+    else if (type == Tensor_type)
     {
         Tensor *tensor = (Tensor *)origin_data;
         PyArrayObject_fields *fields2 = (PyArrayObject_fields *)tensor->data;
@@ -486,7 +486,6 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         reshaped = PyObject_CallFunctionObjArgs(JNP_METHOD->reshape, grad, matmul_result_shape, NULL);
         Py_DECREF(matmul_result_shape);
         DEBUG_PRINT("reshaped:\n")
-        DEBUG_PyObject_Print(reshaped)
             DEBUG_PRINTLN("") if (reshaped == NULL)
         {
             DEBUG_PRINT("reshaped is null\n");
@@ -496,11 +495,6 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         }
         npy_intp t1_ptr_[] = {1, 0};
         PyArray_Dims t1 = {t1_ptr_, 2};
-#ifdef DEBUG
-        printf("transposing:\n");
-        PyObject_Print(metadata->transposed_reshape_b, stdout, 0);
-        printf("\n");
-#endif
         tmp1 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_b, &t1);
         tmp2 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_a, &t1);
         if (tmp1 == NULL || tmp2 == NULL)
@@ -567,17 +561,6 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
     }
     npy_intp t1_ptr_[] = {1, 0};
     PyArray_Dims t1 = {t1_ptr_, 2};
-#ifdef DEBUG
-    for (uint8_t i = 0; i < 2; i++)
-    {
-        DEBUG_PRINT("%d ", t1_ptr_[i]);
-    }
-    DEBUG_PRINT("\n");
-    PyObject_Print((PyObject *)metadata->transposed_reshape_b, stdout, 0);
-    DEBUG_PRINT("\n");
-    PyObject_Print((PyObject *)metadata->transposed_reshape_a, stdout, 0);
-    DEBUG_PRINT("\n");
-#endif
     tmp1 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_b, &t1);
     tmp2 = PyArray_Transpose((PyArrayObject *)metadata->transposed_reshape_a, &t1);
     if (tmp1 == NULL || tmp2 == NULL)
@@ -596,22 +579,6 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         *out2 = NULL;
         return;
     }
-#ifdef DEBUG
-    for (uint8_t i = 0; i < metadata->newshape_a.len; i++)
-    {
-        DEBUG_PRINT("%d ", metadata->newshape_a.ptr[i]);
-    }
-    DEBUG_PRINT("\n");
-    PyObject_Print(at_grad, stdout, 0);
-    DEBUG_PRINT("\n");
-    for (uint8_t i = 0; i < metadata->newshape_b.len; i++)
-    {
-        DEBUG_PRINT("%d ", metadata->newshape_b.ptr[i]);
-    }
-    DEBUG_PRINT("\n");
-    PyObject_Print(bt_grad, stdout, 0);
-    DEBUG_PRINT("\n");
-#endif
     at_grad_reshaped = PyArray_Newshape((PyArrayObject *)at_grad, &metadata->newshape_a, NPY_CORDER);
     bt_grad_reshaped = PyArray_Newshape((PyArrayObject *)bt_grad, &metadata->newshape_b, NPY_CORDER);
     if (at_grad_reshaped == NULL || bt_grad_reshaped == NULL)
@@ -621,22 +588,6 @@ void tensordot_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObjec
         *out2 = NULL;
         return;
     }
-#ifdef DEBUG
-    for (uint8_t i = 0; i < metadata->newaxes_a.len; i++)
-    {
-        DEBUG_PRINT("%d ", metadata->newaxes_a.ptr[i]);
-    }
-    DEBUG_PRINT("\n");
-    PyObject_Print(at_grad_reshaped, stdout, 0);
-    DEBUG_PRINT("\n");
-    for (uint8_t i = 0; i < metadata->newaxes_b.len; i++)
-    {
-        DEBUG_PRINT("%d ", metadata->newaxes_b.ptr[i]);
-    }
-    DEBUG_PRINT("\n");
-    PyObject_Print(bt_grad_reshaped, stdout, 0);
-    DEBUG_PRINT("\n");
-#endif
     npy_intp *tmp_a_ptr = malloc(sizeof(npy_intp) * metadata->newaxes_a.len);
     PyArray_Dims tmp_a = {tmp_a_ptr, metadata->newaxes_a.len};
     npy_intp *tmp_b_ptr = malloc(sizeof(npy_intp) * metadata->newaxes_b.len);
