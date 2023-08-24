@@ -11,6 +11,7 @@
 #include "type_convertor.h"
 #include "tensor_methods.h"
 #include "clinic/tensor_methods.c.h"
+#include "allocator.h"
 
 static Dict *dict = NULL;
 XLA_OPS *xla_ops = NULL;
@@ -286,27 +287,11 @@ PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf)
     return Py_None;
 }
 
-// Tensor *set_item(Tensor *self, PyObject *item)
-// {
-//     DEBUG_PRINT("Getting item in get_item\n");
-//     PyObject *subarray = PyObject_GetItem(self->data, item);
-//     if (subarray == NULL)
-//         return NULL;
-//     Tensor *to_return = (Tensor *)new_Tensor_x(self, subarray, "SliceBackward");
-//     if (self->require_grad)
-//     {
-//         DEBUG_PRINT("refcount of item: %d\n", (int)Py_REFCNT(item));
-//         store_slice_objs(to_return, item);
-//         Py_INCREF(item);
-//     }
-//     return to_return;
-// }
-
 static void Tensor_dealloc(Tensor *self)
 {
     DEBUG_PRINT("Tensor_dealloc\n");
     PyObject_GC_UnTrack(self);
-    Py_CLEAR(self->data);
+    Py_CLEAR(self->data); // pretty expensive
     Py_CLEAR(self->x);
     Py_CLEAR(self->y);
     Py_CLEAR(self->axis);
@@ -342,20 +327,6 @@ static int Tensor_traverse(Tensor *self, visitproc visit, void *arg)
     Py_VISIT(self->graph);
     Py_VISIT(self->grad);
     return 0;
-}
-
-static void store_tensor_need_grad(long long index, Tensor *tensor)
-{
-    Tensor_need_grad_Dict *entry = NULL;
-    if (TENSOR_NEED_GRAD_DICT != NULL)
-        HASH_FIND_PTR(TENSOR_NEED_GRAD_DICT, &tensor, entry);
-    if (entry == NULL)
-    {
-        Tensor_need_grad_Dict *entry = (Tensor_need_grad_Dict *)malloc(sizeof(Tensor_need_grad_Dict));
-        entry->tensor = tensor;
-        entry->index = index;
-        HASH_ADD_PTR(TENSOR_NEED_GRAD_DICT, tensor, entry);
-    }
 }
 
 PyMemberDef properties[] = {
@@ -427,6 +398,7 @@ static PyMethodDef Tensor_methods[] = {
     {"transpose", (PyCFunction)self_transpose, METH_FASTCALL, "Method docstring"},
     {"permute", (PyCFunction)self_transpose, METH_FASTCALL, "Method docstring"},
     {"astype", (PyCFunction)astype, METH_FASTCALL, "Method docstring"},
+    {"copy", (PyCFunction)copy, METH_NOARGS, "Method docstring"},
     {NULL} /* Sentinel */
 };
 
@@ -461,6 +433,9 @@ static PyMethodDef module_methods[] = {
     {"tensordot", (PyCFunction)tensordot, METH_FASTCALL, "Method docstring"},
     {"set_track", (PyCFunction)set_track, METH_FASTCALL, "Method docstring"},
     {"to_dict", (PyCFunction)convert_tensor_dict_to_Py_dict, METH_FASTCALL, "Method docstring"},
+    {"global_float_type", (PyCFunction)set_global_float_type, METH_FASTCALL, "Method docstring"},
+    {"result_type", (PyCFunction)binary_result_type_, METH_FASTCALL, "Method docstring"},
+    {"tensor", (PyCFunction)__tensor, METH_KEYWORDS | METH_VARARGS, "Method docstring"},
     {NULL}};
 
 static PyModuleDef custommodule = {
@@ -547,6 +522,12 @@ PyMODINIT_FUNC PyInit_Numboost(void)
         return NULL;
     import_array();
     init_map();
+    PyDataMem_SetHandler(PyCapsule_New(&my_handler, "mem_handler", NULL));
+
+    //still in progress, not sure if mem pool is needed
+    pool = (mem_pool *)malloc(sizeof(mem_pool));
+    pool->mem_for_small = malloc(sizeof(double) * 4194304); // allocate 32MB
+
     PyObject *m = PyModule_Create(&custommodule);
     if (m == NULL)
         return NULL;

@@ -1,9 +1,10 @@
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef utils_h
+#define utils_h
 #include "stdbool.h"
 #include "import_methods.h"
-#endif
+#include "numboost_api.h"
+#define NO_IMPORT_ARRAY
 
 inline bool notin(long i, long *list, long range)
 {
@@ -27,16 +28,7 @@ inline bool notin(long i, long *list, long range)
 inline long *range_excluding_list(long start, int end, long *list, long pad, long list_len, long *real_len)
 {
     long len = abs(end - start);
-    long *__notin = malloc(sizeof(long) * len);
-#ifdef DEBUG
-    DEBUG_PRINT("list len: %ld\n", list_len);
-    DEBUG_PRINT("list= [");
-    for (int i = 0; i < list_len; i++)
-    {
-        DEBUG_PRINT("%ld ", list[i]);
-    }
-    DEBUG_PRINT("]\n");
-#endif
+    long *__notin = (long *)malloc(sizeof(long) * len);
     for (long i = 0; i < len; i++)
     {
         if (notin(i, list, list_len))
@@ -51,13 +43,17 @@ inline long *range_excluding_list(long start, int end, long *list, long pad, lon
             __notin[i] = pad;
         }
     }
-#ifdef DEBUG
-    DEBUG_PRINT("excluding_list= [");
-    for (int i = 0; i < len; i++)
-    {
-        DEBUG_PRINT("%ld ", __notin[i]);
-    }
-    DEBUG_PRINT("]\n");
-#endif
     return __notin;
 }
+
+#define Numboost_CheckAlloc(ptr) \
+    do                                       \
+    {                                        \
+        if (ptr == NULL)                     \
+        {                                    \
+            PyErr_NoMemory();                \
+            return NULL;                     \
+        }                                    \
+    } while (0)
+
+#endif

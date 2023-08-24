@@ -1,7 +1,6 @@
-#ifndef TNESOR_H2
-#define TNESOR_H2
+#ifndef _SHAPE_H
+#define _SHAPE_H
 #include "tensor.h"
-#endif
 
 inline bool shape_isequal(npy_intp *a_shape, npy_intp *b_shape, int a_ndim, int b_ndim)
 {
@@ -98,3 +97,5 @@ npy_intp rightprod_non_one(npy_intp *shape, int ndim, int *axis);
 void preprocess_strides(npy_intp *a_shape, npy_intp last_stride, int ndim, npy_intp **strides);
 
 PyArrayObject *arry_to_broadcast(npy_intp *shape_a, npy_intp *shape_b, PyArrayObject *a, PyArrayObject *b, int axis);
+
+#endif

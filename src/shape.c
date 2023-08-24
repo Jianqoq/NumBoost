@@ -1,7 +1,6 @@
 #define NO_IMPORT_ARRAY
 #include "utils.h"
 #include "shape.h"
-
 // this method does not check for a specific Tensor, it only checks if the shape is broadcastable
 // use shape_isbroadcastable_to if you want to check if a Tensor is broadcastable to another Tensor
 // it assumes the shape is not equal

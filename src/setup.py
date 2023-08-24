@@ -1,4 +1,5 @@
 import sys
+import sysconfig
 
 import numpy as np
 from setuptools import setup, Extension
@@ -7,22 +8,53 @@ import os
 from setuptools.command.build_ext import build_ext as _build_ext
 import platform
 
-
 if "-DEBUG" in sys.argv:
     enable_debug = ('DEBUG', '1')
     sys.argv.remove("-DEBUG")
 else:
     enable_debug = ('DEBUG',)
 
+compiler_info = sysconfig.get_config_var('CC')
+if compiler_info is None:
+    omp_compile_args = ['/openmp']  # 默认使用MSVC标志
+else:
+    omp_compile_args = ['-fopenmp'] if 'gcc' in compiler_info else ['/openmp']
+
+
+class build_ext(_build_ext):
+    def get_ext_fullpath(self, ext_name):
+        filename = _build_ext.get_ext_filename(self, ext_name)
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+
+
+# 定义扩展模块
+# extension = Extension(
+#     'test',  # 模块名
+#     sources=['fine_tune.c'],  # 源文件
+#     include_dirs=[numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',
+#                          'mkl-C/mkl/latest/include', r'C:\Users\123\Downloads\numpy-main\numpy\core\include\numpy',
+#                   r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release'],  # 包括NumPy的头文件目录
+#     extra_compile_args=omp_compile_args,  # 添加OpenMP编译标志
+#     extra_link_args=omp_compile_args,  # 添加OpenMP链接标志
+#     libraries=['jemalloc', 'mkl_rt', 'npymath'],  # 链接的库文件
+# define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')]
+# )
+#
+# setup(
+#     name='test',
+#     cmdclass={'build_ext': build_ext},
+#     ext_modules=[extension]
+# )
 current_path = os.getcwd()
 files_and_dirs = os.listdir(current_path)
 files = [f for f in files_and_dirs if os.path.isfile(os.path.join(current_path, f))]
 if platform.system() == 'Windows':
-    args = ['/Ox', '/openmp']
+    args = ['/openmp', '/Ox']
     extra_link_args = []
     numboost_files = [f for f in files if f.startswith('Numboost') and f.endswith('.pyd')]
 else:
-    args = ['-O3', '-fopenmp', '-I/mkl-C/mkl/latest/include', '-mavx', '-mavx2']
+    args = ['-O3', '-fopenmp', '-I/mkl-C/mkl/latest/include', '-mavx', '-mavx2', '-I/usr/local/include',
+            '-L/usr/local/lib']
     extra_link_args = ['-lmkl_rt']
     if os.path.exists('Numboost.cpython-38-x86_64-linux-gnu.so'):
         os.remove('Numboost.cpython-38-x86_64-linux-gnu.so')
@@ -32,30 +64,32 @@ if len(files) > 0:
     for f in numboost_files:
         os.remove(f)
 mymodule = Extension('Numboost',
-                     sources=['utils.c', 'tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
+                     sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
                               'set_Tensor_properties.c', 'methods.c', 'binaray_backward_fn.c', 'pcg_basic.c',
-                              'import_methods.c', 'broadcast.c', 'shape.c', 'binary_func.c', 'type_convertor.c', 'tensor_methods.c',
-                              'Iterator/nb_iter.c'],
+                              'import_methods.c', 'broadcast.c', 'shape.c', 'binary_func.c', 'type_convertor.c',
+                              'tensor_methods.c',
+                              'Iterator/nb_iter.c', 'allocator.c', 'binary_func_def.c', 'broadcast_func_def.c'],
                      include_dirs=[
                          numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',
-                         'mkl-C/mkl/latest/include', r'C:\Users\123\Downloads\numpy-main\numpy\core\include\numpy'],
+                         'mkl-C/mkl/latest/include', r'C:\Users\123\Downloads\numpy-main\numpy\core\include\numpy',
+                         'lib_include/include',
+                         r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\include',
+                         r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\include\msvc_compat'],
                      library_dirs=[
                          'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
                          r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64',
-                         r'/mkl-C/mkl/latest/lib/intel64', r'C:\Users\123\anaconda3\Lib\site-packages\numpy\core\lib'
+                         r'/mkl-C/mkl/latest/lib/intel64', r'C:\Users\123\anaconda3\Lib\site-packages\numpy\core\lib',
+                         r'/usr/local/lib',
+                         r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release',
+                         '/home/ok/.local/lib/python3.10/site-packages/numpy/core/lib'
                      ],
-                     libraries=['mkl_rt', 'npymath'] if platform.system() == 'Windows' else [
-                         'mkl_rt', 'gomp'],
+                     libraries=['mkl_rt', 'npymath', 'jemalloc']
+                     if platform.system() == 'Windows' else [
+                         'mkl_rt', 'gomp', 'npymath'],
                      language='c',
                      extra_compile_args=args,
                      extra_link_args=extra_link_args,
                      define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION'), enable_debug])
-
-class build_ext(_build_ext):
-    def get_ext_fullpath(self, ext_name):
-        filename = _build_ext.get_ext_filename(self, ext_name)
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
-
 
 setup(name='autograd_C',
       cmdclass={'build_ext': build_ext},

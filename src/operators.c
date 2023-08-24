@@ -5,10 +5,10 @@
 #include <numpy/arrayobject.h>
 #include "set_Tensor_properties.h"
 #include <Python.h>
-#include "broadcast.h"
 #include "mkl.h"
 #include "op.h"
 #include "binary_func.h"
+#include "numboost_api.h"
 extern XLA_OPS *xla_ops;
 extern jnp_method *JNP_METHOD;
 extern bool TRACK;
@@ -225,47 +225,7 @@ PyObject *Tensor_Empty(PyObject *data)
 PyObject *
 tensor_add(PyObject *self, PyObject *other)
 {
-    Tensor *tmp;
-    if (TRACK)
-    {
-        PyObject *jaxarray = PyNumber_Add(self, other);
-        return jaxarray;
-    }
-    Tensor *_self = (Tensor *)self;
-    PyObject *numpy_result = NULL;
-    PyArrayObject *a = (PyArrayObject *)_self->data;
-    if (Py_TYPE(other) == Tensor_type)
-    {
-        tmp = (Tensor *)other;
-        PyArrayObject *b = (PyArrayObject *)tmp->data;
-        int type = ((PyArrayObject_fields *)a)->descr->type_num;
-        bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
-        if (!equal)
-        {
-            BroadCast(a, b, &numpy_result, ADD, type);
-        }
-        else
-        {
-            BinaryOp_Picker(ADD, a, b, &numpy_result);
-        }
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "AddBackward");
-        return new_tensor;
-    }
-    else
-    {
-        PyObject *numpy_result = PyNumber_Add(_self->data, other);
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor_scalar(_self, numpy_result, other, "AddBackward");
-        Py_DECREF(numpy_result);
-        return new_tensor;
-    }
+    Generic_Binary_Operation(self, other, PyNumber_Add(self, other), ADD, "AddBackward");                                                         
 }
 
 PyObject *
@@ -315,47 +275,7 @@ tensor_iadd(PyObject *self, PyObject *other)
 PyObject *
 tensor_mul(PyObject *self, PyObject *other)
 {
-    if (TRACK)
-    {
-        PyObject *jaxarray = PyNumber_Multiply(self, other);
-        return jaxarray;
-    }
-    Tensor *_self = (Tensor *)self;
-    PyArrayObject *a = (PyArrayObject *)_self->data;
-    PyObject *numpy_result = NULL;
-    Tensor *tmp;
-    if (Py_TYPE(other) == Tensor_type)
-    {
-        tmp = (Tensor *)other;
-        PyArrayObject *b = (PyArrayObject *)tmp->data;
-        int type = ((PyArrayObject_fields *)a)->descr->type_num;
-        bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
-        if (!equal)
-        {
-            BroadCast(a, b, &numpy_result, MUL, type);
-        }
-        else
-        {
-            BinaryOp_Picker(MUL, a, b, &numpy_result);
-        }
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "MulBackward");
-        return new_tensor;
-    }
-    else
-    {
-        PyObject *numpy_result = PyNumber_Multiply(_self->data, other);
-
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor_scalar(_self, numpy_result, other, "MulBackward");
-        return new_tensor;
-    }
+    Generic_Binary_Operation(self, other, PyNumber_Multiply(self, other), MUL, "MulBackward");
 }
 
 PyObject *
@@ -405,48 +325,7 @@ tensor_imul(PyObject *self, PyObject *other)
 PyObject *
 tensor_div(PyObject *self, PyObject *other)
 {
-    Tensor *tmp;
-    PyObject *numpy_result = NULL;
-    if (TRACK)
-    {
-        PyObject *jaxarray = PyNumber_TrueDivide(self, other);
-        return jaxarray;
-    }
-    Tensor *_self = (Tensor *)self;
-    if (Py_TYPE(other) == Tensor_type)
-    {
-        tmp = (Tensor *)other;
-        PyArrayObject *b = (PyArrayObject *)tmp->data;
-        PyArrayObject *a = (PyArrayObject *)_self->data;
-        int type = ((PyArrayObject_fields *)a)->descr->type_num;
-        bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
-        if (!equal)
-        {
-            BroadCast(a, b, &numpy_result, DIV, type);
-        }
-        else
-        {
-            BinaryOp_Picker(DIV, a, b, &numpy_result);
-        }
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "DivBackward");
-        return new_tensor;
-    }
-    else
-    {
-        PyObject *numpy_result = PyNumber_TrueDivide(_self->data, other);
-
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor_scalar(_self, numpy_result, other, "DivBackward");
-        Py_DECREF(numpy_result);
-        return new_tensor;
-    }
+    Generic_Binary_Operation(self, other, PyNumber_TrueDivide(self, other), DIV, "DivBackward");
 }
 
 PyObject *
@@ -532,7 +411,7 @@ tensor_negative(PyObject *self) // need to check
     PyObject *numpy_result;
     if (!_self->require_grad)
     {
-        numpy_result = PyNumber_InPlaceMultiply(_self->data, negative_1);
+        numpy_result = PyNumber_Negative(_self->data);
         Tensor_SetData(_self, numpy_result);
         Py_DECREF(negative_1);
         Py_DECREF(numpy_result);
@@ -540,7 +419,7 @@ tensor_negative(PyObject *self) // need to check
     }
     else
     {
-        numpy_result = PyNumber_Multiply(_self->data, negative_1);
+        numpy_result = PyNumber_Negative(_self->data);
 
         if (numpy_result == NULL)
         {
@@ -556,48 +435,7 @@ tensor_negative(PyObject *self) // need to check
 PyObject *
 tensor_sub(PyObject *self, PyObject *other)
 {
-    Tensor *tmp;
-    if (TRACK)
-    {
-        PyObject *jaxarray = PyNumber_Subtract(self, other);
-        return jaxarray;
-    }
-    Tensor *_self = (Tensor *)self;
-    PyObject *numpy_result = NULL;
-    PyArrayObject *a = (PyArrayObject *)_self->data;
-    if (Py_TYPE(other) == Tensor_type)
-    {
-        tmp = (Tensor *)other;
-        PyArrayObject *b = (PyArrayObject *)tmp->data;
-        int type = ((PyArrayObject_fields *)a)->descr->type_num;
-        bool equal = shape_isequal(PyArray_SHAPE(a), PyArray_SHAPE(b), PyArray_NDIM(a), PyArray_NDIM(b));
-        if (!equal)
-        {
-            BroadCast(a, b, &numpy_result, SUB, type);
-        }
-        else
-        {
-            BinaryOp_Picker(SUB, a, b, &numpy_result);
-        }
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "SubBackward");
-        return new_tensor;
-    }
-    else
-    {
-        PyObject *numpy_result = PyNumber_Subtract(_self->data, other);
-
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor_scalar(_self, numpy_result, other, "SubBackward");
-        Py_DECREF(numpy_result);
-        return new_tensor;
-    }
+    Generic_Binary_Operation(self, other, PyNumber_Subtract(self, other), SUB, "SubBackward");
 }
 
 PyObject *
@@ -647,35 +485,7 @@ tensor_isub(PyObject *self, PyObject *other)
 PyObject *
 tensor_pow(PyObject *self, PyObject *other)
 {
-    Tensor *temp;
-    if (TRACK)
-    {
-        PyObject *jaxarray = PyNumber_Power(self, other, Py_None);
-        return jaxarray;
-    }
-    Tensor *_self = (Tensor *)self;
-    if (Py_TYPE(other) == Tensor_type)
-    {
-        temp = (Tensor *)other;
-        PyObject *numpy_result = PyNumber_Power(_self->data, temp->data, Py_None);
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor(_self, temp, numpy_result, "PowBackward");
-        return new_tensor;
-    }
-    else
-    {
-        PyObject *numpy_result = PyNumber_Power(_self->data, other, Py_None);
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor_scalar(_self, numpy_result, other, "PowBackward");
-        Py_DECREF(numpy_result);
-        return new_tensor;
-    }
+    Generic_Binary_Operation(self, other, PyNumber_Power(self, other, NULL), POW, "PowBackward");
 }
 
 PyObject *
@@ -824,41 +634,7 @@ tensor_invert(PyObject *self)
 PyObject *
 tensor_lshift(PyObject *self, PyObject *other)
 {
-    Tensor *tmp;
-    if (TRACK)
-    {
-        PyObject *jaxarray = PyNumber_Lshift(self, other);
-        return jaxarray;
-    }
-    Tensor *_self = (Tensor *)self;
-    if (_self->require_grad)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "shift operation auto backward not implemented yet");
-        return NULL;
-    }
-    if (Py_TYPE(other) == Tensor_type)
-    {
-        tmp = (Tensor *)other;
-        PyObject *numpy_result = PyNumber_Lshift(_self->data, tmp->data);
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        return new_tensor;
-    }
-    else
-    {
-        PyObject *numpy_result = PyNumber_Lshift(_self->data, other);
-
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor_scalar(_self, numpy_result, other, "");
-        Py_DECREF(numpy_result);
-        return new_tensor;
-    }
+    Generic_Binary_Operation(self, other, PyNumber_Lshift(self, other), LSHIFT, "");
 }
 
 PyObject *
@@ -903,40 +679,7 @@ tensor_ilshift(PyObject *self, PyObject *other)
 PyObject *
 tensor_rshift(PyObject *self, PyObject *other)
 {
-    Tensor *tmp;
-    if (TRACK)
-    {
-        PyObject *jaxarray = PyNumber_Rshift(self, other);
-        return jaxarray;
-    }
-    Tensor *_self = (Tensor *)self;
-    if (_self->require_grad)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "shift operation auto backward not implemented yet");
-        return NULL;
-    }
-    if (Py_TYPE(other) == Tensor_type)
-    {
-        tmp = (Tensor *)other;
-        PyObject *numpy_result = PyNumber_Rshift(_self->data, tmp->data);
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        return new_tensor;
-    }
-    else
-    {
-        PyObject *numpy_result = PyNumber_Rshift(_self->data, other);
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor_scalar(_self, numpy_result, other, "");
-        Py_DECREF(numpy_result);
-        return new_tensor;
-    }
+    Generic_Binary_Operation(self, other, PyNumber_Rshift(self, other), RSHIFT, "");
 }
 
 PyObject *
@@ -1145,40 +888,7 @@ tensor_float(PyObject *self)
 PyObject *
 tensor_remainder(PyObject *self, PyObject *other)
 {
-    Tensor *tmp;
-    if (TRACK)
-    {
-        return NULL;
-    }
-    Tensor *_self = (Tensor *)self;
-    if (_self->require_grad)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Remainder operation is not differentiable");
-        return NULL;
-    }
-    if (Py_TYPE(other) == Tensor_type)
-    {
-        tmp = (Tensor *)other;
-        PyObject *numpy_result = PyNumber_Remainder(_self->data, tmp->data);
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        return new_tensor;
-    }
-    else
-    {
-        PyObject *numpy_result = PyNumber_Remainder(_self->data, other);
-
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor_scalar(_self, numpy_result, other, "");
-        Py_DECREF(numpy_result);
-        return new_tensor;
-    }
+    Generic_Binary_Operation(self, other, PyNumber_Remainder(self, other), MOD, "");
 }
 
 PyObject *
@@ -1384,41 +1094,7 @@ tensor_iremainder(PyObject *self, PyObject *other)
 PyObject *
 tensor_floordiv(PyObject *self, PyObject *other)
 {
-    Tensor *tmp;
-    if (TRACK)
-    {
-        PyObject *jaxarray = PyNumber_FloorDivide(self, other);
-        return jaxarray;
-    }
-    Tensor *_self = (Tensor *)self;
-    if (_self->require_grad)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Floor divide operation is not differentiable");
-        return NULL;
-    }
-    if (Py_TYPE(other) == Tensor_type)
-    {
-        tmp = (Tensor *)other;
-        PyObject *numpy_result = PyNumber_FloorDivide(_self->data, tmp->data);
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-        return new_tensor;
-    }
-    else
-    {
-        PyObject *numpy_result = PyNumber_FloorDivide(_self->data, other);
-
-        if (numpy_result == NULL)
-        {
-            return NULL;
-        }
-        PyObject *new_tensor = new_Tensor_scalar(_self, numpy_result, other, "");
-        Py_DECREF(numpy_result);
-        return new_tensor;
-    }
+    Generic_Binary_Operation(self, other, PyNumber_FloorDivide(self, other), FLOOR_DIV, "");
 }
 
 PyObject *

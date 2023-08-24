@@ -1,8 +1,9 @@
+#define PY_ARRAY_UNIQUE_SYMBOL tensor_c
+#define NO_IMPORT_ARRAY
 #include "../tensor.h"
 #include "structmember.h"
 #include "../set_Tensor_properties.h"
 #include "../operators.h"
-
 
 static void tensor_iter_dealloc(TensorIteratorObject *self)
 {
@@ -32,7 +33,7 @@ TensorIteratorObject *iterator_new(PyTypeObject *type, Tensor *self)
         return NULL;
     }
     iter->data_iter = PyObject_GetIter(self->data);
-    iter->ndim = PyArray_NDIM(self->data);
+    iter->ndim = PyArray_NDIM((PyArrayObject *)self->data);
     if (iter->data_iter == NULL || PyErr_Occurred())
     {
         return NULL;

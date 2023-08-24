@@ -7,6 +7,6 @@ os.add_dll_directory(r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\i
 if __name__ == '__main__':
     freeze_support()
     from mypy.stubgen import parse_options, generate_stubs
-    args = ['-m', 'Numboost']
+    args = ['-m', 'numpy_allocator']
     options = parse_options(args)
     generate_stubs(options)
