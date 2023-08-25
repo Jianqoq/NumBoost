@@ -4,8 +4,8 @@
 
 // #define parameters PyArrayObject *a, PyArrayObject *b
 // #define parameters_var a, b
-// #define get_ptrs(data_type)                          \
-//     data_type *a_ptr = (data_type *)PyArray_DATA(a); \
+// #define get_ptrs(data_type)
+//     data_type *a_ptr = (data_type *)PyArray_DATA(a);
 //     data_type *b_ptr = (data_type *)PyArray_DATA(b);
 // #define ptrs_name a_ptr, b_ptr
 // #define operations(i, type) nb_add(a_ptr[i], b_ptr[i], type)
@@ -85,14 +85,14 @@ Register_Binary_Operation(div_, longdouble, LongDouble_Div_Binary_Operation, nb_
 NotImplement_Err(div_, , PyArrayObject, PyArrayObject);
 Register_Binary_Operation(div_, half, Half_Div_Binary_Operation, nb_divide, div_result_type_pick(NPY_HALF), _);
 
-Register_Int_Binary_OperationsErr(div_, _a_scalar, PyArrayObject, PyArrayObject);
+Register_Int_Binary_OperationsErr(div_, _a_scalar, Python_Number, PyArrayObject);
 Register_Binary_Operation_A_Scalar(div_, float, Float_Div_Binary_Operation_A_Scalar, nb_divide, div_result_type_pick(NPY_FLOAT), _a_scalar);
 Register_Binary_Operation_A_Scalar(div_, double, Double_Div_Binary_Operation_A_Scalar, nb_divide, div_result_type_pick(NPY_DOUBLE), _a_scalar);
 Register_Binary_Operation_A_Scalar(div_, longdouble, LongDouble_Div_Binary_Operation_A_Scalar, nb_divide, div_result_type_pick(NPY_LONGDOUBLE), _a_scalar);
 NotImplement_Err(div_, _a_scalar, Python_Number, PyArrayObject);
 Register_Binary_Operation_A_Scalar(div_, half, Half_Div_Binary_Operation_A_Scalar, nb_divide, div_result_type_pick(NPY_HALF), _a_scalar);
 
-Register_Int_Binary_OperationsErr(div_, _b_scalar, PyArrayObject, PyArrayObject);
+Register_Int_Binary_OperationsErr(div_, _b_scalar, PyArrayObject, Python_Number);
 Register_Binary_Operation_B_Scalar(div_, float, Float_Div_Binary_Operation_B_Scalar, nb_divide, div_result_type_pick(NPY_FLOAT), _b_scalar);
 Register_Binary_Operation_B_Scalar(div_, double, Double_Div_Binary_Operation_B_Scalar, nb_divide, div_result_type_pick(NPY_DOUBLE), _b_scalar);
 Register_Binary_Operation_B_Scalar(div_, longdouble, LongDouble_Div_Binary_Operation_B_Scalar, nb_divide, div_result_type_pick(NPY_LONGDOUBLE), _b_scalar);

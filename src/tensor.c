@@ -1,5 +1,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define PY_SSIZE_T_CLEAN
+#define NPY_TARGET_VERSION NPY_1_25_API_VERSION
 #include "numpy/arrayobject.h"
 #include "utils.h"
 #include "omp.h"

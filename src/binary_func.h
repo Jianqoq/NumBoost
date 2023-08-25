@@ -570,8 +570,8 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             npy_float *numpy_ptr = (npy_float *)PyArray_DATA(numpy_result);                                      \
             _Pragma("omp parallel for")                                                                          \
                 Float_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, size, npy_float);                             \
-            return numpy_result;                                                                                 \
         }                                                                                                        \
+        return numpy_result;                                                                                     \
     }
 
 #define Double_Div_Binary_Operation(a, b, op, data_type, npy_enum, loop_body)                                      \
@@ -591,8 +591,8 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             npy_double *numpy_ptr = (npy_double *)PyArray_DATA(numpy_result);                                      \
             _Pragma("omp parallel for")                                                                            \
                 Double_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, size, npy_double);                             \
-            return numpy_result;                                                                                   \
         }                                                                                                          \
+        return numpy_result;                                                                                       \
     }
 
 #define LongDouble_Div_Binary_Operation(a, b, op, data_type, npy_enum, loop_body)                                          \
@@ -612,166 +612,146 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             npy_longdouble *numpy_ptr = (npy_longdouble *)PyArray_DATA(numpy_result);                                      \
             _Pragma("omp parallel for")                                                                                    \
                 LongDouble_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, size, npy_longdouble);                             \
-            return numpy_result;                                                                                           \
         }                                                                                                                  \
+        return numpy_result;                                                                                               \
     }
 
-#define Half_Div_Binary_Operation(a, b, op, data_type, npy_enum, loop_body)                                    \
-    {                                                                                                          \
-        npy_half *a_ptr = (npy_half *)PyArray_DATA(a);                                                         \
-        npy_half *b_ptr = (npy_half *)PyArray_DATA(b);                                                         \
-        npy_intp size = PyArray_SIZE(a);                                                                       \
-        npy_intp *shape = PyArray_SHAPE(a);                                                                    \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0);     \
-        npy_intp i;                                                                                            \
-        if (!PyArray_IS_C_CONTIGUOUS(a) || !PyArray_IS_C_CONTIGUOUS(b))                                        \
-        {                                                                                                      \
-            BinaryOperation_Uncontiguous(npy_half, a, b, numpy_result, op, Half_Div_Binary_Loop_Uncontiguous); \
-        }                                                                                                      \
-        else                                                                                                   \
-        {                                                                                                      \
-            npy_half *numpy_ptr = (npy_half *)PyArray_DATA(numpy_result);                                      \
-            _Pragma("omp parallel for")                                                                        \
-                Half_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, size, npy_half);                             \
-            return numpy_result;                                                                               \
-        }                                                                                                      \
-    }
-
-#define Float_Div_Binary_Operation_A_Scalar(a, b, op, data_type, npy_enum)                                 \
+#define Half_Div_Binary_Operation(a, b, op, data_type, npy_enum, loop_body)                                \
+    npy_half *a_ptr = (npy_half *)PyArray_DATA(a);                                                         \
+    npy_half *b_ptr = (npy_half *)PyArray_DATA(b);                                                         \
+    npy_intp size = PyArray_SIZE(a);                                                                       \
+    npy_intp *shape = PyArray_SHAPE(a);                                                                    \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0);     \
+    npy_intp i;                                                                                            \
+    if (!PyArray_IS_C_CONTIGUOUS(a) || !PyArray_IS_C_CONTIGUOUS(b))                                        \
     {                                                                                                      \
-        npy_float *b_ptr = (npy_float *)PyArray_DATA(b);                                                   \
-        npy_intp size = PyArray_SIZE(b);                                                                   \
-        npy_intp *shape = PyArray_SHAPE(b);                                                                \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(b), shape, npy_enum, 0); \
-        if (numpy_result == NULL)                                                                          \
-        {                                                                                                  \
-            return NULL;                                                                                   \
-        }                                                                                                  \
-        npy_intp i;                                                                                        \
-        npy_float *numpy_ptr = (npy_float *)PyArray_DATA(numpy_result);                                    \
-        _Pragma("omp parallel for")                                                                        \
-            Float_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                      \
-        return numpy_result;                                                                               \
-    }
-
-#define Double_Div_Binary_Operation_A_Scalar(a, b, op, data_type, npy_enum)                                \
+        BinaryOperation_Uncontiguous(npy_half, a, b, numpy_result, op, Half_Div_Binary_Loop_Uncontiguous); \
+    }                                                                                                      \
+    else                                                                                                   \
     {                                                                                                      \
-        npy_double *b_ptr = (npy_double *)PyArray_DATA(b);                                                 \
-        npy_intp size = PyArray_SIZE(b);                                                                   \
-        npy_intp *shape = PyArray_SHAPE(b);                                                                \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(b), shape, npy_enum, 0); \
-        if (numpy_result == NULL)                                                                          \
-        {                                                                                                  \
-            return NULL;                                                                                   \
-        }                                                                                                  \
-        npy_intp i;                                                                                        \
-        npy_double *numpy_ptr = (npy_double *)PyArray_DATA(numpy_result);                                  \
-        _Pragma("omp parallel for")                                                                        \
-            Double_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                     \
-        return numpy_result;                                                                               \
-    }
-
-#define LongDouble_Div_Binary_Operation_A_Scalar(a, b, op, data_type, npy_enum)                            \
-    {                                                                                                      \
-        npy_longdouble *b_ptr = (npy_longdouble *)PyArray_DATA(b);                                         \
-        npy_intp size = PyArray_SIZE(b);                                                                   \
-        npy_intp *shape = PyArray_SHAPE(b);                                                                \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(b), shape, npy_enum, 0); \
-        if (numpy_result == NULL)                                                                          \
-        {                                                                                                  \
-            return NULL;                                                                                   \
-        }                                                                                                  \
-        npy_intp i;                                                                                        \
-        npy_longdouble *numpy_ptr = (npy_longdouble *)PyArray_DATA(numpy_result);                          \
-        _Pragma("omp parallel for")                                                                        \
-            LongDouble_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                 \
-        return numpy_result;                                                                               \
-    }
-
-#define Half_Div_Binary_Operation_A_Scalar(a, b, op, data_type, npy_enum)                                  \
-    {                                                                                                      \
-        npy_half *b_ptr = (npy_half *)PyArray_DATA(b);                                                     \
-        npy_intp size = PyArray_SIZE(b);                                                                   \
-        npy_intp *shape = PyArray_SHAPE(b);                                                                \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(b), shape, npy_enum, 0); \
-        if (numpy_result == NULL)                                                                          \
-        {                                                                                                  \
-            return NULL;                                                                                   \
-        }                                                                                                  \
-        npy_intp i;                                                                                        \
         npy_half *numpy_ptr = (npy_half *)PyArray_DATA(numpy_result);                                      \
         _Pragma("omp parallel for")                                                                        \
-            Half_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                       \
-        return numpy_result;                                                                               \
-    }
+            Half_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, size, npy_half);                             \
+    }                                                                                                      \
+    return numpy_result;
 
-#define Float_Div_Binary_Operation_B_Scalar(a, b, op, data_type, npy_enum)                                 \
-    {                                                                                                      \
-        data_type *a_val = (data_type *)PyArray_DATA(a);                                                   \
-        npy_intp size = PyArray_SIZE(a);                                                                   \
-        npy_intp *shape = PyArray_SHAPE(a);                                                                \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
-        npy_intp i;                                                                                        \
-        npy_float *numpy_ptr = (npy_float *)PyArray_DATA(numpy_result);                                    \
-        _Pragma("omp parallel for")                                                                        \
-            Float_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                      \
-        return numpy_result;                                                                               \
-    }
+#define Float_Div_Binary_Operation_A_Scalar(a, b, op, data_type, npy_enum)                             \
+    npy_float *b_ptr = (npy_float *)PyArray_DATA(b);                                                   \
+    npy_intp size = PyArray_SIZE(b);                                                                   \
+    npy_intp *shape = PyArray_SHAPE(b);                                                                \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(b), shape, npy_enum, 0); \
+    if (numpy_result == NULL)                                                                          \
+    {                                                                                                  \
+        return NULL;                                                                                   \
+    }                                                                                                  \
+    npy_intp i;                                                                                        \
+    npy_float *numpy_ptr = (npy_float *)PyArray_DATA(numpy_result);                                    \
+    _Pragma("omp parallel for")                                                                        \
+        Float_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                      \
+    return numpy_result;
 
-#define Double_Div_Binary_Operation_B_Scalar(a, b, op, data_type, npy_enum)                                \
-    {                                                                                                      \
-        npy_double *a_val = (npy_double *)PyArray_DATA(a);                                                 \
-        npy_intp size = PyArray_SIZE(a);                                                                   \
-        npy_intp *shape = PyArray_SHAPE(a);                                                                \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
-        npy_intp i;                                                                                        \
-        npy_double *numpy_ptr = (npy_double *)PyArray_DATA(numpy_result);                                  \
-        _Pragma("omp parallel for")                                                                        \
-            Double_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                     \
-        return numpy_result;                                                                               \
-    }
+#define Double_Div_Binary_Operation_A_Scalar(a, b, op, data_type, npy_enum)                            \
+    npy_double *b_ptr = (npy_double *)PyArray_DATA(b);                                                 \
+    npy_intp size = PyArray_SIZE(b);                                                                   \
+    npy_intp *shape = PyArray_SHAPE(b);                                                                \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(b), shape, npy_enum, 0); \
+    if (numpy_result == NULL)                                                                          \
+    {                                                                                                  \
+        return NULL;                                                                                   \
+    }                                                                                                  \
+    npy_intp i;                                                                                        \
+    npy_double *numpy_ptr = (npy_double *)PyArray_DATA(numpy_result);                                  \
+    _Pragma("omp parallel for")                                                                        \
+        Double_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                     \
+    return numpy_result;
 
-#define LongDouble_Div_Binary_Operation_B_Scalar(a, b, op, data_type, npy_enum)                            \
-    {                                                                                                      \
-        npy_longdouble *a_val = (npy_longdouble *)PyArray_DATA(a);                                         \
-        npy_intp size = PyArray_SIZE(a);                                                                   \
-        npy_intp *shape = PyArray_SHAPE(a);                                                                \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
-        npy_intp i;                                                                                        \
-        npy_longdouble *numpy_ptr = (npy_longdouble *)PyArray_DATA(numpy_result);                          \
-        _Pragma("omp parallel for")                                                                        \
-            LongDouble_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                 \
-        return numpy_result;                                                                               \
-    }
+#define LongDouble_Div_Binary_Operation_A_Scalar(a, b, op, data_type, npy_enum)                        \
+    npy_longdouble *b_ptr = (npy_longdouble *)PyArray_DATA(b);                                         \
+    npy_intp size = PyArray_SIZE(b);                                                                   \
+    npy_intp *shape = PyArray_SHAPE(b);                                                                \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(b), shape, npy_enum, 0); \
+    if (numpy_result == NULL)                                                                          \
+    {                                                                                                  \
+        return NULL;                                                                                   \
+    }                                                                                                  \
+    npy_intp i;                                                                                        \
+    npy_longdouble *numpy_ptr = (npy_longdouble *)PyArray_DATA(numpy_result);                          \
+    _Pragma("omp parallel for")                                                                        \
+        LongDouble_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                 \
+    return numpy_result;
 
-#define Half_Div_Binary_Operation_B_Scalar(a, b, op, data_type, npy_enum)                                  \
-    {                                                                                                      \
-        npy_half *a_val = (npy_half *)PyArray_DATA(a);                                                     \
-        npy_intp size = PyArray_SIZE(a);                                                                   \
-        npy_intp *shape = PyArray_SHAPE(a);                                                                \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
-        npy_intp i;                                                                                        \
-        npy_half *numpy_ptr = (npy_half *)PyArray_DATA(numpy_result);                                      \
-        _Pragma("omp parallel for")                                                                        \
-            Half_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                       \
-        return numpy_result;                                                                               \
-    }
+#define Half_Div_Binary_Operation_A_Scalar(a, b, op, data_type, npy_enum)                              \
+    npy_half *b_ptr = (npy_half *)PyArray_DATA(b);                                                     \
+    npy_intp size = PyArray_SIZE(b);                                                                   \
+    npy_intp *shape = PyArray_SHAPE(b);                                                                \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(b), shape, npy_enum, 0); \
+    if (numpy_result == NULL)                                                                          \
+    {                                                                                                  \
+        return NULL;                                                                                   \
+    }                                                                                                  \
+    npy_intp i;                                                                                        \
+    npy_half *numpy_ptr = (npy_half *)PyArray_DATA(numpy_result);                                      \
+    _Pragma("omp parallel for")                                                                        \
+        Half_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                       \
+    return numpy_result;
 
-#define BINARY_OPERATION_FUSE(a, b, op, data_type, npy_enum)                                               \
-    {                                                                                                      \
-        data_type *a_ptr = (data_type *)PyArray_DATA(a);                                                   \
-        data_type *b_ptr = (data_type *)PyArray_DATA(b);                                                   \
-        npy_intp size = PyArray_SIZE(a);                                                                   \
-        npy_intp *shape = PyArray_SHAPE(a);                                                                \
-        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
-        data_type *numpy_ptr = (data_type *)PyArray_DATA(numpy_result);                                    \
-        npy_intp i;                                                                                        \
-        _Pragma("omp parallel for") for (i = 0; i < size; i++)                                             \
-        {                                                                                                  \
-            result_ptr[i] = op(a_ptr[i], b_ptr[i]);                                                        \
-        }                                                                                                  \
-        return numpy_result;                                                                               \
-    }
+#define Float_Div_Binary_Operation_B_Scalar(a, b, op, data_type, npy_enum)                             \
+    data_type *a_val = (data_type *)PyArray_DATA(a);                                                   \
+    npy_intp size = PyArray_SIZE(a);                                                                   \
+    npy_intp *shape = PyArray_SHAPE(a);                                                                \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
+    npy_intp i;                                                                                        \
+    npy_float *numpy_ptr = (npy_float *)PyArray_DATA(numpy_result);                                    \
+    _Pragma("omp parallel for")                                                                        \
+        Float_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                      \
+    return numpy_result;
+
+#define Double_Div_Binary_Operation_B_Scalar(a, b, op, data_type, npy_enum)                            \
+    npy_double *a_val = (npy_double *)PyArray_DATA(a);                                                 \
+    npy_intp size = PyArray_SIZE(a);                                                                   \
+    npy_intp *shape = PyArray_SHAPE(a);                                                                \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
+    npy_intp i;                                                                                        \
+    npy_double *numpy_ptr = (npy_double *)PyArray_DATA(numpy_result);                                  \
+    _Pragma("omp parallel for")                                                                        \
+        Double_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                     \
+    return numpy_result;
+
+#define LongDouble_Div_Binary_Operation_B_Scalar(a, b, op, data_type, npy_enum)                        \
+    npy_longdouble *a_val = (npy_longdouble *)PyArray_DATA(a);                                         \
+    npy_intp size = PyArray_SIZE(a);                                                                   \
+    npy_intp *shape = PyArray_SHAPE(a);                                                                \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
+    npy_intp i;                                                                                        \
+    npy_longdouble *numpy_ptr = (npy_longdouble *)PyArray_DATA(numpy_result);                          \
+    _Pragma("omp parallel for")                                                                        \
+        LongDouble_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                 \
+    return numpy_result;
+
+#define Half_Div_Binary_Operation_B_Scalar(a, b, op, data_type, npy_enum)                              \
+    npy_half *a_val = (npy_half *)PyArray_DATA(a);                                                     \
+    npy_intp size = PyArray_SIZE(a);                                                                   \
+    npy_intp *shape = PyArray_SHAPE(a);                                                                \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
+    npy_intp i;                                                                                        \
+    npy_half *numpy_ptr = (npy_half *)PyArray_DATA(numpy_result);                                      \
+    _Pragma("omp parallel for")                                                                        \
+        Half_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                       \
+    return numpy_result;
+
+#define BINARY_OPERATION_FUSE(a, b, op, data_type, npy_enum)                                           \
+    data_type *a_ptr = (data_type *)PyArray_DATA(a);                                                   \
+    data_type *b_ptr = (data_type *)PyArray_DATA(b);                                                   \
+    npy_intp size = PyArray_SIZE(a);                                                                   \
+    npy_intp *shape = PyArray_SHAPE(a);                                                                \
+    PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
+    data_type *numpy_ptr = (data_type *)PyArray_DATA(numpy_result);                                    \
+    npy_intp i;                                                                                        \
+    _Pragma("omp parallel for") for (i = 0; i < size; i++)                                             \
+    {                                                                                                  \
+        result_ptr[i] = op(a_ptr[i], b_ptr[i]);                                                        \
+    }                                                                                                  \
+    return numpy_result;
 
 #define BINARY_OPERATION_VEC(a, b, vec_func, data_type, npy_enum)                                                     \
     {                                                                                                                 \

@@ -90,7 +90,7 @@ mymodule = Extension('Numboost',
                      language='c',
                      extra_compile_args=args,
                      extra_link_args=extra_link_args,
-                     define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION'), enable_debug])
+                     define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_25_API_VERSION'), enable_debug])
 
 setup(name='autograd_C',
       cmdclass={'build_ext': build_ext},
