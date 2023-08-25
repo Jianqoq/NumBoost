@@ -6,6 +6,8 @@
 #include "type_convertor.h"
 #include "set_Tensor_properties.h"
 #include "uthash.h"
+#include "numboost_api.h"
+
 extern jnp_method *JNP_METHOD;
 extern Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT;
 extern PyTypeObject TensorIterator_type;
@@ -74,11 +76,11 @@ PyObject *__str__(Tensor *self)
                                  end};
         if (PyArray_IsAnyScalar(self->data))
         {
-            string_array[3] = (char*)(PyArray_DescrFromScalar(self->data)->typeobj->tp_name);
+            string_array[3] = (char *)(PyArray_DescrFromScalar(self->data)->typeobj->tp_name);
         }
         else
         {
-            string_array[3] = (char*)(PyArray_DESCR((PyArrayObject *)self->data)->typeobj->tp_name);
+            string_array[3] = (char *)(PyArray_DESCR((PyArrayObject *)self->data)->typeobj->tp_name);
         }
         uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
         uint64_t string_total_len = 1;
@@ -291,6 +293,11 @@ PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+PyObject *__tensor(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    return __new__(Tensor_type, args, kwds);
+}
+
 Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
@@ -407,6 +414,14 @@ static void store_tensor_need_grad(long long index, Tensor *tensor)
 Py_hash_t __hash__(Tensor *self)
 {
     return (Py_hash_t)self;
+}
+
+Tensor *copy(Tensor*self)
+{
+    PyArrayObject* ret = nb_copy((PyArrayObject*)self->data);
+    if (ret == NULL)
+        return NULL;
+    return (Tensor*)new_Tensor_x(self, (PyObject*)ret, "");
 }
 
 PyObject *

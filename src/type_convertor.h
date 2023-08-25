@@ -1,4 +1,38 @@
+
+#ifndef _TYPE_CONVERTOR_H
+#define _TYPE_CONVERTOR_H
 #include <numpy/arrayobject.h>
+#include "allocator.h"
+#include <assert.h>
+
+#ifndef PYTHON_NUMBER_H
+#define PYTHON_NUMBER_H
+typedef struct
+{
+    int type;
+    union
+    {
+        npy_bool bool_;
+        npy_byte byte_;
+        npy_ubyte ubyte_;
+        npy_short short_;
+        npy_ushort ushort_;
+        npy_int int_;
+        npy_uint uint_;
+        npy_long long_;
+        npy_ulong ulong_;
+        npy_longlong longlong_;
+        npy_ulonglong ulonglong_;
+        npy_float float_;
+        npy_double double_;
+        npy_longdouble longdouble_;
+        npy_half half_;
+    } data;
+} Python_Number;
+#endif
+
+#ifndef TYPE_CONVERTOR_H
+#define TYPE_CONVERTOR_H
 
 void Any_to_Float(PyArrayObject **array, PyArrayObject **result, int type);
 
@@ -6,9 +40,15 @@ void as_type(PyArrayObject **a, PyArrayObject **result, int target_type);
 
 int div_result_type_pick(int npy_enum);
 
-inline npy_half float_cast_half(npy_float32 value)
+int binary_result_type(int op, int a_dtype, int a_size, int b_dtype, int b_size);
+
+PyObject *binary_result_type_(PyObject *self, PyObject *const *args, size_t nargsf);
+
+PyObject *set_global_float_type(PyObject *self, PyObject *const *args, size_t nargsf);
+
+inline npy_half float_cast_half(npy_float value)
 {
-    npy_float32 *p = &value;
+    npy_float *p = &value;
     uint32_t b = *((uint32_t *)p);
     uint32_t float32_m = (uint32_t)(b & 0x007fffffu);
     uint32_t float32_sign = (uint32_t)((b & 0x80000000) >> 16);
@@ -327,7 +367,7 @@ inline npy_half double_cast_half(npy_float64 value)
     if (e <= 0x3f00000000000000ULL)
     {
         if (e < 0x3e60000000000000ULL)
-            return float64_sign;
+            return (uint16_t)float64_sign;
         e >>= 52;
         float64_m += 0x0010000000000000ULL;
         float64_m <<= (e - 998);
@@ -347,7 +387,7 @@ inline npy_half double_cast_half(npy_float64 value)
 
 inline npy_half ulonglong_cast_half(npy_ulonglong value)
 {
-    return longlong_cast_half((npy_double)value);
+    return double_cast_half((npy_double)value);
 }
 
 inline npy_ulong half_cast_ulong(npy_half value)
@@ -355,90 +395,86 @@ inline npy_ulong half_cast_ulong(npy_half value)
     return ((npy_ulong)half_cast_long(value));
 }
 
-inline npy_double half_cast_ulonglong(npy_half value)
+inline npy_ulonglong half_cast_ulonglong(npy_half value)
 {
-    return (half_cast_double(value));
+    return ((npy_ulonglong)half_cast_double(value));
 }
 
-#define CAST_ARRAY(source, result, source_type, to_type, npy_enum)                              \
-    {                                                                                           \
-        npy_intp ndims = PyArray_NDIM(*source);                                                 \
-        npy_intp *shape = PyArray_SHAPE(*source);                                               \
-        npy_intp size = PyArray_SIZE(*source);                                                  \
-        PyArrayObject *array_ = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, npy_enum, 0); \
-        if (array_ == NULL)                                                                     \
-        {                                                                                       \
-            *result = NULL;                                                                     \
-            *array = NULL;                                                                      \
-            return;                                                                             \
-        }                                                                                       \
-        to_type *array_data = (to_type *)PyArray_DATA(array_);                                  \
-        source_type *data = (source_type *)PyArray_DATA(*source);                               \
-        npy_intp i;                                                                             \
-        _Pragma("omp parallel for") for (i = 0; i < size; i++)                                  \
-        {                                                                                       \
-            to_type value = (to_type)data[i];                                                   \
-            array_data[i] = value;                                                              \
-        }                                                                                       \
-        if (result != NULL)                                                                     \
-            *result = array_;                                                                   \
-        else                                                                                    \
-        {                                                                                       \
-            Py_DECREF(*array);                                                                  \
-            *source = array_;                                                                   \
-        }                                                                                       \
+#endif
+
+#define CAST_ARRAY(source, result, source_type, to_type, npy_enum)                                                             \
+    for (i = 0; i < ndims; i++)                                                                                                \
+        new_strides[i] = (npy_intp)((strides[i] * sizeof(to_type)) / (npy_intp)sizeof(source_type));                           \
+    PyArrayObject *array_##source_type = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type, PyArray_DescrFromType(npy_enum), \
+                                                                               (int)ndims, (npy_intp const *)shape,            \
+                                                                               (npy_intp const *)new_strides, NULL,            \
+                                                                               PyArray_FLAGS(*source), NULL);                  \
+    if (array_##source_type == NULL)                                                                                           \
+    {                                                                                                                          \
+        *result = NULL;                                                                                                        \
+        *array = NULL;                                                                                                         \
+        return;                                                                                                                \
+    }                                                                                                                          \
+    free(new_strides);                                                                                                         \
+    to_type *array_data_##source_type = (to_type *)PyArray_DATA(array_##source_type);                                          \
+    source_type *data_##source_type = (source_type *)PyArray_DATA(*source);                                                    \
+    _Pragma("omp parallel for") for (i = 0; i < size; i++)                                                                     \
+    {                                                                                                                          \
+        to_type value = (to_type)data_##source_type[i];                                                                        \
+        array_data_##source_type[i] = value;                                                                                   \
+    }                                                                                                                          \
+    if (result != NULL)                                                                                                        \
+        *result = array_##source_type;                                                                                         \
+    else                                                                                                                       \
+    {                                                                                                                          \
+        Py_DECREF(*array);                                                                                                     \
+        *source = array_##source_type;                                                                                         \
     }
 
-#define F_CAST_ARRAY(source, result, source_type, to_type, npy_enum, half_cast_func)            \
-    {                                                                                           \
-        npy_intp ndims = PyArray_NDIM(*source);                                                 \
-        npy_intp *shape = PyArray_SHAPE(*source);                                               \
-        npy_intp size = PyArray_SIZE(*source);                                                  \
-        PyArrayObject *array_ = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, npy_enum, 0); \
-        if (array_ == NULL)                                                                     \
-        {                                                                                       \
-            *result = NULL;                                                                     \
-            *array = NULL;                                                                      \
-            return;                                                                             \
-        }                                                                                       \
-        to_type *array_data = (to_type *)PyArray_DATA(array_);                                  \
-        source_type *data = (source_type *)PyArray_DATA(*source);                               \
-        npy_intp i;                                                                             \
-        _Pragma("omp parallel for") for (i = 0; i < size; i++)                                  \
-            array_data[i] = half_cast_func(data[i]);                                            \
-        if (result != NULL)                                                                     \
-            *result = array_;                                                                   \
-        else                                                                                    \
-        {                                                                                       \
-            Py_DECREF(*array);                                                                  \
-            *source = array_;                                                                   \
-        }                                                                                       \
+#define F_CAST_ARRAY(source, result, source_type, to_type, npy_enum, half_cast_func)                                           \
+    for (i = 0; i < ndims; i++)                                                                                                \
+        new_strides[i] = (npy_intp)((strides[i] * sizeof(to_type)) / (npy_intp)sizeof(source_type));                           \
+    PyArrayObject *array_##source_type = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type, PyArray_DescrFromType(npy_enum), \
+                                                                               (int)ndims, (npy_intp const *)shape,            \
+                                                                               (npy_intp const *)new_strides, NULL,            \
+                                                                               PyArray_FLAGS(*source), NULL);                  \
+    if (array_##source_type == NULL)                                                                                           \
+    {                                                                                                                          \
+        *result = NULL;                                                                                                        \
+        *array = NULL;                                                                                                         \
+        return;                                                                                                                \
+    }                                                                                                                          \
+    free(new_strides);                                                                                                         \
+    to_type *array_data_##source_type = (to_type *)PyArray_DATA(array_##source_type);                                          \
+    source_type *data_##source_type = (source_type *)PyArray_DATA(*source);                                                    \
+    _Pragma("omp parallel for") for (i = 0; i < size; i++)                                                                     \
+        array_data_##source_type[i] = (to_type)half_cast_func(data_##source_type[i]);                                          \
+    if (result != NULL)                                                                                                        \
+        *result = array_##source_type;                                                                                         \
+    else                                                                                                                       \
+    {                                                                                                                          \
+        Py_DECREF(*array);                                                                                                     \
+        *source = array_##source_type;                                                                                         \
     }
 
-#define CAST_ARRAY_BOOL(source, result, source_type)                                            \
-    {                                                                                           \
-        npy_intp ndims = PyArray_NDIM(*source);                                                 \
-        npy_intp *shape = PyArray_SHAPE(*source);                                               \
-        npy_intp size = PyArray_SIZE(*source);                                                  \
-        PyArrayObject *array_ = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_BOOL, 0); \
-        if (array_ == NULL)                                                                     \
-        {                                                                                       \
-            *result = NULL;                                                                     \
-            *array = NULL;                                                                      \
-            return;                                                                             \
-        }                                                                                       \
-        npy_bool *array_data = (npy_bool *)PyArray_DATA(array_);                                \
-        source_type *data = (source_type *)PyArray_DATA(*source);                               \
-        npy_intp i;                                                                             \
-        _Pragma("omp parallel for") for (i = 0; i < size; i++)                                  \
-            array_data[i] = data[i] ? 1 : 0;                                                    \
-        if (result != NULL)                                                                     \
-            *result = array_;                                                                   \
-        else                                                                                    \
-        {                                                                                       \
-            Py_DECREF(*array);                                                                  \
-            *source = array_;                                                                   \
-        }                                                                                       \
+#define CAST_ARRAY_BOOL(source, result, source_type)                                                     \
+    PyArrayObject *array_##source_type = (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_BOOL, 0); \
+    if (array_##source_type == NULL)                                                                     \
+    {                                                                                                    \
+        *result = NULL;                                                                                  \
+        *array = NULL;                                                                                   \
+        return;                                                                                          \
+    }                                                                                                    \
+    npy_bool *array_data_##source_type = (npy_bool *)PyArray_DATA(array_##source_type);                  \
+    source_type *data_##source_type = (source_type *)PyArray_DATA(*source);                              \
+    _Pragma("omp parallel for") for (i = 0; i < size; i++)                                               \
+        array_data_##source_type[i] = data_##source_type[i] ? 1 : 0;                                     \
+    if (result != NULL)                                                                                  \
+        *result = array_##source_type;                                                                   \
+    else                                                                                                 \
+    {                                                                                                    \
+        Py_DECREF(*array);                                                                               \
+        *source = array_##source_type;                                                                   \
     }
 
 #define CAST_ARRAY_CASE(TYPE, FROM, TO, TO_ENUM)     \
@@ -465,3 +501,5 @@ inline npy_double half_cast_ulonglong(npy_half value)
     case TYPE:                             \
         Any_to_##To(a, result, self_type); \
         break;
+
+#endif

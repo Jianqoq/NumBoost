@@ -1,10 +1,111 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #include "type_convertor.h"
+#include "op.h"
+#include "stdbool.h"
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef min
+#define min(a, b) (((a) > (b)) ? (b) : (a))
+#endif
+int gloabal_int_type = NPY_INT;
+int gloabal_float_type = NPY_FLOAT;
+
+#define uint_switch_cases(op)                                     \
+    switch (op)                                                   \
+    {                                                             \
+    case ADD:                                                     \
+    case SUB:                                                     \
+    case MUL:                                                     \
+        if (is_float_number(b_dtype))                             \
+            return float_type_based_on_size(max(a_size, b_size)); \
+        else                                                      \
+            return a_dtype;                                       \
+    case DIV:                                                     \
+        return float_type_based_on_size(max(a_size, b_size));     \
+    case MOD:                                                     \
+        if (is_float_number(b_dtype))                             \
+            return float_type_based_on_size(max(a_size, b_size)); \
+        else                                                      \
+            return max(a_dtype, b_dtype);                         \
+    case POW:                                                     \
+        return gloabal_float_type;                                \
+    case FLOOR_DIV:                                               \
+        return max(a_dtype, b_dtype);                             \
+    case BITWISE_AND:                                             \
+    case BITWISE_OR:                                              \
+    case BITWISE_XOR:                                             \
+        return NPY_BOOL;                                          \
+    case LSHIFT:                                                  \
+    case RSHIFT:                                                  \
+        if (is_float_number(b_dtype))                             \
+            return -1;                                            \
+        else                                                      \
+            return max(a_dtype, b_dtype);                         \
+    default:                                                      \
+        return max(a_dtype, b_dtype);                             \
+    }                                                             \
+    break;
+
+#define int_switch_cases(op)                                      \
+    switch (op)                                                   \
+    {                                                             \
+    case ADD:                                                     \
+    case SUB:                                                     \
+    case MUL:                                                     \
+        if (is_float_number(b_dtype))                             \
+            return float_type_based_on_size(max(a_size, b_size)); \
+        else                                                      \
+            return max(a_dtype, b_dtype);                         \
+    case DIV:                                                     \
+        return float_type_based_on_size(max(a_size, b_size));     \
+    case MOD:                                                     \
+        if (is_float_number(b_dtype))                             \
+            return float_type_based_on_size(max(a_size, b_size)); \
+        else                                                      \
+            return max(a_dtype, b_dtype);                         \
+    case POW:                                                     \
+        return gloabal_float_type;                                \
+    case FLOOR_DIV:                                               \
+        return max(a_dtype, b_dtype);                             \
+    case BITWISE_AND:                                             \
+    case BITWISE_OR:                                              \
+    case BITWISE_XOR:                                             \
+        return NPY_BOOL;                                          \
+    case LSHIFT:                                                  \
+    case RSHIFT:                                                  \
+        if (is_float_number(b_dtype))                             \
+            return -1;                                            \
+        else                                                      \
+            return max(a_dtype, b_dtype);                         \
+    default:                                                      \
+        return max(a_dtype, b_dtype);                             \
+    }                                                             \
+    break;
+
+PyObject *set_global_float_type(PyObject *self, PyObject *const *args, size_t nargsf)
+{
+    int type = (int)PyLong_AsLong(args[0]);
+    if (type == NPY_FLOAT || type == NPY_DOUBLE || type == NPY_LONGDOUBLE || type == NPY_HALF)
+        gloabal_float_type = type;
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "type must be float, double, longdouble or half");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 /*to uint8*/
 void Any_to_Float(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_float, NPY_FLOAT)
@@ -27,6 +128,12 @@ void Any_to_Float(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Double(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_double, NPY_DOUBLE)
@@ -49,6 +156,12 @@ void Any_to_Double(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Half(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         F_CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_half, NPY_HALF, bool_cast_half)
@@ -71,6 +184,12 @@ void Any_to_Half(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_LongLong(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_longlong, NPY_LONGLONG)
@@ -93,6 +212,12 @@ void Any_to_LongLong(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Long(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_long, NPY_LONG)
@@ -115,6 +240,12 @@ void Any_to_Long(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Int(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_int, NPY_INT)
@@ -137,6 +268,12 @@ void Any_to_Int(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Byte_(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_byte, NPY_BYTE)
@@ -159,6 +296,12 @@ void Any_to_Byte_(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_UByte(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_ubyte, NPY_UBYTE)
@@ -181,6 +324,12 @@ void Any_to_UByte(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Uint(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_uint, NPY_UINT)
@@ -203,6 +352,12 @@ void Any_to_Uint(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Ulong(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_ulong, NPY_ULONG)
@@ -225,6 +380,12 @@ void Any_to_Ulong(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_ULongLong(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_ulonglong, NPY_ULONGLONG)
@@ -247,6 +408,12 @@ void Any_to_ULongLong(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Short(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_short, NPY_SHORT)
@@ -269,6 +436,12 @@ void Any_to_Short(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_UShort(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_ushort, NPY_USHORT)
@@ -291,6 +464,12 @@ void Any_to_UShort(PyArrayObject **array, PyArrayObject **result, int type)
 
 void Any_to_Bool(PyArrayObject **array, PyArrayObject **result, int type)
 {
+    npy_intp ndims = PyArray_NDIM(*array);
+    npy_intp *shape = PyArray_SHAPE(*array);
+    npy_intp size = PyArray_SIZE(*array);
+    npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+    npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+    npy_intp i;
     switch (type)
     {
         NO_CONVERT_CASE(NPY_BOOL)
@@ -359,5 +538,161 @@ int div_result_type_pick(int npy_enum)
     case NPY_LONGLONG:
     case NPY_ULONGLONG:
         return NPY_DOUBLE;
+    case NPY_FLOAT:
+        return NPY_FLOAT;
+    case NPY_DOUBLE:
+        return NPY_DOUBLE;
+    case NPY_LONGDOUBLE:
+        return NPY_LONGDOUBLE;
+    case NPY_HALF:
+        return NPY_HALF;
+    default:
+        return -1;
     }
+}
+
+bool is_float_number(int dtype)
+{
+    switch (dtype)
+    {
+    case NPY_FLOAT:
+    case NPY_DOUBLE:
+    case NPY_LONGDOUBLE:
+    case NPY_HALF:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool is_uint_number(int dtype)
+{
+    return (dtype == NPY_UBYTE || dtype == NPY_USHORT || dtype == NPY_UINT || dtype == NPY_ULONG || dtype == NPY_ULONGLONG);
+}
+
+int float_type_based_on_size(int size)
+{
+    switch (size)
+    {
+    case 2:
+        return max(NPY_HALF, gloabal_float_type);
+    case 4:
+        return max(NPY_FLOAT, gloabal_float_type);
+    case 8:
+        return max(NPY_DOUBLE, gloabal_float_type);
+    case 16:
+        return max(NPY_LONGDOUBLE, gloabal_float_type);
+    default:
+        return gloabal_float_type;
+    }
+}
+
+int binary_result_type(int op, int a_dtype, int a_size, int b_dtype, int b_size)
+{
+    switch (a_dtype)
+    {
+    case NPY_BOOL:
+    case NPY_BYTE:
+        int_switch_cases(op);
+    case NPY_UBYTE:
+        uint_switch_cases(op);
+    case NPY_SHORT:
+        int_switch_cases(op);
+    case NPY_USHORT:
+        uint_switch_cases(op);
+    case NPY_INT:
+        int_switch_cases(op);
+    case NPY_UINT:
+        uint_switch_cases(op);
+    case NPY_LONG:
+        int_switch_cases(op);
+    case NPY_ULONG:
+        uint_switch_cases(op);
+    case NPY_LONGLONG:
+        int_switch_cases(op);
+    case NPY_ULONGLONG:
+        uint_switch_cases(op);
+    case NPY_FLOAT:
+    case NPY_DOUBLE:
+    case NPY_LONGDOUBLE:
+        switch (op)
+        {
+        case ADD:
+        case SUB:
+        case MUL:
+        case DIV:
+        case MOD:
+            return float_type_based_on_size(max(a_size, b_size));
+        case POW:
+            return gloabal_float_type;
+        case FLOOR_DIV:
+            return max(a_dtype, b_dtype);
+        case BITWISE_AND:
+        case BITWISE_OR:
+        case BITWISE_XOR:
+            return NPY_BOOL;
+        case LSHIFT:
+        case RSHIFT:
+            PyErr_SetString(PyExc_TypeError, "unsupported operand type(s) for >> or <<: 'float' and 'float'");
+            return -1;
+        default:
+            return max(a_dtype, b_dtype);
+        }
+        break;
+    case NPY_CFLOAT:
+    case NPY_CDOUBLE:
+    case NPY_CLONGDOUBLE:
+    case NPY_OBJECT:
+    case NPY_STRING:
+    case NPY_UNICODE:
+    case NPY_VOID:
+    case NPY_DATETIME:
+    case NPY_TIMEDELTA:
+        PyErr_SetString(PyExc_TypeError, "unsupported data type");
+        return -1;
+    case NPY_HALF:
+        switch (op)
+        {
+        case ADD:
+        case SUB:
+        case MUL:
+        case DIV:
+        case MOD:
+            return float_type_based_on_size(max(a_size, b_size));
+        case POW:
+            return gloabal_float_type;
+        case FLOOR_DIV:
+            if (is_float_number(b_dtype))
+                return float_type_based_on_size(max(a_size, b_size));
+            else
+                return gloabal_float_type;
+        case BITWISE_AND:
+        case BITWISE_OR:
+        case BITWISE_XOR:
+            return NPY_BOOL;
+        case LSHIFT:
+        case RSHIFT:
+            PyErr_SetString(PyExc_TypeError, "unsupported operand type(s) for >> or <<: 'float' and 'float'");
+            return -1;
+        default:
+            return max(a_dtype, b_dtype);
+        }
+        break;
+    default:
+        PyErr_SetString(PyExc_TypeError, "unsupported data type");
+        return -1;
+    }
+}
+
+PyObject *binary_result_type_(PyObject *self, PyObject *const *args, size_t nargsf)
+{
+    long op = PyLong_AsLong(args[0]);
+    long a_dtype = PyLong_AsLong(args[1]);
+    long a_size = PyLong_AsLong(args[2]);
+    long b_dtype = PyLong_AsLong(args[3]);
+    long b_size = PyLong_AsLong(args[4]);
+    if ((op == -1 || a_dtype == -1 || a_size == -1 || b_dtype == -1 || b_size == -1) && PyErr_Occurred())
+        return NULL;
+    int result = binary_result_type((int)op, (int)a_dtype, (int)a_size, (int)b_dtype, (int)b_size);
+    return PyLong_FromLong(result);
 }

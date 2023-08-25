@@ -3,6 +3,17 @@
 #include <Python.h>
 #endif
 
+// #include <jemalloc/jemalloc.h>
+// #ifndef JELMALLOC
+// #define JELMALLOC
+// #ifdef _MSC_VER
+// #define malloc(size) je_malloc(size)
+// #define free(ptr) je_free(ptr)
+// #define realloc(ptr, size) je_realloc(ptr, size)
+// #define calloc(count, size) je_calloc(count, size)
+// #endif
+// #endif
+
 #include <stdbool.h>
 #ifndef HASH_H
 #define HASH_H

@@ -1,4 +1,14 @@
+#ifndef IMPORT_METHODS_C
+#define IMPORT_METHODS_C
+#define NO_IMPORT_ARRAY
+#include "tensor.h"
 #include "import_methods.h"
+
+#ifdef _MSC_VER
+#define Format_String "%s %lld"
+#else
+#define Format_String "%s %ld"
+#endif
 
 inline static PyObject **_Generic_check_import_if_success(PyObject **struct_with_methods, const char *message, int start_line)
 {
@@ -11,7 +21,7 @@ inline static PyObject **_Generic_check_import_if_success(PyObject **struct_with
         {
             char line[100];
             // 23 is the number of ops in the list above, need to change if num ops are changed
-            sprintf(line, "%s %lld", "Failed to import xla ops at import_methods.c line", p - begin + start_line);
+            sprintf(line, Format_String, "Failed to import xla ops at import_methods.c line", p - begin + start_line);
             PyErr_SetString(PyExc_RuntimeError, (const char *)line);
             free(struct_with_methods);
             return NULL;
@@ -294,3 +304,5 @@ jnp_method *import_jnp_methods(jnp_method **JNP_METHOD_)
         return JNP_METHOD;
     }
 }
+
+#endif

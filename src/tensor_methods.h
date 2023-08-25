@@ -1,3 +1,5 @@
+#ifndef _TENSOR_METHODS_H
+#define _TENSOR_METHODS_H
 #include "tensor.h"
 
 PyObject *astype(Tensor *self, PyObject *const *args, size_t nargsf);
@@ -20,13 +22,15 @@ Tensor *T(Tensor *self);
 
 PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
+PyObject *__tensor(PyObject *self, PyObject *args, PyObject *kwds);
+
 Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 
 Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 
 PyObject *backward(PyObject *self, PyObject *args);
 
-PyObject *next(Tensor *self);
+Tensor *copy(Tensor*self);
 
 Py_hash_t __hash__(Tensor *self);
 
@@ -74,3 +78,5 @@ Py_hash_t __hash__(Tensor *self);
         PyArrayObject *result = PyArray_EMPTY(1, 1, npy_enum, 0); \
         *((type *)PyArray_DATA(result)) = g_max;                  \
         return Tensor_Empty((PyObject *)result);
+
+#endif

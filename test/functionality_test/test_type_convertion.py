@@ -7,23 +7,55 @@ if platform.system() == 'Windows':
     os.add_dll_directory(r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from num_boost import *
-#
-#
+
+
 def assert_operation(a, b, array):
     assert np.allclose(a.data, b, equal_nan=True)
     a_ = Tensor(array)
-    o = a + a_
-    o1 = b + array
-    assert np.allclose(o.data, o1.astype(o.data.dtype), equal_nan=True)
-    o = a - a_
-    o1 = b - array
-    assert np.allclose(o.data, o1.astype(o.data.dtype), equal_nan=True)
-    o = a * a_
-    o1 = b * array
-    assert np.allclose(o.data, o1.astype(o.data.dtype), equal_nan=True)
-    o = a / a_
-    o1 = b / array
-    assert np.allclose(o.data, o1.astype(o.data.dtype), equal_nan=True)
+    predict_type = result_type(Add, np_type_2_nb[a.data.dtype],
+                               a.data.itemsize, np_type_2_nb[a_.data.dtype], a_.data.itemsize)
+    o = a.astype(predict_type) + a_.astype(predict_type)
+    o1 = b.astype(nb_type_2_np[predict_type]) + array.astype(nb_type_2_np[predict_type])
+    indice = np.where(o.data != o1.astype(o.data.dtype))
+    assert np.allclose(o.data, o1.astype(o.data.dtype), equal_nan=True), (f"predicted type: {predict_type},"
+                                                                          f"a type: {a.data.dtype},"
+                                                                          f" {a_.data.dtype}\n"
+                                                                          f" {nb_type_2_np[predict_type]}\n"
+                                                                          f"tensor diff: {o[indice]}\n\n"
+                                                                          f"array diff: {o1[indice]}")
+    predict_type = result_type(Sub, np_type_2_nb[a.data.dtype],
+                               a.data.itemsize, np_type_2_nb[a_.data.dtype], a_.data.itemsize)
+    o = a.astype(predict_type) - a_.astype(predict_type)
+    o1 = b.astype(nb_type_2_np[predict_type]) - array.astype(nb_type_2_np[predict_type])
+    indice = np.where(o.data != o1.astype(o.data.dtype))
+    assert np.allclose(o.data, o1.astype(o.data.dtype), equal_nan=True), (f"predicted type: {predict_type},"
+                                                                          f"a type: {a.data.dtype},"
+                                                                          f" {a_.data.dtype}\n"
+                                                                          f" {nb_type_2_np[predict_type]}\n"
+                                                                          f"tensor diff: {o[indice]}\n\n"
+                                                                          f"array diff: {o1[indice]}")
+    predict_type = result_type(Mul, np_type_2_nb[a.data.dtype],
+                               a.data.itemsize, np_type_2_nb[a_.data.dtype], a_.data.itemsize)
+    o = a.astype(predict_type) * a_.astype(predict_type)
+    o1 = b.astype(nb_type_2_np[predict_type]) * array.astype(nb_type_2_np[predict_type])
+    indice = np.where(o.data != o1.astype(o.data.dtype))
+    assert np.allclose(o.data, o1.astype(o.data.dtype), equal_nan=True), (f"predicted type: {predict_type},"
+                                                                          f"a type: {a.data.dtype},"
+                                                                          f" {a_.data.dtype}\n"
+                                                                          f" {nb_type_2_np[predict_type]}\n"
+                                                                          f"tensor diff: {o[indice]}\n\n"
+                                                                          f"array diff: {o1[indice]}")
+    predict_type = result_type(Div, np_type_2_nb[a.data.dtype], a.data.itemsize,
+                               np_type_2_nb[a_.data.dtype], a_.data.itemsize)
+    o = a.astype(predict_type) / a_.astype(predict_type)
+    o1 = b.astype(nb_type_2_np[predict_type]) / array.astype(nb_type_2_np[predict_type])
+    indice = np.where(o.data != o1.astype(o.data.dtype))
+    assert np.allclose(o.data, o1.astype(o.data.dtype), equal_nan=True), (f"predicted type: {predict_type},"
+                                                                          f"a type: {a.data.dtype},"
+                                                                          f" {a_.data.dtype}\n"
+                                                                          f" {nb_type_2_np[predict_type]}\n"
+                                                                          f"tensor diff: {o[indice]}\n\n"
+                                                                          f"array diff: {o1[indice]}")
 
 
 @pytest.mark.parametrize("array", [np.random.randn(200, 500, 3).astype(np.float16)])
