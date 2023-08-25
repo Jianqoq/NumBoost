@@ -2,7 +2,7 @@
 
 Linux, Windows
 
-Python: 3.9+
+Python: 3.11+
 
 Compiler: GCC, MSVC
 
