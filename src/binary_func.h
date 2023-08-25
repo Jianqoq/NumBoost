@@ -11,10 +11,16 @@ PyArrayObject *numboost_binary(PyArrayObject *a, PyArrayObject *b, int op_enum);
 PyArrayObject *numboost_binary_scalar_left(PyObject *a, PyArrayObject *b, int op_enum);
 PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int op_enum);
 
-#define Binary_Loop(a_ptr, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                          \
-    {                                                   \
-        result_ptr[i] = op(a_ptr[i], b_ptr[i], type);   \
+#define Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                \
+    {                                                         \
+        result_ptr[i] = op(a_ptr[i], b_ptr[i], type);         \
+    }
+
+#define Ufunc_Loop(result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                 \
+    {                                          \
+        result_ptr[i] = op(i, type);           \
     }
 
 #define Binary_Loop_Uncontiguous(type, op, inner_loop_size, stride_a, \
@@ -26,19 +32,19 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         *(result_ptr + i) = op(val1, val2, type);                     \
     }
 
-#define Mod_Binary_Loop(a_ptr, b_ptr, result_ptr, op, type)      \
-    for (i = 0; i < size; i++)                                   \
-    {                                                            \
-        type val2 = b_ptr[i];                                    \
-        if (!val2)                                               \
-        {                                                        \
-            result_ptr[i] = 0;                                   \
-            continue;                                            \
-        }                                                        \
-        type val1 = a_ptr[i];                                    \
-        type ret = op(val1, val2, type);                         \
-        ret += ((ret != 0) & ((val1 < 0) != (val2 < 0))) * val2; \
-        result_ptr[i] = ret;                                     \
+#define Mod_Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                    \
+    {                                                             \
+        type val2 = b_ptr[i];                                     \
+        if (!val2)                                                \
+        {                                                         \
+            result_ptr[i] = 0;                                    \
+            continue;                                             \
+        }                                                         \
+        type val1 = a_ptr[i];                                     \
+        type ret = op(val1, val2, type);                          \
+        ret += ((ret != 0) & ((val1 < 0) != (val2 < 0))) * val2;  \
+        result_ptr[i] = ret;                                      \
     }
 
 #define Mod_Binary_Loop_Uncontiguous(type, op, inner_loop_size, stride_a, \
@@ -57,7 +63,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         *(result_ptr + i) = ret;                                          \
     }
 
-#define Modh_Binary_Loop(a_ptr, b_ptr, result_ptr, op, type)                            \
+#define Modh_Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type)                      \
     for (i = 0; i < size; i++)                                                          \
     {                                                                                   \
         float b = half_cast_float(b_ptr[i]);                                            \
@@ -87,49 +93,49 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         *(result_ptr + i) = float_cast_half(ret);                          \
     }
 
-#define Binary_Loop_a_Scalar(a, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                               \
-    {                                                        \
-        result_ptr[i] = op(a, b_ptr[i], type);               \
+#define Binary_Loop_a_Scalar(a, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                     \
+    {                                                              \
+        result_ptr[i] = op(a, b_ptr[i], type);                     \
     }
 
-#define Binary_Loop_b_Scalar(a_ptr, b, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                               \
-    {                                                        \
-        result_ptr[i] = op(a_ptr[i], b, type);               \
+#define Binary_Loop_b_Scalar(a_ptr, b, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                     \
+    {                                                              \
+        result_ptr[i] = op(a_ptr[i], b, type);                     \
     }
 
-#define Half_Binary_Loop_A_Scalar(a, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                    \
-    {                                                             \
-        npy_float b = half_cast_float(b_ptr[i]);                  \
-        npy_float result = op(a, b, type);                        \
-        result_ptr[i] = float_cast_half(result);                  \
+#define Half_Binary_Loop_A_Scalar(a, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                          \
+    {                                                                   \
+        npy_float b = half_cast_float(b_ptr[i]);                        \
+        npy_float result = op(a, b, type);                              \
+        result_ptr[i] = float_cast_half(result);                        \
     }
 
-#define Half_Binary_Loop_B_Scalar(a_ptr, b, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                    \
-    {                                                             \
-        npy_float a = half_cast_float(a_ptr[i]);                  \
-        npy_float result = op(a, b, type);                        \
-        result_ptr[i] = float_cast_half(result);                  \
+#define Half_Binary_Loop_B_Scalar(a_ptr, b, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                          \
+    {                                                                   \
+        npy_float a = half_cast_float(a_ptr[i]);                        \
+        npy_float result = op(a, b, type);                              \
+        result_ptr[i] = float_cast_half(result);                        \
     }
 
-#define Float_Div_Binary_Loop(a_ptr, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                    \
-    {                                                             \
-        if (!b_ptr[i])                                            \
-        {                                                         \
-            if (a_ptr[i] > 0)                                     \
-                result_ptr[i] = NPY_INFINITYF;                    \
-            else if (a_ptr[i] < 0)                                \
-                result_ptr[i] = -NPY_INFINITYF;                   \
-            else                                                  \
-                result_ptr[i] = NPY_NANF;                         \
-            continue;                                             \
-        }                                                         \
-        else                                                      \
-            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]), type);     \
+#define Float_Div_Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                          \
+    {                                                                   \
+        if (!b_ptr[i])                                                  \
+        {                                                               \
+            if (a_ptr[i] > 0)                                           \
+                result_ptr[i] = NPY_INFINITYF;                          \
+            else if (a_ptr[i] < 0)                                      \
+                result_ptr[i] = -NPY_INFINITYF;                         \
+            else                                                        \
+                result_ptr[i] = NPY_NANF;                               \
+            continue;                                                   \
+        }                                                               \
+        else                                                            \
+            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]), type);           \
     }
 
 #define Float_Div_Binary_Loop_Uncontiguous(type, op, inner_loop_size, stride_a, \
@@ -154,21 +160,21 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         }                                                                       \
     }
 
-#define Double_Div_Binary_Loop(a_ptr, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                     \
-    {                                                              \
-        if (!b_ptr[i])                                             \
-        {                                                          \
-            if (a_ptr[i] > 0)                                      \
-                result_ptr[i] = NPY_INFINITY;                      \
-            else if (a_ptr[i] < 0)                                 \
-                result_ptr[i] = -NPY_INFINITY;                     \
-            else                                                   \
-                result_ptr[i] = NPY_NAN;                           \
-            continue;                                              \
-        }                                                          \
-        else                                                       \
-            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]), type);      \
+#define Double_Div_Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                           \
+    {                                                                    \
+        if (!b_ptr[i])                                                   \
+        {                                                                \
+            if (a_ptr[i] > 0)                                            \
+                result_ptr[i] = NPY_INFINITY;                            \
+            else if (a_ptr[i] < 0)                                       \
+                result_ptr[i] = -NPY_INFINITY;                           \
+            else                                                         \
+                result_ptr[i] = NPY_NAN;                                 \
+            continue;                                                    \
+        }                                                                \
+        else                                                             \
+            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]), type);            \
     }
 
 #define Double_Div_Binary_Loop_Uncontiguous(type, op, inner_loop_size, stride_a, \
@@ -193,21 +199,21 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         }                                                                        \
     }
 
-#define LongDouble_Div_Binary_Loop(a_ptr, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                         \
-    {                                                                  \
-        if (!b_ptr[i])                                                 \
-        {                                                              \
-            if (a_ptr[i] > 0)                                          \
-                result_ptr[i] = NPY_INFINITYL;                         \
-            else if (a_ptr[i] < 0)                                     \
-                result_ptr[i] = -NPY_INFINITYL;                        \
-            else                                                       \
-                result_ptr[i] = NPY_NANL;                              \
-            continue;                                                  \
-        }                                                              \
-        else                                                           \
-            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]), type);          \
+#define LongDouble_Div_Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                               \
+    {                                                                        \
+        if (!b_ptr[i])                                                       \
+        {                                                                    \
+            if (a_ptr[i] > 0)                                                \
+                result_ptr[i] = NPY_INFINITYL;                               \
+            else if (a_ptr[i] < 0)                                           \
+                result_ptr[i] = -NPY_INFINITYL;                              \
+            else                                                             \
+                result_ptr[i] = NPY_NANL;                                    \
+            continue;                                                        \
+        }                                                                    \
+        else                                                                 \
+            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]), type);                \
     }
 
 #define LongDouble_Div_Binary_Loop_Uncontiguous(type, op, inner_loop_size, stride_a, \
@@ -232,125 +238,125 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         }                                                                            \
     }
 
-#define Float_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, type) \
+#define Float_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                               \
+    {                                                                        \
+        if (!b_ptr[i])                                                       \
+        {                                                                    \
+            if (a > 0)                                                       \
+                result_ptr[i] = NPY_INFINITYF;                               \
+            else if (a < 0)                                                  \
+                result_ptr[i] = -NPY_INFINITYF;                              \
+            else                                                             \
+                result_ptr[i] = NPY_NANF;                                    \
+            continue;                                                        \
+        }                                                                    \
+        else                                                                 \
+            result_ptr[i] = op(a, b_ptr[i], type);                           \
+    }
+
+#define Double_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                                \
+    {                                                                         \
+        if (!b_ptr[i])                                                        \
+        {                                                                     \
+            if (a > 0)                                                        \
+                result_ptr[i] = NPY_INFINITY;                                 \
+            else if (a < 0)                                                   \
+                result_ptr[i] = -NPY_INFINITY;                                \
+            else                                                              \
+                result_ptr[i] = NPY_NAN;                                      \
+            continue;                                                         \
+        }                                                                     \
+        else                                                                  \
+            result_ptr[i] = op(a, b_ptr[i], type);                            \
+    }
+
+#define LongDouble_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                                    \
+    {                                                                             \
+        if (!b_ptr[i])                                                            \
+        {                                                                         \
+            if (a > 0)                                                            \
+                result_ptr[i] = NPY_INFINITYL;                                    \
+            else if (a < 0)                                                       \
+                result_ptr[i] = -NPY_INFINITYL;                                   \
+            else                                                                  \
+                result_ptr[i] = NPY_NANL;                                         \
+            continue;                                                             \
+        }                                                                         \
+        else                                                                      \
+            result_ptr[i] = op(a, b_ptr[i], type);                                \
+    }
+
+#define Float_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                               \
+    {                                                                        \
+        if (!a_ptr[i])                                                       \
+        {                                                                    \
+            if (a > 0)                                                       \
+                result_ptr[i] = NPY_INFINITYF;                               \
+            else if (a < 0)                                                  \
+                result_ptr[i] = -NPY_INFINITYF;                              \
+            else                                                             \
+                result_ptr[i] = NPY_NANF;                                    \
+            continue;                                                        \
+        }                                                                    \
+        else                                                                 \
+            result_ptr[i] = op(a_ptr[i], b, type);                           \
+    }
+
+#define Double_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                                \
+    {                                                                         \
+        if (!a_ptr[i])                                                        \
+        {                                                                     \
+            if (a > 0)                                                        \
+                result_ptr[i] = NPY_INFINITY;                                 \
+            else if (a < 0)                                                   \
+                result_ptr[i] = -NPY_INFINITY;                                \
+            else                                                              \
+                result_ptr[i] = NPY_NAN;                                      \
+            continue;                                                         \
+        }                                                                     \
+        else                                                                  \
+            result_ptr[i] = op(a_ptr[i], b, type);                            \
+    }
+
+#define LongDouble_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                                    \
+    {                                                                             \
+        if (!a_ptr[i])                                                            \
+        {                                                                         \
+            if (a > 0)                                                            \
+                result_ptr[i] = NPY_INFINITYL;                                    \
+            else if (a < 0)                                                       \
+                result_ptr[i] = -NPY_INFINITYL;                                   \
+            else                                                                  \
+                result_ptr[i] = NPY_NANL;                                         \
+            continue;                                                             \
+        }                                                                         \
+        else                                                                      \
+            result_ptr[i] = op(a_ptr[i], b, type);                                \
+    }
+
+#define Half_Div_Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type) \
     for (i = 0; i < size; i++)                                         \
     {                                                                  \
-        if (!b_ptr[i])                                                 \
+        npy_float a = (npy_float)half_cast_float(a_ptr[i]);            \
+        npy_float b = (npy_float)half_cast_float(b_ptr[i]);            \
+        if (!b)                                                        \
         {                                                              \
             if (a > 0)                                                 \
-                result_ptr[i] = NPY_INFINITYF;                         \
+                result_ptr[i] = 0x7C00;                                \
             else if (a < 0)                                            \
-                result_ptr[i] = -NPY_INFINITYF;                        \
+                result_ptr[i] = 0xFC00;                                \
             else                                                       \
-                result_ptr[i] = NPY_NANF;                              \
+                result_ptr[i] = 0x7FFF;                                \
             continue;                                                  \
         }                                                              \
-        else                                                           \
-            result_ptr[i] = op(a, b_ptr[i], type);                     \
-    }
-
-#define Double_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                          \
-    {                                                                   \
-        if (!b_ptr[i])                                                  \
-        {                                                               \
-            if (a > 0)                                                  \
-                result_ptr[i] = NPY_INFINITY;                           \
-            else if (a < 0)                                             \
-                result_ptr[i] = -NPY_INFINITY;                          \
-            else                                                        \
-                result_ptr[i] = NPY_NAN;                                \
-            continue;                                                   \
-        }                                                               \
-        else                                                            \
-            result_ptr[i] = op(a, b_ptr[i], type);                      \
-    }
-
-#define LongDouble_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                              \
-    {                                                                       \
-        if (!b_ptr[i])                                                      \
-        {                                                                   \
-            if (a > 0)                                                      \
-                result_ptr[i] = NPY_INFINITYL;                              \
-            else if (a < 0)                                                 \
-                result_ptr[i] = -NPY_INFINITYL;                             \
-            else                                                            \
-                result_ptr[i] = NPY_NANL;                                   \
-            continue;                                                       \
-        }                                                                   \
-        else                                                                \
-            result_ptr[i] = op(a, b_ptr[i], type);                          \
-    }
-
-#define Float_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                         \
-    {                                                                  \
-        if (!a_ptr[i])                                                 \
-        {                                                              \
-            if (a > 0)                                                 \
-                result_ptr[i] = NPY_INFINITYF;                         \
-            else if (a < 0)                                            \
-                result_ptr[i] = -NPY_INFINITYF;                        \
-            else                                                       \
-                result_ptr[i] = NPY_NANF;                              \
-            continue;                                                  \
-        }                                                              \
-        else                                                           \
-            result_ptr[i] = op(a_ptr[i], b, type);                     \
-    }
-
-#define Double_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                          \
-    {                                                                   \
-        if (!a_ptr[i])                                                  \
-        {                                                               \
-            if (a > 0)                                                  \
-                result_ptr[i] = NPY_INFINITY;                           \
-            else if (a < 0)                                             \
-                result_ptr[i] = -NPY_INFINITY;                          \
-            else                                                        \
-                result_ptr[i] = NPY_NAN;                                \
-            continue;                                                   \
-        }                                                               \
-        else                                                            \
-            result_ptr[i] = op(a_ptr[i], b, type);                      \
-    }
-
-#define LongDouble_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                              \
-    {                                                                       \
-        if (!a_ptr[i])                                                      \
-        {                                                                   \
-            if (a > 0)                                                      \
-                result_ptr[i] = NPY_INFINITYL;                              \
-            else if (a < 0)                                                 \
-                result_ptr[i] = -NPY_INFINITYL;                             \
-            else                                                            \
-                result_ptr[i] = NPY_NANL;                                   \
-            continue;                                                       \
-        }                                                                   \
-        else                                                                \
-            result_ptr[i] = op(a_ptr[i], b, type);                          \
-    }
-
-#define Half_Div_Binary_Loop(a_ptr, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                   \
-    {                                                            \
-        npy_float a = (npy_float)half_cast_float(a_ptr[i]);      \
-        npy_float b = (npy_float)half_cast_float(b_ptr[i]);      \
-        if (!b)                                                  \
-        {                                                        \
-            if (a > 0)                                           \
-                result_ptr[i] = 0x7C00;                          \
-            else if (a < 0)                                      \
-                result_ptr[i] = 0xFC00;                          \
-            else                                                 \
-                result_ptr[i] = 0x7FFF;                          \
-            continue;                                            \
-        }                                                        \
-        npy_float result = op(a, b, type);                       \
-        result_ptr[i] = float_cast_half(result);                 \
+        npy_float result = op(a, b, type);                             \
+        result_ptr[i] = float_cast_half(result);                       \
     }
 
 #define Half_Div_Binary_Loop_Uncontiguous(type, op, inner_loop_size, stride_a, \
@@ -376,46 +382,52 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
     }
 
 // need more investigation
-#define Half_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                        \
-    {                                                                 \
-        npy_float b = half_cast_float(b_ptr[i]);                      \
-        if (!b)                                                       \
-        {                                                             \
-            if (a > 0)                                                \
-                result_ptr[i] = 0x7C00;                               \
-            else if (a < 0)                                           \
-                result_ptr[i] = 0xFC00;                               \
-            else                                                      \
-                result_ptr[i] = 0x7FFF;                               \
-            continue;                                                 \
-        }                                                             \
-        npy_float result = op(a, b, type);                            \
-        result_ptr[i] = float_cast_half(result);                      \
+#define Half_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                              \
+    {                                                                       \
+        npy_float b = half_cast_float(b_ptr[i]);                            \
+        if (!b)                                                             \
+        {                                                                   \
+            if (a > 0)                                                      \
+                result_ptr[i] = 0x7C00;                                     \
+            else if (a < 0)                                                 \
+                result_ptr[i] = 0xFC00;                                     \
+            else                                                            \
+                result_ptr[i] = 0x7FFF;                                     \
+            continue;                                                       \
+        }                                                                   \
+        npy_float result = op(a, b, type);                                  \
+        result_ptr[i] = float_cast_half(result);                            \
     }
 
-#define Half_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, type) \
-    for (i = 0; i < size; i++)                                        \
-    {                                                                 \
-        npy_float a = half_cast_float(a_ptr[i]);                      \
-        if (!b)                                                       \
-        {                                                             \
-            if (a > 0)                                                \
-                result_ptr[i] = 0x7C00;                               \
-            else if (a < 0)                                           \
-                result_ptr[i] = 0xFC00;                               \
-            else                                                      \
-                result_ptr[i] = 0x7FFF;                               \
-            continue;                                                 \
-        }                                                             \
-        npy_float result = op(a, b, type);                            \
-        result_ptr[i] = float_cast_half(result);                      \
+#define Half_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
+    for (i = 0; i < size; i++)                                              \
+    {                                                                       \
+        npy_float a = half_cast_float(a_ptr[i]);                            \
+        if (!b)                                                             \
+        {                                                                   \
+            if (a > 0)                                                      \
+                result_ptr[i] = 0x7C00;                                     \
+            else if (a < 0)                                                 \
+                result_ptr[i] = 0xFC00;                                     \
+            else                                                            \
+                result_ptr[i] = 0x7FFF;                                     \
+            continue;                                                       \
+        }                                                                   \
+        npy_float result = op(a, b, type);                                  \
+        result_ptr[i] = float_cast_half(result);                            \
     }
 
 #define Register_Binary_Operation(name, data_type, macro, op, npy_enum, loop_body)     \
     static PyArrayObject *Binary_##name##data_type(PyArrayObject *a, PyArrayObject *b) \
     {                                                                                  \
         macro(a, b, op, npy_##data_type, npy_enum, loop_body)                          \
+    }
+
+#define Register_Ufunc_Operation(name, data_type, macro, op, npy_enum, loop_body, parameters, parameters_var, get_ptrs, ptrs_name) \
+    static PyArrayObject *Binary_##name##data_type(parameters)                                                                     \
+    {                                                                                                                              \
+        macro(op, npy_##data_type, npy_enum, loop_body)                                                                            \
     }
 
 #define Register_Binary_Operation_A_Scalar(name, data_type, macro, op, npy_enum, loop_body)       \
@@ -463,7 +475,28 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         {                                                                                                  \
             npy_intp i;                                                                                    \
             _Pragma("omp parallel for")                                                                    \
-                loop_body(a_ptr, b_ptr, numpy_ptr, op, data_type);                                         \
+                loop_body(a_ptr, b_ptr, numpy_ptr, op, size, data_type);                                   \
+            return numpy_result;                                                                           \
+        }                                                                                                  \
+    }
+#define first_param(a, ...) a
+#define Ufunc_Operation(op, data_type, npy_enum, loop_body, uncontiguous_loop_body)                        \
+    {                                                                                                      \
+        get_ptrs(data_type);                                                                               \
+        npy_intp size = PyArray_SIZE(a);                                                                   \
+        npy_intp *shape = PyArray_SHAPE(a);                                                                \
+        PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
+        data_type *numpy_ptr = (data_type *)PyArray_DATA(numpy_result);                                    \
+        if (!PyArray_IS_C_CONTIGUOUS(a) || !PyArray_IS_C_CONTIGUOUS(b))                                    \
+        {                                                                                                  \
+            BinaryOperation_Uncontiguous(data_type, a, b, numpy_result, op, Binary_Loop_Uncontiguous);     \
+            return numpy_result;                                                                           \
+        }                                                                                                  \
+        else                                                                                               \
+        {                                                                                                  \
+            npy_intp i;                                                                                    \
+            _Pragma("omp parallel for")                                                                    \
+                loop_body(numpy_ptr, op, size, data_type);                                                 \
             return numpy_result;                                                                           \
         }                                                                                                  \
     }
@@ -477,7 +510,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         data_type *numpy_ptr = (data_type *)PyArray_DATA(numpy_result);                                    \
         npy_intp i;                                                                                        \
         _Pragma("omp parallel for")                                                                        \
-            Binary_Loop_a_Scalar(a, b_ptr, numpy_ptr, op, data_type);                                      \
+            Binary_Loop_a_Scalar(a, b_ptr, numpy_ptr, op, size, data_type);                                \
         return numpy_result;                                                                               \
     }
 
@@ -490,7 +523,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         data_type *numpy_ptr = (data_type *)PyArray_DATA(numpy_result);                                    \
         npy_intp i;                                                                                        \
         _Pragma("omp parallel for")                                                                        \
-            Binary_Loop_b_Scalar(a_ptr, b, numpy_ptr, op, data_type);                                      \
+            Binary_Loop_b_Scalar(a_ptr, b, numpy_ptr, op, size, data_type);                                \
         return numpy_result;                                                                               \
     }
 
@@ -503,7 +536,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         data_type *numpy_ptr = (data_type *)PyArray_DATA(numpy_result);                                    \
         npy_intp i;                                                                                        \
         _Pragma("omp parallel for")                                                                        \
-            Half_Binary_Loop_A_Scalar(a, b_ptr, numpy_ptr, op, data_type);                                 \
+            Half_Binary_Loop_A_Scalar(a, b_ptr, numpy_ptr, op, size, data_type);                           \
         return numpy_result;                                                                               \
     }
 
@@ -516,7 +549,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         data_type *numpy_ptr = (data_type *)PyArray_DATA(numpy_result);                                    \
         npy_intp i;                                                                                        \
         _Pragma("omp parallel for")                                                                        \
-            Half_Binary_Loop_B_Scalar(a_ptr, b, numpy_ptr, op, data_type);                                 \
+            Half_Binary_Loop_B_Scalar(a_ptr, b, numpy_ptr, op, size, data_type);                           \
         return numpy_result;                                                                               \
     }
 
@@ -536,7 +569,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         {                                                                                                        \
             npy_float *numpy_ptr = (npy_float *)PyArray_DATA(numpy_result);                                      \
             _Pragma("omp parallel for")                                                                          \
-                Float_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, npy_float);                                   \
+                Float_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, size, npy_float);                             \
             return numpy_result;                                                                                 \
         }                                                                                                        \
     }
@@ -557,7 +590,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         {                                                                                                          \
             npy_double *numpy_ptr = (npy_double *)PyArray_DATA(numpy_result);                                      \
             _Pragma("omp parallel for")                                                                            \
-                Double_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, npy_double);                                   \
+                Double_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, size, npy_double);                             \
             return numpy_result;                                                                                   \
         }                                                                                                          \
     }
@@ -578,7 +611,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         {                                                                                                                  \
             npy_longdouble *numpy_ptr = (npy_longdouble *)PyArray_DATA(numpy_result);                                      \
             _Pragma("omp parallel for")                                                                                    \
-                LongDouble_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, npy_longdouble);                                   \
+                LongDouble_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, size, npy_longdouble);                             \
             return numpy_result;                                                                                           \
         }                                                                                                                  \
     }
@@ -599,7 +632,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         {                                                                                                      \
             npy_half *numpy_ptr = (npy_half *)PyArray_DATA(numpy_result);                                      \
             _Pragma("omp parallel for")                                                                        \
-                Half_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, npy_half);                                   \
+                Half_Div_Binary_Loop(a_ptr, b_ptr, numpy_ptr, op, size, npy_half);                             \
             return numpy_result;                                                                               \
         }                                                                                                      \
     }
@@ -617,7 +650,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         npy_intp i;                                                                                        \
         npy_float *numpy_ptr = (npy_float *)PyArray_DATA(numpy_result);                                    \
         _Pragma("omp parallel for")                                                                        \
-            Float_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, data_type);                            \
+            Float_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                      \
         return numpy_result;                                                                               \
     }
 
@@ -634,7 +667,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         npy_intp i;                                                                                        \
         npy_double *numpy_ptr = (npy_double *)PyArray_DATA(numpy_result);                                  \
         _Pragma("omp parallel for")                                                                        \
-            Double_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, data_type);                           \
+            Double_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                     \
         return numpy_result;                                                                               \
     }
 
@@ -651,7 +684,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         npy_intp i;                                                                                        \
         npy_longdouble *numpy_ptr = (npy_longdouble *)PyArray_DATA(numpy_result);                          \
         _Pragma("omp parallel for")                                                                        \
-            LongDouble_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, data_type);                       \
+            LongDouble_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                 \
         return numpy_result;                                                                               \
     }
 
@@ -668,7 +701,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         npy_intp i;                                                                                        \
         npy_half *numpy_ptr = (npy_half *)PyArray_DATA(numpy_result);                                      \
         _Pragma("omp parallel for")                                                                        \
-            Half_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, data_type);                             \
+            Half_Div_Binary_Loop_A_SCALAR(a, b_ptr, numpy_ptr, op, size, data_type);                       \
         return numpy_result;                                                                               \
     }
 
@@ -681,7 +714,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         npy_intp i;                                                                                        \
         npy_float *numpy_ptr = (npy_float *)PyArray_DATA(numpy_result);                                    \
         _Pragma("omp parallel for")                                                                        \
-            Float_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, data_type);                            \
+            Float_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                      \
         return numpy_result;                                                                               \
     }
 
@@ -692,9 +725,9 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         npy_intp *shape = PyArray_SHAPE(a);                                                                \
         PyArrayObject *numpy_result = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(a), shape, npy_enum, 0); \
         npy_intp i;                                                                                        \
-        npy_double *numpy_ptr = (npy_float *)PyArray_DATA(numpy_result);                                   \
+        npy_double *numpy_ptr = (npy_double *)PyArray_DATA(numpy_result);                                  \
         _Pragma("omp parallel for")                                                                        \
-            Double_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, data_type);                           \
+            Double_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                     \
         return numpy_result;                                                                               \
     }
 
@@ -707,7 +740,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         npy_intp i;                                                                                        \
         npy_longdouble *numpy_ptr = (npy_longdouble *)PyArray_DATA(numpy_result);                          \
         _Pragma("omp parallel for")                                                                        \
-            LongDouble_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, data_type);                       \
+            LongDouble_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                 \
         return numpy_result;                                                                               \
     }
 
@@ -720,7 +753,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         npy_intp i;                                                                                        \
         npy_half *numpy_ptr = (npy_half *)PyArray_DATA(numpy_result);                                      \
         _Pragma("omp parallel for")                                                                        \
-            Half_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, data_type);                             \
+            Half_Div_Binary_Loop_B_SCALAR(a_val, b, numpy_ptr, op, size, data_type);                       \
         return numpy_result;                                                                               \
     }
 

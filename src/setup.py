@@ -74,14 +74,15 @@ mymodule = Extension('Numboost',
                          'mkl-C/mkl/latest/include', r'C:\Users\123\Downloads\numpy-main\numpy\core\include\numpy',
                          'lib_include/include',
                          r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\include',
-                         r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\include\msvc_compat'],
+                         r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\include\msvc_compat'
+                         ],
                      library_dirs=[
                          'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
                          r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64',
-                         r'/mkl-C/mkl/latest/lib/intel64', r'C:\Users\123\anaconda3\Lib\site-packages\numpy\core\lib',
+                         r'/mkl-C/mkl/latest/lib/intel64',
                          r'/usr/local/lib',
                          r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release',
-                         '/home/ok/.local/lib/python3.10/site-packages/numpy/core/lib'
+                         os.path.join(os.path.dirname(numpy.core.__file__), 'lib')
                      ],
                      libraries=['mkl_rt', 'npymath', 'jemalloc']
                      if platform.system() == 'Windows' else [

@@ -2,6 +2,15 @@
 #define NO_IMPORT_ARRAY
 #include "binary_func_def.h"
 
+// #define parameters PyArrayObject *a, PyArrayObject *b
+// #define parameters_var a, b
+// #define get_ptrs(data_type)                          \
+//     data_type *a_ptr = (data_type *)PyArray_DATA(a); \
+//     data_type *b_ptr = (data_type *)PyArray_DATA(b);
+// #define ptrs_name a_ptr, b_ptr
+// #define operations(i, type) nb_add(a_ptr[i], b_ptr[i], type)
+
+// Register_Ufunc_Operation(add_ufnc, bool, Ufunc_Operation, operations, NPY_FLOAT, Ufunc_Loop, parameters, parameters_var, get_ptrs, ptrs_name);
 /*====================================================== Add ===============================================================================*/
 Register_Int_Binary_Operations(add_, , Binary_Operation, nb_add, , Binary_Loop);
 Register_Binary_Operation(add_, float, Binary_Operation, nb_add, NPY_FLOAT, Binary_Loop);
