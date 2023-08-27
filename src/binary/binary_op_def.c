@@ -1,6 +1,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
-#include "binary_func_def.h"
+#include "binary_op_def.h"
 
 // #define parameters PyArrayObject *a, PyArrayObject *b
 // #define parameters_var a, b

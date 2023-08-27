@@ -65,11 +65,11 @@ if len(files) > 0:
         os.remove(f)
 
 mymodule = Extension('Numboost',
-                     sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
-                              'set_Tensor_properties.c', 'methods.c', 'binaray_backward_fn.c', 'pcg_basic.c',
-                              'import_methods.c', 'broadcast.c', 'shape.c', 'binary_func.c', 'type_convertor.c',
-                              'tensor_methods.c',
-                              'Iterator/nb_iter.c', 'allocator.c', 'binary_func_def.c', 'broadcast_func_def.c'],
+                     sources=['tensor.c', 'python_math_magic.c', 'backward_fn.c', 'stack.c',
+                              'set_tensor_properties.c', 'methods.c', 'binaray_backward_fn.c', 'pcg_basic.c',
+                              'import_methods.c', 'broadcast/broadcast_impl.c', 'shape.c', 'binary/binary_op_impl.c',
+                              'type_convertor/type_convertor.c', 'tensor_methods.c',
+                              'Iterator/nb_iter.c', 'allocator/allocator.c', 'binary/binary_op_def.c', 'broadcast/broadcast_def.c'],
                      include_dirs=[
                          numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',
                          'mkl-C/mkl/latest/include', r'C:\Users\123\Downloads\numpy-main\numpy\core\include\numpy',

@@ -1,7 +1,7 @@
 #ifndef BROADCAST_FUNC_DEF_H
 #define BROADCAST_FUNC_DEF_H
 #include "numpy/arrayobject.h"
-#include "broadcast.h"
+#include "broadcast_impl.h"
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))

@@ -1,7 +1,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #include "type_convertor.h"
-#include "op.h"
+#include "../op.h"
 #include "stdbool.h"
 #ifndef max
 #define max(a, b) (((a) > (b)) ? (a) : (b))

@@ -1,12 +1,12 @@
 #ifndef _BROADCAST_H
 #define _BROADCAST_H
-#include "shape.h"
+#include "../shape.h"
 #include <immintrin.h>
-#include "type_convertor.h"
-#include "op.h"
+#include "../type_convertor/type_convertor.h"
+#include "../op.h"
 #include "omp.h"
 #include "numpy/npy_math.h"
-#include "numboost_api.h"
+#include "../numboost_api.h"
 
 inline npy_intp dot_prod(npy_intp *strides, npy_intp *indice, int ndim)
 {

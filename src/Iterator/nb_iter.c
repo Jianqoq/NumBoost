@@ -2,8 +2,8 @@
 #define NO_IMPORT_ARRAY
 #include "../tensor.h"
 #include "structmember.h"
-#include "../set_Tensor_properties.h"
-#include "../operators.h"
+#include "../set_tensor_properties.h"
+#include "../python_math_magic.h"
 
 static void tensor_iter_dealloc(TensorIteratorObject *self)
 {

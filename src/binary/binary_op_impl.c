@@ -1,13 +1,13 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
-#include "tensor.h"
+#include "../tensor.h"
 #include <omp.h>
 #include "mkl.h"
-#include "utils.h"
-#include "op.h"
-#include "binary_func.h"
-#include "binary_func_def.h"
+#include "../utils.h"
+#include "../op.h"
+#include "binary_op_impl.h"
+#include "binary_op_def.h"
 
 PyArrayObject *numboost_binary(PyArrayObject *a, PyArrayObject *b, int op_enum)
 {

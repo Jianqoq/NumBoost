@@ -9,10 +9,10 @@
 #include <math.h>
 #include <stdlib.h>
 #include "numpy/ndarraytypes.h"
-#include "set_Tensor_properties.h"
+#include "set_tensor_properties.h"
 #include "tensor.h"
-#include "operators.h"
-#include "type_convertor.h"
+#include "python_math_magic.h"
+#include "type_convertor/type_convertor.h"
 extern np_method *NP_METHOD;
 extern Array_Shape *ARRAY_SHAPE;
 extern Power_Dict *POWER_DICT;

@@ -1,7 +1,7 @@
 #ifndef BINARY_FUNC_DEF_H
 #define BINARY_FUNC_DEF_H
 #include "numpy/arrayobject.h"
-#include "binary_func.h"
+#include "binary_op_impl.h"
 #define Register_Binary_Operation_Array(op, sufix, a_type, b_type)                                                                \
     PyArrayObject* (*op##_operations##sufix[])(a_type *, b_type *) = {                                                         \
         Binary_##op##_bool##sufix, Binary_##op##_byte##sufix, Binary_##op##_ubyte##sufix, Binary_##op##_short##sufix,             \

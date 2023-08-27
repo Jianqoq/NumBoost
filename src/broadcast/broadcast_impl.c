@@ -1,9 +1,9 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #define PY_SSIZE_T_CLEAN
-#include "broadcast.h"
-#include "op.h"
-#include "broadcast_func_def.h"
+#include "broadcast_impl.h"
+#include "../op.h"
+#include "broadcast_def.h"
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif

@@ -1,6 +1,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
-#include "broadcast_func_def.h"
+#include "broadcast_def.h"
 
 Register_Broadcast_Operation(bool, add_, nb_add, Standard_Inner_Loop);
 Register_Broadcast_Operation(bool, sub_, nb_subtract, Standard_Inner_Loop);

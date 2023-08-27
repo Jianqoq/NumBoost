@@ -2,7 +2,7 @@
 #ifndef _TYPE_CONVERTOR_H
 #define _TYPE_CONVERTOR_H
 #include <numpy/arrayobject.h>
-#include "allocator.h"
+#include "../allocator/allocator.h"
 #include <assert.h>
 
 #ifndef PYTHON_NUMBER_H

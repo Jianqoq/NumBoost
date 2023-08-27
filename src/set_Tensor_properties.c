@@ -1,7 +1,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define PY_SSIZE_T_CLEAN
 #define NO_IMPORT_ARRAY
-#include "set_Tensor_properties.h"
+#include "set_tensor_properties.h"
 
 
 void Tensor_SetData(Tensor *self, PyObject *data)

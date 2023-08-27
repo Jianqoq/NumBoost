@@ -1,10 +1,10 @@
 #ifndef BINARY_FUNC_H
 #define BINARY_FUNC_H
-#include "shape.h"
-#include "type_convertor.h"
+#include "../shape.h"
+#include "../type_convertor/type_convertor.h"
 #include <numpy/npy_math.h>
 #include <immintrin.h>
-#include "numboost_api.h"
+#include "../numboost_api.h"
 #include "omp.h"
 
 PyArrayObject *numboost_binary(PyArrayObject *a, PyArrayObject *b, int op_enum);
