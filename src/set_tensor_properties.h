@@ -1,7 +1,6 @@
 #ifndef SET_TENSOR_PROPERTIES_H
 #define SET_TENSOR_PROPERTIES_H
 #include "tensor.h"
-#endif
 
 void Tensor_SetData(Tensor *self, PyObject *data);
 void Tensor_SetX(Tensor *self, PyObject *x);
@@ -36,3 +35,5 @@ void Tensor_SetGrad_startwone_without_init(Tensor *self, PyObject *grad);
 void Tensor_SetGraph_startwone_without_init(Tensor *self, PyObject *graph);
 void Tensor_SetDtype_startwone_without_init(Tensor *self, PyArray_Descr *dtype);
 void Tensor_SetAxis_startwone_without_init(Tensor *self, PyObject *axis);
+
+#endif

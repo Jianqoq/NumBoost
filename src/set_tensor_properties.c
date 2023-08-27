@@ -17,6 +17,7 @@ void Tensor_SetData(Tensor *self, PyObject *data)
         PyErr_Clear();
     }
 }
+
 void Tensor_SetX(Tensor *self, PyObject *x)
 {
     Py_DECREF(self->x);
@@ -30,6 +31,7 @@ void Tensor_SetX(Tensor *self, PyObject *x)
         PyErr_Clear();
     }
 }
+
 void Tensor_SetY(Tensor *self, PyObject *y)
 {
     Py_INCREF(y);
@@ -43,6 +45,7 @@ void Tensor_SetY(Tensor *self, PyObject *y)
         PyErr_Clear();
     }
 }
+
 void Tensor_SetGrad(Tensor *self, PyObject *grad)
 {
     Py_INCREF(grad);
