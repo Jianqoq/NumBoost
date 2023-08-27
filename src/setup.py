@@ -1,19 +1,19 @@
 import sys
 import sysconfig
-
-import numpy as np
 from setuptools import setup, Extension
 import numpy
 import os
 from setuptools.command.build_ext import build_ext as _build_ext
 import platform
 
-if "-DEBUG" in sys.argv:
-    enable_debug = ('DEBUG', '1')
-    sys.argv.remove("-DEBUG")
-else:
-    enable_debug = ('DEBUG',)
-
+available_args = ('-DEBUG', '-Allocator_Debug')
+numboost_custom_macro_args = []
+for arg in sys.argv:
+    if arg in available_args:
+        numboost_custom_macro_args.append((arg.split('-')[1], '1'))
+for arg in sys.argv:
+    if arg in available_args:
+        sys.argv.remove(arg)
 compiler_info = sysconfig.get_config_var('CC')
 if compiler_info is None:
     omp_compile_args = ['/openmp']  # 默认使用MSVC标志
@@ -63,6 +63,7 @@ else:
 if len(files) > 0:
     for f in numboost_files:
         os.remove(f)
+
 mymodule = Extension('Numboost',
                      sources=['tensor.c', 'operators.c', 'backward_fn.c', 'stack.c',
                               'set_Tensor_properties.c', 'methods.c', 'binaray_backward_fn.c', 'pcg_basic.c',
@@ -90,8 +91,8 @@ mymodule = Extension('Numboost',
                      language='c',
                      extra_compile_args=args,
                      extra_link_args=extra_link_args,
-                     define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_25_API_VERSION'), enable_debug])
+                     define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_25_API_VERSION')] + numboost_custom_macro_args)
 
-setup(name='autograd_C',
+setup(name='Numboost',
       cmdclass={'build_ext': build_ext},
       ext_modules=[mymodule])

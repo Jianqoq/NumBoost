@@ -71,7 +71,7 @@ PyObject *get_power(Tensor *key)
     return s->prev_power;
 }
 
-void store_array_shape(Tensor *key, npy_intp *shape, npy_intp len)
+void store_array_shape(Tensor *key, npy_intp *shape, int len)
 {
     Array_Shape *s = NULL;
     if (ARRAY_SHAPE != NULL)
@@ -780,7 +780,7 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObje
     Tensor *tensor = (Tensor *)args[0];
     DEBUG_PyObject_Print(tensor);
     PyArrayObject *array = (PyArrayObject *)tensor->data;
-    npy_intp length = nargs - 1;
+    int length = nargs - 1;
     npy_intp *dims = malloc(sizeof(npy_intp) * length);
     DEBUG_PRINT("dims: ");
     for (uint8_t i = 1; i < nargs; i++)

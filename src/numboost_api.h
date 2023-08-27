@@ -2,6 +2,8 @@
 #define NUMBOOST_API_H
 #include <numpy/npy_math.h>
 #include "type_convertor.h"
+#include "binary_func.h"
+#include "broadcast.h"
 // #include <jemalloc/jemalloc.h>
 
 // #ifndef JELMALLOC
@@ -22,36 +24,36 @@
 //"npy_enum" is the numpy enum defined in numpy/ndarraytypes.h
 #define Perform_Binary_Operation(a, b, result, operation, data_type, npy_enum) OPERATION_PICKER(a, b, result, operation, data_type, npy_enum)
 
-#define nb_add(x, y, c_type) ((x) + (y))
-#define nb_add_half(x, y, c_type) (float_cast_half(half_cast_float((x)) + half_cast_float((y))))
-#define nb_subtract(x, y, c_type) ((x) - (y))
-#define nb_subtract_half(x, y, c_type) (float_cast_half(half_cast_float((x)) - half_cast_float((y))))
-#define nb_multiply(x, y, c_type) ((x) * (y))
-#define nb_multiply_half(x, y, c_type) (float_cast_half(half_cast_float((x)) * half_cast_float((y))))
-#define nb_divide(x, y, c_type) ((x) / (y))
-#define nb_divide_half(x, y, c_type) (float_cast_half((x)) / float_cast_half((y)))
-#define nb_power_half(x, y, c_type) (float_cast_half(npy_powf(half_cast_float((x)), half_cast_float((y)))))
-#define nb_power_float(x, y, c_type) (npy_powf((x), (y)))
-#define nb_power_double(x, y, c_type) (npy_pow((x), (y)))
-#define nb_power_long_double(x, y, c_type) (npy_powl((x), (y)))
-#define nb_floor_divide_int(x, y, c_type) ((y) == 0 ? 0 : ((x) / (y)))                                                                    // floor division for integer types, e.g. int, long, ..., ulonglong, etc.
-#define nb_floor_divide_float(x, y, c_type) ((y) == 0 ? NAN : npy_floorf(((x) / (y))))                                                    // floor division for float
-#define nb_floor_divide_double(x, y, c_type) ((y) == 0 ? NAN : npy_floor((x) / (y)))                                                      // floor division for double
-#define nb_floor_divide_long_double(x, y, c_type) ((y) == NAN ? 0 : npy_floorl(((x) / (y))))                                              // floor division for long double
-#define nb_floor_divide_half(x, y, c_type) ((y) == 0 ? 0x7FFF : float_cast_half(npy_floorf(half_cast_float((x)) / half_cast_float((y))))) // floor division for half
-#define nb_remainder(x, y, c_type) ((y) == 0 ? 0 : (x) % (y))
-#define nb_mod_int(x, y, c_type) ((y) == 0 ? 0 : (x) % (y))
-#define nb_mod_half(x, y, c_type) ((y) == 0 ? 0 : float_cast_half(npy_fmodf(half_cast_float((x)), half_cast_float((y)))))
-#define nb_mod_float(x, y, c_type) ((y) == 0 ? 0 : npy_fmodf((x), (y)))
-#define nb_mod_double(x, y, c_type) ((y) == 0 ? 0 : npy_fmod((x), (y)))
-#define nb_mod_long_double(x, y, c_type) ((y) == 0 ? 0 : npy_fmodl((x), (y)))
+#define nb_add(x, y) ((x) + (y))
+#define nb_add_half(x, y) (float_cast_half(half_cast_float((x)) + half_cast_float((y))))
+#define nb_subtract(x, y) ((x) - (y))
+#define nb_subtract_half(x, y) (float_cast_half(half_cast_float((x)) - half_cast_float((y))))
+#define nb_multiply(x, y) ((x) * (y))
+#define nb_multiply_half(x, y) (float_cast_half(half_cast_float((x)) * half_cast_float((y))))
+#define nb_divide(x, y) ((x) / (y))
+#define nb_divide_half(x, y) (float_cast_half(half_cast_float((x)) / half_cast_float((y))))
+#define nb_power_half(x, y) (float_cast_half(npy_powf(half_cast_float((x)), half_cast_float((y)))))
+#define nb_power_float(x, y) (npy_powf((x), (y)))
+#define nb_power_double(x, y) (npy_pow((x), (y)))
+#define nb_power_long_double(x, y) (npy_powl((x), (y)))
+#define nb_floor_divide_int(x, y) ((y) == 0 ? 0 : ((x) / (y)))                                                                    // floor division for integer types, e.g. int, long, ..., ulonglong, etc.
+#define nb_floor_divide_float(x, y) ((y) == 0 ? NAN : npy_floorf(((x) / (y))))                                                    // floor division for float
+#define nb_floor_divide_double(x, y) ((y) == 0 ? NAN : npy_floor((x) / (y)))                                                      // floor division for double
+#define nb_floor_divide_long_double(x, y) ((y) == NAN ? 0 : npy_floorl(((x) / (y))))                                              // floor division for long double
+#define nb_floor_divide_half(x, y) ((y) == 0 ? 0x7FFF : float_cast_half(npy_floorf(half_cast_float((x)) / half_cast_float((y))))) // floor division for half
+#define nb_remainder(x, y) ((y) == 0 ? 0 : (x) % (y))
+#define nb_mod_int(x, y) ((y) == 0 ? 0 : (x) % (y))
+#define nb_mod_half(x, y) ((y) == 0 ? 0 : float_cast_half(npy_fmodf(half_cast_float((x)), half_cast_float((y)))))
+#define nb_mod_float(x, y) ((y) == 0 ? 0 : npy_fmodf((x), (y)))
+#define nb_mod_double(x, y) ((y) == 0 ? 0 : npy_fmod((x), (y)))
+#define nb_mod_long_double(x, y) ((y) == 0 ? 0 : npy_fmodl((x), (y)))
 
 #ifdef _MSC_VER
-#define nb_lshift(x, y, c_type) (((x) << (y)) * ((y) < (sizeof(c_type) * 8)))
-#define nb_rshift(x, y, c_type) (((x) >> (y)) * ((y) < (sizeof(c_type) * 8)))
+#define nb_lshift(x, y) (((x) << (y)) * ((y) < (sizeof(y) * 8)))
+#define nb_rshift(x, y) (((x) >> (y)) * ((y) < (sizeof(y) * 8)))
 #elif defined(__GNUC__)
-#define nb_lshift(x, y, c_type) ((x) << (y))
-#define nb_rshift(x, y, c_type) ((x) >> (y))
+#define nb_lshift(x, y) ((x) << (y))
+#define nb_rshift(x, y) ((x) >> (y))
 #ifndef min
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #endif
@@ -108,6 +110,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr)
     @param  inner_loop_body     Body of the inner loop [ macro ]
  */
 #define BinaryOperation_Uncontiguous(type, a, b, result, op, inner_loop_body)                                               \
+    do                                                                                                                      \
     {                                                                                                                       \
         npy_intp *__strides_a = PyArray_STRIDES(a);                                                                         \
         npy_intp *__strides_b = PyArray_STRIDES(b);                                                                         \
@@ -208,6 +211,6 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr)
         free(shape_copy);                                                                                                   \
         free(strides_a);                                                                                                    \
         free(strides_b);                                                                                                    \
-    }
+    } while (0)
 
 #endif // NUMBOOST_API_H

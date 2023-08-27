@@ -34,10 +34,15 @@ PyObject *__str__(Tensor *self)
         prefix = "\n\tTensor(";
         end = ")";
     }
+
+    //array string
+    /*=======================================================================================*/
     PyObject *py_str = PyObject_Str(self->data);
+    const char *str = PyUnicode_AsUTF8(py_str);
+
+    /*=======================================================================================*/
     char require_grad[6];
     sprintf(require_grad, "%s", self->require_grad ? "true" : "false");
-    const char *str = PyUnicode_AsUTF8(py_str);
     uint64_t str_len = strlen(str);
     uint64_t count = 0;
     uint64_t length = strlen((const char *)prefix);
@@ -230,11 +235,11 @@ Tensor *T(Tensor *self)
         }
         return to_return;
     }
-    npy_intp ndim = ((PyArrayObject_fields *)self->data)->nd;
+    int ndim = ((PyArrayObject_fields *)self->data)->nd;
     npy_intp *new_axes = (npy_intp *)malloc(sizeof(npy_intp) * ndim);
     for (int i = 0; i < ndim; i++)
         new_axes[i] = ndim - i - 1;
-    PyArray_Dims new_dims = {new_axes, (int)ndim};
+    PyArray_Dims new_dims = {new_axes, ndim};
     PyObject *transposed = PyArray_Transpose((PyArrayObject *)self->data, &new_dims);
     if (transposed == NULL)
         return NULL;
@@ -416,12 +421,12 @@ Py_hash_t __hash__(Tensor *self)
     return (Py_hash_t)self;
 }
 
-Tensor *copy(Tensor*self)
+Tensor *copy(Tensor *self)
 {
-    PyArrayObject* ret = nb_copy((PyArrayObject*)self->data);
+    PyArrayObject *ret = nb_copy((PyArrayObject *)self->data);
     if (ret == NULL)
         return NULL;
-    return (Tensor*)new_Tensor_x(self, (PyObject*)ret, "");
+    return (Tensor *)new_Tensor_x(self, (PyObject *)ret, "");
 }
 
 PyObject *

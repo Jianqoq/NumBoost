@@ -65,9 +65,6 @@ def test_C_Tensor_addition():
                     predicted_type = nb.result_type(ops[op][1], nb.np_type_2_nb[a_.data.dtype],
                                                     a_.data.itemsize, nb.np_type_2_nb[b_.data.dtype], b_.data.itemsize)
                     q = ops[op][0](a.astype(nb.nb_type_2_np[predicted_type]), u.astype(nb.nb_type_2_np[predicted_type]))
-                    # print(a_.data.dtype, b_.data.dtype)
-                    # print("Python: a_size: ", nb.np_type_2_nb[a_.data.dtype],
-                    #       "b_size: ", nb.np_type_2_nb[b_.data.dtype], "predicted_type: ", predicted_type)
                     c = ops[op][0](a_, b_)
                     l = q.astype(c.data.dtype)
                     m = np.where(c.data != l)
@@ -138,7 +135,6 @@ def test_C_Tensor_lshift(array):
     predict_type = result_type(LShift, nb.np_type_2_nb[p.data.dtype],
                                p.data.itemsize, nb.np_type_2_nb[c.dtype],
                                c.itemsize)
-    print("python version predict type: ", predict_type)
     assert np.allclose(
         result2, result1.data, equal_nan=True), (f"predict type: {predict_type} actual: {result2.dtype}\n"
                                                  f"correct: {result2}({result2.dtype}) | got: {result1}")

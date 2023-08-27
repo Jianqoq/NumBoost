@@ -1,10 +1,12 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #define PY_SSIZE_T_CLEAN
-#define min(a, b) ((a) < (b) ? (a) : (b))
 #include "broadcast.h"
 #include "op.h"
 #include "broadcast_func_def.h"
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 void Broad_Cast_vec_(PyArrayObject *a, PyArrayObject *b, PyObject **array_result)
 {
@@ -68,7 +70,7 @@ void Broad_Cast_vec_(PyArrayObject *a, PyArrayObject *b, PyObject **array_result
         indice_b_cache[i] = strides_b[i] * shape[i];
     }
     npy_intp total_size = find_innerloop_size(bigger_shape, to_broadcast_shape_pad_one, ndim);
-    int vec_loop_size = (total_size / 8) * 8;
+    int vec_loop_size = (int)((total_size / 8) * 8);
     int remain_size = total_size % 8;
     int max_dim = ndim - 1;
     int outer_start = max_dim - 1;
