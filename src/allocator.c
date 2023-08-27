@@ -75,7 +75,6 @@ static void *default_malloc(void *ctx, size_t size)
         }
         if (s->mem_allocated >= 0)
         {
-            mem_chain->max_possible_cache_size -= size;
             void *ptr = s->mem_pool[s->mem_allocated--];
             assert(ptr);
             return ptr;
