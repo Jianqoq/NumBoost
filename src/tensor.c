@@ -245,64 +245,64 @@ void free_all_resources()
     // }
     // free(mem_chain);
 
-    Dict *entry, *tmp2;
-    HASH_ITER(hh, dict, entry, tmp2)
-    {
-        HASH_DEL(dict, entry);
-        free(entry);
-    }
-    free_xla_ops(xla_ops);
-    free_tensordot_data();
-    free_np_methods(NP_METHOD);
-    free_jnp_methods(JNP_METHOD);
+    // Dict *entry, *tmp2;
+    // HASH_ITER(hh, dict, entry, tmp2)
+    // {
+    //     HASH_DEL(dict, entry);
+    //     free(entry);
+    // }
+    // free_xla_ops(xla_ops);
+    // free_tensordot_data();
+    // free_np_methods(NP_METHOD);
+    // free_jnp_methods(JNP_METHOD);
 
-    Array_Shape *s2, *tmp3;
-    HASH_ITER(hh, ARRAY_SHAPE, s2, tmp3)
-    {
-        HASH_DEL(ARRAY_SHAPE, s2);
-        Py_XDECREF(s2->key);
-        free(s2->shape);
-        free(s2);
-    }
-    Power_Dict *s3, *tmp4;
-    HASH_ITER(hh, POWER_DICT, s3, tmp4)
-    {
-        HASH_DEL(POWER_DICT, s3);
-        Py_XDECREF(s3->key);
-        Py_XDECREF(s3->prev_power);
-        free(s3);
-    }
-    Log_Dict *s4, *tmp5;
-    HASH_ITER(hh, LOG_DICT, s4, tmp5)
-    {
-        HASH_DEL(LOG_DICT, s4);
-        Py_XDECREF(s4->key);
-        Py_XDECREF(s4->base);
-        free(s4);
-    }
-    Tensor_need_grad_Dict *s5, *tmp6;
-    HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, s5, tmp6)
-    {
-        HASH_DEL(TENSOR_NEED_GRAD_DICT, s5);
-        Py_XDECREF(s5->tensor);
-        free(s5);
-    }
+    // Array_Shape *s2, *tmp3;
+    // HASH_ITER(hh, ARRAY_SHAPE, s2, tmp3)
+    // {
+    //     HASH_DEL(ARRAY_SHAPE, s2);
+    //     Py_XDECREF(s2->key);
+    //     free(s2->shape);
+    //     free(s2);
+    // }
+    // Power_Dict *s3, *tmp4;
+    // HASH_ITER(hh, POWER_DICT, s3, tmp4)
+    // {
+    //     HASH_DEL(POWER_DICT, s3);
+    //     Py_XDECREF(s3->key);
+    //     Py_XDECREF(s3->prev_power);
+    //     free(s3);
+    // }
+    // Log_Dict *s4, *tmp5;
+    // HASH_ITER(hh, LOG_DICT, s4, tmp5)
+    // {
+    //     HASH_DEL(LOG_DICT, s4);
+    //     Py_XDECREF(s4->key);
+    //     Py_XDECREF(s4->base);
+    //     free(s4);
+    // }
+    // Tensor_need_grad_Dict *s5, *tmp6;
+    // HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, s5, tmp6)
+    // {
+    //     HASH_DEL(TENSOR_NEED_GRAD_DICT, s5);
+    //     Py_XDECREF(s5->tensor);
+    //     free(s5);
+    // }
 
-    Tensordot_Dict *s6, *tmp7;
-    HASH_ITER(hh, TENSORDOT_DICT, s6, tmp7)
-    {
-        HASH_DEL(TENSORDOT_DICT, s6);
-        free(s6);
-    }
-    HASH_CLEAR(hh, dict);
-    HASH_CLEAR(hh, TENSORDOT_DICT);
-    HASH_CLEAR(hh, ARRAY_SHAPE);
-    HASH_CLEAR(hh, POWER_DICT);
-    HASH_CLEAR(hh, LOG_DICT);
-    HASH_CLEAR(hh, TENSOR_NEED_GRAD_DICT);
-    HASH_CLEAR(hh, SLICE_DICT);
-    HASH_CLEAR(hh, ZEROS_ARRAY_DICT);
-    Py_CLEAR(Tensor_type);
+    // Tensordot_Dict *s6, *tmp7;
+    // HASH_ITER(hh, TENSORDOT_DICT, s6, tmp7)
+    // {
+    //     HASH_DEL(TENSORDOT_DICT, s6);
+    //     free(s6);
+    // }
+    // HASH_CLEAR(hh, dict);
+    // HASH_CLEAR(hh, TENSORDOT_DICT);
+    // HASH_CLEAR(hh, ARRAY_SHAPE);
+    // HASH_CLEAR(hh, POWER_DICT);
+    // HASH_CLEAR(hh, LOG_DICT);
+    // HASH_CLEAR(hh, TENSOR_NEED_GRAD_DICT);
+    // HASH_CLEAR(hh, SLICE_DICT);
+    // HASH_CLEAR(hh, ZEROS_ARRAY_DICT);
+    // Py_CLEAR(Tensor_type);
 }
 
 void INCREF_TENSOR(Tensor *self)
