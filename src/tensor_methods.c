@@ -5,7 +5,7 @@
 #include "python_magic/python_math_magic.h"
 #include "type_convertor/type_convertor.h"
 #include "set_tensor_properties.h"
-#include "hash_lib/uthash.h"
+#include "libraries/hash/uthash.h"
 #include "numboost_api.h"
 
 extern jnp_method *JNP_METHOD;

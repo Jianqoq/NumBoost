@@ -83,7 +83,7 @@ mymodule = Extension('Numboost',
                          r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64',
                          r'/mkl-C/mkl/latest/lib/intel64',
                          r'/usr/local/lib',
-                         r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release',
+                         r'C:\Users\123\autograd-C\Autograd-C\src\libraries\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release',
                          os.path.join(os.path.dirname(numpy.core.__file__), 'lib')
                      ],
                      libraries=['mkl_rt', 'npymath', 'jemalloc']

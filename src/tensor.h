@@ -14,7 +14,7 @@
 // #endif
 
 #include <stdbool.h>
-#include "hash_lib/uthash.h"
+#include "libraries/hash/uthash.h"
 extern bool TRACK;
 PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf);
 
