@@ -278,3 +278,6 @@ typedef struct
 XLA_OPS *import_xla_ops(XLA_OPS **xla_ops_struct);
 np_method *import_np_methods(np_method **np_methods_struct);
 jnp_method *import_jnp_methods(jnp_method **JNP_METHOD);
+void free_xla_ops(XLA_OPS *xla_ops);
+void free_np_methods(np_method *np_method);
+void free_jnp_methods(jnp_method *jnp_method);

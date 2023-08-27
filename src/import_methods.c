@@ -1,5 +1,3 @@
-#ifndef IMPORT_METHODS_C
-#define IMPORT_METHODS_C
 #define NO_IMPORT_ARRAY
 #include "tensor.h"
 #include "import_methods.h"
@@ -188,13 +186,12 @@ XLA_OPS *import_xla_ops(XLA_OPS **xla_ops_)
     xla_ops->While = PyObject_GetAttrString(ops, "While");
     xla_ops->xor = PyObject_GetAttrString(ops, "xor");
     xla_ops->zeta = PyObject_GetAttrString(ops, "Zeta");
+    Py_DecRef(ops);
+    Py_DecRef(xla_client);
     if (_Generic_check_import_if_success((PyObject **)xla_ops_, "Failed to import xla ops at import_methods.c line", 39) == NULL)
         return NULL;
     else
-    {
-        Py_DecRef(ops);
         return xla_ops;
-    }
 }
 
 np_method *import_np_methods(np_method **NP_METHOD_)
@@ -236,12 +233,11 @@ np_method *import_np_methods(np_method **NP_METHOD_)
     NP_METHOD->reshape = PyObject_GetAttrString(module, "reshape");
     NP_METHOD->tensordot = PyObject_GetAttrString(module, "tensordot");
     NP_METHOD->concatenate = PyObject_GetAttrString(module, "concatenate");
-
+    Py_DecRef(module);
     if (_Generic_check_import_if_success((PyObject **)NP_METHOD_, "Failed to import numpy methods at import_methods.c line", 197) == NULL)
         return NULL;
     else
     {
-        Py_DecRef(module);
         return NP_METHOD;
     }
 }
@@ -293,16 +289,240 @@ jnp_method *import_jnp_methods(jnp_method **JNP_METHOD_)
     JNP_METHOD->tensordot = PyObject_GetAttrString(module, "tensordot");
     JNP_METHOD->concatenate = PyObject_GetAttrString(module, "concatenate");
     JNP_METHOD->sum = PyObject_GetAttrString(module, "sum");
-
+    Py_DecRef(module);
+    Py_DecRef(module2);
+    Py_DecRef(module3);
     if (_Generic_check_import_if_success((PyObject **)JNP_METHOD_, "Failed to import numpy methods at import_methods.c line", 248) == NULL)
         return NULL;
     else
     {
-        Py_DecRef(module);
-        Py_DecRef(module2);
-        Py_DecRef(module3);
         return JNP_METHOD;
     }
 }
 
-#endif
+void free_xla_ops(XLA_OPS *xla_ops)
+{
+    Py_DecRef(xla_ops->abs);
+    Py_DecRef(xla_ops->acos);
+    Py_DecRef(xla_ops->acosh);
+    Py_DecRef(xla_ops->add);
+    Py_DecRef(xla_ops->afterall);
+    Py_DecRef(xla_ops->allgather);
+    Py_DecRef(xla_ops->allreduce);
+    Py_DecRef(xla_ops->alltoall);
+    Py_DecRef(xla_ops->and);
+    Py_DecRef(xla_ops->approx_topK);
+    Py_DecRef(xla_ops->approx_topK_fallback);
+    Py_DecRef(xla_ops->approx_TopK_reduction_output_size);
+    Py_DecRef(xla_ops->asin);
+    Py_DecRef(xla_ops->asinh);
+    Py_DecRef(xla_ops->atan);
+    Py_DecRef(xla_ops->atan2);
+    Py_DecRef(xla_ops->atanh);
+    Py_DecRef(xla_ops->besselI0e);
+    Py_DecRef(xla_ops->besselI1e);
+    Py_DecRef(xla_ops->bit_cast_convert_type);
+    Py_DecRef(xla_ops->broadcast);
+    Py_DecRef(xla_ops->broadcast_in_dim);
+    Py_DecRef(xla_ops->call);
+    Py_DecRef(xla_ops->cbrt);
+    Py_DecRef(xla_ops->ceil);
+    Py_DecRef(xla_ops->cholesky);
+    Py_DecRef(xla_ops->clamp);
+    Py_DecRef(xla_ops->clz);
+    Py_DecRef(xla_ops->collapse);
+    Py_DecRef(xla_ops->collective_permute);
+    Py_DecRef(xla_ops->Complex);
+    Py_DecRef(xla_ops->concat_in_dim);
+    Py_DecRef(xla_ops->conditional);
+    Py_DecRef(xla_ops->conj);
+    Py_DecRef(xla_ops->constant);
+    Py_DecRef(xla_ops->constant_literal);
+    Py_DecRef(xla_ops->convert_element_type);
+    Py_DecRef(xla_ops->conv_general_dilated);
+    Py_DecRef(xla_ops->cos);
+    Py_DecRef(xla_ops->cosh);
+    Py_DecRef(xla_ops->create_token);
+    Py_DecRef(xla_ops->cross_replica_sum);
+    Py_DecRef(xla_ops->custom_call);
+    Py_DecRef(xla_ops->custom_call_with_aliasing);
+    Py_DecRef(xla_ops->custom_call_with_computation);
+    Py_DecRef(xla_ops->custom_call_with_layout);
+    Py_DecRef(xla_ops->digmma);
+    Py_DecRef(xla_ops->div);
+    Py_DecRef(xla_ops->dot);
+    Py_DecRef(xla_ops->dynamic_slice);
+    Py_DecRef(xla_ops->dynamic_update_slice);
+    Py_DecRef(xla_ops->dotgeneral);
+    Py_DecRef(xla_ops->dynamic_reshape);
+    Py_DecRef(xla_ops->eigh);
+    Py_DecRef(xla_ops->eq);
+    Py_DecRef(xla_ops->erf);
+    Py_DecRef(xla_ops->erfc);
+    Py_DecRef(xla_ops->erf_inv);
+    Py_DecRef(xla_ops->exp);
+    Py_DecRef(xla_ops->expm1);
+    Py_DecRef(xla_ops->fft);
+    Py_DecRef(xla_ops->floor);
+    Py_DecRef(xla_ops->ge);
+    Py_DecRef(xla_ops->get_dimension_size);
+    Py_DecRef(xla_ops->get_tuple_element);
+    Py_DecRef(xla_ops->gt);
+    Py_DecRef(xla_ops->igamma);
+    Py_DecRef(xla_ops->igammac);
+    Py_DecRef(xla_ops->igamma_grad_a);
+    Py_DecRef(xla_ops->imag);
+    Py_DecRef(xla_ops->infeed_with_token);
+    Py_DecRef(xla_ops->iota);
+    Py_DecRef(xla_ops->is_finite);
+    Py_DecRef(xla_ops->le);
+    Py_DecRef(xla_ops->lgamma);
+    Py_DecRef(xla_ops->log);
+    Py_DecRef(xla_ops->log1p);
+    Py_DecRef(xla_ops->lt);
+    Py_DecRef(xla_ops->lu);
+    Py_DecRef(xla_ops->map);
+    Py_DecRef(xla_ops->max);
+    Py_DecRef(xla_ops->min);
+    Py_DecRef(xla_ops->mul);
+    Py_DecRef(xla_ops->ne);
+    Py_DecRef(xla_ops->neg);
+    Py_DecRef(xla_ops->next_after);
+    Py_DecRef(xla_ops->not );
+    Py_DecRef(xla_ops->optimization_barrier);
+    Py_DecRef(xla_ops->or);
+    Py_DecRef(xla_ops->outfeed_with_token);
+    Py_DecRef(xla_ops->pad);
+    Py_DecRef(xla_ops->parameter);
+    Py_DecRef(xla_ops->pow);
+    Py_DecRef(xla_ops->ProductOfElementaryHouseholderReflectors);
+    Py_DecRef(xla_ops->qr);
+    Py_DecRef(xla_ops->qr_decomposition);
+    Py_DecRef(xla_ops->random_gamma_grad);
+    Py_DecRef(xla_ops->real);
+    Py_DecRef(xla_ops->reciprocal);
+    Py_DecRef(xla_ops->recv_from_host);
+    Py_DecRef(xla_ops->reduce);
+    Py_DecRef(xla_ops->reduce_precision);
+    Py_DecRef(xla_ops->reduce_scatter);
+    Py_DecRef(xla_ops->ReduceWindowWithGeneralPadding);
+    Py_DecRef(xla_ops->regularized_incomplete_beta);
+    Py_DecRef(xla_ops->rem);
+    Py_DecRef(xla_ops->remove_dynamic_dimension);
+    Py_DecRef(xla_ops->replica_id);
+    Py_DecRef(xla_ops->reshape);
+    Py_DecRef(xla_ops->rev);
+    Py_DecRef(xla_ops->rng_bit_generator);
+    Py_DecRef(xla_ops->rng_normal);
+    Py_DecRef(xla_ops->rng_uniform);
+    Py_DecRef(xla_ops->round);
+    Py_DecRef(xla_ops->rsqrt);
+    Py_DecRef(xla_ops->scatter);
+    Py_DecRef(xla_ops->select);
+    Py_DecRef(xla_ops->select_and_scatter_with_general_padding);
+    Py_DecRef(xla_ops->send_to_host);
+    Py_DecRef(xla_ops->set_dimension_size);
+    Py_DecRef(xla_ops->shift_left);
+    Py_DecRef(xla_ops->shift_right_arithmetic);
+    Py_DecRef(xla_ops->shift_right_logical);
+    Py_DecRef(xla_ops->sign);
+    Py_DecRef(xla_ops->sin);
+    Py_DecRef(xla_ops->sinh);
+    Py_DecRef(xla_ops->slice);
+    Py_DecRef(xla_ops->slice_in_dim);
+    Py_DecRef(xla_ops->sort);
+    Py_DecRef(xla_ops->sqrt);
+    Py_DecRef(xla_ops->square);
+    Py_DecRef(xla_ops->sub);
+    Py_DecRef(xla_ops->svd);
+    Py_DecRef(xla_ops->tan);
+    Py_DecRef(xla_ops->tanh);
+    Py_DecRef(xla_ops->topK);
+    Py_DecRef(xla_ops->transpose);
+    Py_DecRef(xla_ops->triangular_solve);
+    Py_DecRef(xla_ops->tuple);
+    Py_DecRef(xla_ops->While);
+    Py_DecRef(xla_ops->xor);
+    Py_DecRef(xla_ops->zeta);
+    free(xla_ops);
+}
+
+void free_jnp_methods(jnp_method *jnp_method)
+{
+    Py_DecRef(jnp_method->unspecified_value);
+    Py_DecRef(jnp_method->copy);
+    Py_DecRef(jnp_method->jit);
+    Py_DecRef(jnp_method->array);
+    Py_DecRef(jnp_method->negative);
+    Py_DecRef(jnp_method->sin);
+    Py_DecRef(jnp_method->cos);
+    Py_DecRef(jnp_method->tan);
+    Py_DecRef(jnp_method->arcsin);
+    Py_DecRef(jnp_method->arccos);
+    Py_DecRef(jnp_method->arctan);
+    Py_DecRef(jnp_method->sinh);
+    Py_DecRef(jnp_method->cosh);
+    Py_DecRef(jnp_method->tanh);
+    Py_DecRef(jnp_method->arcsinh);
+    Py_DecRef(jnp_method->arccosh);
+    Py_DecRef(jnp_method->arctanh);
+    Py_DecRef(jnp_method->absolute);
+    Py_DecRef(jnp_method->exp);
+    Py_DecRef(jnp_method->log);
+    Py_DecRef(jnp_method->log10);
+    Py_DecRef(jnp_method->log1P);
+    Py_DecRef(jnp_method->sqrt);
+    Py_DecRef(jnp_method->square);
+    Py_DecRef(jnp_method->abs);
+    Py_DecRef(jnp_method->add);
+    Py_DecRef(jnp_method->multiply);
+    Py_DecRef(jnp_method->subtract);
+    Py_DecRef(jnp_method->divide);
+    Py_DecRef(jnp_method->power);
+    Py_DecRef(jnp_method->mean);
+    Py_DecRef(jnp_method->dot);
+    Py_DecRef(jnp_method->matmul);
+    Py_DecRef(jnp_method->transpose);
+    Py_DecRef(jnp_method->reshape);
+    Py_DecRef(jnp_method->tensordot);
+    Py_DecRef(jnp_method->concatenate);
+    Py_DecRef(jnp_method->sum);
+    free(jnp_method);
+}
+
+void free_np_methods(np_method *np_method)
+{
+    Py_DecRef(np_method->sin);
+    Py_DecRef(np_method->cos);
+    Py_DecRef(np_method->tan);
+    Py_DecRef(np_method->arcsin);
+    Py_DecRef(np_method->arccos);
+    Py_DecRef(np_method->arctan);
+    Py_DecRef(np_method->sinh);
+    Py_DecRef(np_method->cosh);
+    Py_DecRef(np_method->tanh);
+    Py_DecRef(np_method->arcsinh);
+    Py_DecRef(np_method->arccosh);
+    Py_DecRef(np_method->arctanh);
+    Py_DecRef(np_method->absolute);
+    Py_DecRef(np_method->exp);
+    Py_DecRef(np_method->log);
+    Py_DecRef(np_method->log10);
+    Py_DecRef(np_method->log1P);
+    Py_DecRef(np_method->sqrt);
+    Py_DecRef(np_method->square);
+    Py_DecRef(np_method->abs);
+    Py_DecRef(np_method->add);
+    Py_DecRef(np_method->multiply);
+    Py_DecRef(np_method->subtract);
+    Py_DecRef(np_method->divide);
+    Py_DecRef(np_method->power);
+    Py_DecRef(np_method->mean);
+    Py_DecRef(np_method->dot);
+    Py_DecRef(np_method->matmul);
+    Py_DecRef(np_method->transpose);
+    Py_DecRef(np_method->reshape);
+    Py_DecRef(np_method->tensordot);
+    Py_DecRef(np_method->concatenate);
+    free(np_method);
+}

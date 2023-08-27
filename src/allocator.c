@@ -112,11 +112,6 @@ static void *default_realloc(void *ctx, void *ptr, size_t new_size)
     return realloc(ptr, new_size);
 }
 
-// static void default_free(void *ctx, void *ptr, size_t size)
-// {
-//     free(ptr);
-// }
-
 static void default_free(void *ctx, void *ptr, size_t size)
 {
     cache *s = NULL;
@@ -143,6 +138,7 @@ static void default_free(void *ctx, void *ptr, size_t size)
                 Allocator_Debug_Print("free: freeing tail mem[%d], tail allocated: %ld, tail: %p, tail->prev: %p\n", i, mem_chain->tail->mem_allocated + 1, mem_chain->tail, mem_chain->tail->prev);
                 free(mem_chain->tail->mem_pool[i]);
             }
+
             mem_chain->tail->mem_allocated -= to_free_num;
         }
         else if (size > mem_chain->tail->tensor_size * (mem_chain->tail->mem_allocated + 1) && mem_chain->tail->mem_allocated >= 0)
@@ -165,13 +161,6 @@ static void default_free(void *ctx, void *ptr, size_t size)
                 temp->prev->next = mem_chain->head;
                 mem_chain->head->prev = temp->prev;
                 mem_chain->tail = temp->prev;
-                Allocator_Debug_Print("free: changed tail to %p\n", mem_chain->tail);
-                HASH_DEL(cache_pool, temp);
-                Allocator_Debug_Print("free: free temp mem_pool: %p\n", temp->mem_pool);
-                free(temp->mem_pool);
-                Allocator_Debug_Print("free: free temp\n");
-                free(temp);
-                Allocator_Debug_Print("free: size left: %llu\n", size);
             }
             if (mem_chain->tail == mem_chain->head)
             {
