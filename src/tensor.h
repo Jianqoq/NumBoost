@@ -1,7 +1,6 @@
-#ifndef PYTHON_H
-#define PYTHON_H
+#ifndef TENSOR_H
+#define TENSOR_H
 #include <Python.h>
-#endif
 
 // #include <jemalloc/jemalloc.h>
 // #ifndef JELMALLOC
@@ -15,37 +14,19 @@
 // #endif
 
 #include <stdbool.h>
-#ifndef HASH_H
-#define HASH_H
-#include "uthash.h"
-#endif
-
-#ifndef TRACK_H
-#define TRACK_H
+#include "libraries/hash/uthash.h"
 extern bool TRACK;
 PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf);
-#endif
 
-#ifndef IMPORT_METHODS_H
-#define IMPORT_METHODS_H
-#include "import_methods.h"
-#endif
+#include "import_module_methods.h"
 
-#ifndef XLA_H
-#define XLA_H
 extern XLA_OPS *xla_ops;
-#endif
 
 #include "object.h"
 extern PyTypeObject *Tensor_type;
 
-#ifndef ARRAYOBJECT_H
-#define ARRAYOBJECT_H
 #include "numpy/arrayobject.h"
-#endif
 
-#ifndef TENSOR_H
-#define TENSOR_H
 typedef struct
 {
     PyObject_HEAD
@@ -60,25 +41,18 @@ typedef struct
     PyObject *axis;
     PyObject *grad;
     int dim;
-
 } Tensor;
-#endif
 
-#ifndef ITOR_H
-#define ITOR_H
 typedef struct
 {
     PyObject_HEAD
         PyObject *data_iter;
     int ndim;
 } TensorIteratorObject;
-#endif
 
 TensorIteratorObject *iterator_new(PyTypeObject *type, Tensor *self);
 PyObject *iterator_next(TensorIteratorObject *self);
 
-#ifndef TENSOR_CORE
-#define TENSOR_CORE
 void free_dict(void);
 void init_map();
 

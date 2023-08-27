@@ -8,11 +8,11 @@
 #include <string.h>
 #include "structmember.h"
 #include "tensor.h"
-#include "operators.h"
-#include "type_convertor.h"
+#include "python_magic/python_math_magic.h"
+#include "type_convertor/type_convertor.h"
 #include "tensor_methods.h"
 #include "clinic/tensor_methods.c.h"
-#include "allocator.h"
+#include "allocator/allocator.h"
 
 static Dict *dict = NULL;
 XLA_OPS *xla_ops = NULL;
