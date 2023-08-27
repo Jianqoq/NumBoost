@@ -3,7 +3,7 @@
 #include "../tensor.h"
 #include "structmember.h"
 #include "../set_tensor_properties.h"
-#include "../python_math_magic.h"
+#include "../python_magic/python_math_magic.h"
 
 static void tensor_iter_dealloc(TensorIteratorObject *self)
 {

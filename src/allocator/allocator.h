@@ -1,7 +1,7 @@
 #ifndef _ALLOCATOR_H
 #define _ALLOCATOR_H
 #include "../tensor.h"
-#include "../uthash.h"
+#include "../hash_lib/uthash.h"
 
 #define Thread_Hold_Value 0.9
 #define Mem_Pool_Size 100

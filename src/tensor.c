@@ -8,7 +8,7 @@
 #include <string.h>
 #include "structmember.h"
 #include "tensor.h"
-#include "python_math_magic.h"
+#include "python_magic/python_math_magic.h"
 #include "type_convertor/type_convertor.h"
 #include "tensor_methods.h"
 #include "clinic/tensor_methods.c.h"

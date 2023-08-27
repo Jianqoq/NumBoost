@@ -2,8 +2,8 @@
 #define NUMBOOST_API_H
 #include <numpy/npy_math.h>
 #include "type_convertor/type_convertor.h"
-#include "binary/binary_op_impl.h"
-#include "broadcast/broadcast_impl.h"
+#include "binary_ops/binary_op_impl.h"
+#include "broadcast_ops/broadcast_impl.h"
 // #include <jemalloc/jemalloc.h>
 
 // #ifndef JELMALLOC

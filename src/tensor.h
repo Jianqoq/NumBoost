@@ -14,11 +14,11 @@
 // #endif
 
 #include <stdbool.h>
-#include "uthash.h"
+#include "hash_lib/uthash.h"
 extern bool TRACK;
 PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf);
 
-#include "import_methods.h"
+#include "import_module_methods.h"
 
 extern XLA_OPS *xla_ops;
 

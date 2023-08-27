@@ -2,10 +2,10 @@
 #define NO_IMPORT_ARRAY
 #define PY_SSIZE_T_CLEAN
 #include "tensor_methods.h"
-#include "python_math_magic.h"
+#include "python_magic/python_math_magic.h"
 #include "type_convertor/type_convertor.h"
 #include "set_tensor_properties.h"
-#include "uthash.h"
+#include "hash_lib/uthash.h"
 #include "numboost_api.h"
 
 extern jnp_method *JNP_METHOD;
