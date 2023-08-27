@@ -14,7 +14,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
 #define Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type) \
     for (i = 0; i < size; i++)                                \
     {                                                         \
-        result_ptr[i] = op(a_ptr[i], b_ptr[i], type);         \
+        result_ptr[i] = op(a_ptr[i], b_ptr[i]);         \
     }
 
 #define Ufunc_Loop(result_ptr, op, size, type) \
@@ -29,7 +29,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
     {                                                                 \
         type val1 = *((a_ptr + i * stride_a));                        \
         type val2 = *((b_ptr + i * stride_b));                        \
-        *(result_ptr + i) = op(val1, val2, type);                     \
+        *(result_ptr + i) = op(val1, val2);                     \
     }
 
 #define Mod_Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type) \
@@ -42,7 +42,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                             \
         }                                                         \
         type val1 = a_ptr[i];                                     \
-        type ret = op(val1, val2, type);                          \
+        type ret = op(val1, val2);                          \
         ret += ((ret != 0) & ((val1 < 0) != (val2 < 0))) * val2;  \
         result_ptr[i] = ret;                                      \
     }
@@ -58,7 +58,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                     \
         }                                                                 \
         type val1 = *((a_ptr + i * stride_a));                            \
-        type ret = op((val1), (val2), type);                              \
+        type ret = op((val1), (val2));                              \
         ret += ((ret != 0) & ((val1 < 0) != (val2 < 0))) * val2;          \
         *(result_ptr + i) = ret;                                          \
     }
@@ -88,7 +88,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                      \
         }                                                                  \
         float val1 = half_cast_float(*((a_ptr + i * stride_a)));           \
-        float ret = npy_fmodf((val1), (val2), type);                       \
+        float ret = npy_fmodf((val1), (val2));                       \
         ret += ((ret != 0) & ((val1 < 0) != (val2 < 0))) * val2;           \
         *(result_ptr + i) = float_cast_half(ret);                          \
     }
@@ -96,20 +96,20 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
 #define Binary_Loop_a_Scalar(a, b_ptr, result_ptr, op, size, type) \
     for (i = 0; i < size; i++)                                     \
     {                                                              \
-        result_ptr[i] = op(a, b_ptr[i], type);                     \
+        result_ptr[i] = op(a, b_ptr[i]);                     \
     }
 
 #define Binary_Loop_b_Scalar(a_ptr, b, result_ptr, op, size, type) \
     for (i = 0; i < size; i++)                                     \
     {                                                              \
-        result_ptr[i] = op(a_ptr[i], b, type);                     \
+        result_ptr[i] = op(a_ptr[i], b);                     \
     }
 
 #define Half_Binary_Loop_A_Scalar(a, b_ptr, result_ptr, op, size, type) \
     for (i = 0; i < size; i++)                                          \
     {                                                                   \
         npy_float b = half_cast_float(b_ptr[i]);                        \
-        npy_float result = op(a, b, type);                              \
+        npy_float result = op(a, b);                              \
         result_ptr[i] = float_cast_half(result);                        \
     }
 
@@ -117,7 +117,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
     for (i = 0; i < size; i++)                                          \
     {                                                                   \
         npy_float a = half_cast_float(a_ptr[i]);                        \
-        npy_float result = op(a, b, type);                              \
+        npy_float result = op(a, b);                              \
         result_ptr[i] = float_cast_half(result);                        \
     }
 
@@ -135,7 +135,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                   \
         }                                                               \
         else                                                            \
-            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]), type);           \
+            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]));           \
     }
 
 #define Float_Div_Binary_Loop_Uncontiguous(type, op, inner_loop_size, stride_a, \
@@ -156,7 +156,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         }                                                                       \
         else                                                                    \
         {                                                                       \
-            *(result_ptr + i) = op(val1, val2, npy_float);                      \
+            *(result_ptr + i) = op(val1, val2);                      \
         }                                                                       \
     }
 
@@ -174,7 +174,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                    \
         }                                                                \
         else                                                             \
-            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]), type);            \
+            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]));            \
     }
 
 #define Double_Div_Binary_Loop_Uncontiguous(type, op, inner_loop_size, stride_a, \
@@ -195,7 +195,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         }                                                                        \
         else                                                                     \
         {                                                                        \
-            *(result_ptr + i) = op(val1, val2, npy_double);                      \
+            *(result_ptr + i) = op(val1, val2);                      \
         }                                                                        \
     }
 
@@ -213,7 +213,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                        \
         }                                                                    \
         else                                                                 \
-            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]), type);                \
+            result_ptr[i] = op((a_ptr[i]), (b_ptr[i]));                \
     }
 
 #define LongDouble_Div_Binary_Loop_Uncontiguous(type, op, inner_loop_size, stride_a, \
@@ -234,7 +234,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         }                                                                            \
         else                                                                         \
         {                                                                            \
-            *(result_ptr + i) = op(val1, val2, npy_double);                          \
+            *(result_ptr + i) = op(val1, val2);                          \
         }                                                                            \
     }
 
@@ -252,7 +252,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                        \
         }                                                                    \
         else                                                                 \
-            result_ptr[i] = op(a, b_ptr[i], type);                           \
+            result_ptr[i] = op(a, b_ptr[i]);                           \
     }
 
 #define Double_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, size, type) \
@@ -269,7 +269,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                         \
         }                                                                     \
         else                                                                  \
-            result_ptr[i] = op(a, b_ptr[i], type);                            \
+            result_ptr[i] = op(a, b_ptr[i]);                            \
     }
 
 #define LongDouble_Div_Binary_Loop_A_SCALAR(a, b_ptr, result_ptr, op, size, type) \
@@ -286,7 +286,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                             \
         }                                                                         \
         else                                                                      \
-            result_ptr[i] = op(a, b_ptr[i], type);                                \
+            result_ptr[i] = op(a, b_ptr[i]);                                \
     }
 
 #define Float_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
@@ -303,7 +303,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                        \
         }                                                                    \
         else                                                                 \
-            result_ptr[i] = op(a_ptr[i], b, type);                           \
+            result_ptr[i] = op(a_ptr[i], b);                           \
     }
 
 #define Double_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
@@ -320,7 +320,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                         \
         }                                                                     \
         else                                                                  \
-            result_ptr[i] = op(a_ptr[i], b, type);                            \
+            result_ptr[i] = op(a_ptr[i], b);                            \
     }
 
 #define LongDouble_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
@@ -337,7 +337,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
             continue;                                                             \
         }                                                                         \
         else                                                                      \
-            result_ptr[i] = op(a_ptr[i], b, type);                                \
+            result_ptr[i] = op(a_ptr[i], b);                                \
     }
 
 #define Half_Div_Binary_Loop(a_ptr, b_ptr, result_ptr, op, size, type) \
@@ -355,7 +355,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
                 result_ptr[i] = 0x7FFF;                                \
             continue;                                                  \
         }                                                              \
-        npy_float result = op(a, b, type);                             \
+        npy_float result = op(a, b);                             \
         result_ptr[i] = float_cast_half(result);                       \
     }
 
@@ -377,7 +377,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
         }                                                                      \
         else                                                                   \
         {                                                                      \
-            *(result_ptr + i) = float_cast_half((op(val1, val2, type)));       \
+            *(result_ptr + i) = float_cast_half((op(val1, val2)));       \
         }                                                                      \
     }
 
@@ -396,7 +396,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
                 result_ptr[i] = 0x7FFF;                                     \
             continue;                                                       \
         }                                                                   \
-        npy_float result = op(a, b, type);                                  \
+        npy_float result = op(a, b);                                  \
         result_ptr[i] = float_cast_half(result);                            \
     }
 
@@ -414,7 +414,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
                 result_ptr[i] = 0x7FFF;                                     \
             continue;                                                       \
         }                                                                   \
-        npy_float result = op(a, b, type);                                  \
+        npy_float result = op(a, b);                                  \
         result_ptr[i] = float_cast_half(result);                            \
     }
 

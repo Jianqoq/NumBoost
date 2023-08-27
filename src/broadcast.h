@@ -29,9 +29,9 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
     {                                                                                                \
         for (int i = 0; i < inner_loop_size; i++)                                                    \
         {                                                                                            \
-            type val1 = *(a_ptr + i * stride_a);                                           \
-            type val2 = *(b_ptr + i * stride_b);                                           \
-            *(result_ptr + i) = op(val1, val2, type);                                                \
+            type val1 = *(a_ptr + i * stride_a);                                                     \
+            type val2 = *(b_ptr + i * stride_b);                                                     \
+            *(result_ptr + i) = op(val1, val2);                                                      \
         }                                                                                            \
     }
 
@@ -39,9 +39,9 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
     {                                                                                             \
         for (int i = 0; i < inner_loop_size; i++)                                                 \
         {                                                                                         \
-            type val1 = *(a_ptr + i * stride_a);                                        \
-            type val2 = *(b_ptr + i * stride_b);                                        \
-            *(result_ptr + i) = op(val1, val2, type);                                             \
+            type val1 = *(a_ptr + i * stride_a);                                                  \
+            type val2 = *(b_ptr + i * stride_b);                                                  \
+            *(result_ptr + i) = op(val1, val2);                                                   \
         }                                                                                         \
     }
 
@@ -49,10 +49,9 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
     {                                                                                            \
         for (int i = 0; i < inner_loop_size; i++)                                                \
         {                                                                                        \
-            npy_half val1 = *(a_ptr + i * stride_a);                               \
-            npy_half val2 = *(b_ptr + i * stride_b);                               \
-            npy_float result = op(val1, val2, type);                                             \
-            *(result_ptr + i) = float_cast_half(result);                                         \
+            npy_half val1 = *(a_ptr + i * stride_a);                                             \
+            npy_half val2 = *(b_ptr + i * stride_b);                                             \
+            *(result_ptr + i) = op(val1, val2);                                                  \
         }                                                                                        \
     }
 
@@ -60,8 +59,8 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
     {                                                                                           \
         for (int i = 0; i < inner_loop_size; i++)                                               \
         {                                                                                       \
-            type val1 = *(a_ptr + i * stride_a);                                      \
-            type val2 = *(b_ptr + i * stride_b);                                      \
+            type val1 = *(a_ptr + i * stride_a);                                                \
+            type val2 = *(b_ptr + i * stride_b);                                                \
             *(result_ptr + i) = npy_pow((val1), (val2));                                        \
         }                                                                                       \
     }
@@ -70,8 +69,8 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
     {                                                                                            \
         for (int i = 0; i < inner_loop_size; i++)                                                \
         {                                                                                        \
-            type val1 = *(a_ptr + i * stride_a);                                       \
-            type val2 = *(b_ptr + i * stride_b);                                       \
+            type val1 = *(a_ptr + i * stride_a);                                                 \
+            type val2 = *(b_ptr + i * stride_b);                                                 \
             *(result_ptr + i) = npy_powf((val1), (val2));                                        \
         }                                                                                        \
     }
@@ -80,8 +79,8 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
     {                                                                                            \
         for (int i = 0; i < inner_loop_size; i++)                                                \
         {                                                                                        \
-            type val1 = *(a_ptr + i * stride_a);                                       \
-            type val2 = *(b_ptr + i * stride_b);                                       \
+            type val1 = *(a_ptr + i * stride_a);                                                 \
+            type val2 = *(b_ptr + i * stride_b);                                                 \
             *(result_ptr + i) = npy_powl((val1), (val2));                                        \
         }                                                                                        \
     }
@@ -295,17 +294,17 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
         return result;                                                                                                                                \
     }
 
-#define Register_All_Err(type)             \
-    Register_Broadcast_Err(type, add_);    \
-    Register_Broadcast_Err(type, sub_);    \
-    Register_Broadcast_Err(type, mul_);    \
-    Register_Broadcast_Err(type, div_);    \
-    Register_Broadcast_Err(type, mod_);    \
-    Register_Broadcast_Err(type, lshift_); \
-    Register_Broadcast_Err(type, rshift_); \
-    Register_Broadcast_Err(type, pow_);
+#define Register_Broadcast_Operation_All_Err(type)   \
+    Register_Broadcast_Operation_Err(type, add_);    \
+    Register_Broadcast_Operation_Err(type, sub_);    \
+    Register_Broadcast_Operation_Err(type, mul_);    \
+    Register_Broadcast_Operation_Err(type, div_);    \
+    Register_Broadcast_Operation_Err(type, mod_);    \
+    Register_Broadcast_Operation_Err(type, lshift_); \
+    Register_Broadcast_Operation_Err(type, rshift_); \
+    Register_Broadcast_Operation_Err(type, pow_);
 
-#define Register_Broadcast_Err(type, suffix)                                                       \
+#define Register_Broadcast_Operation_Err(type, suffix)                                             \
     static PyArrayObject *Broadcast_Standard_##type##_##suffix(PyArrayObject *a, PyArrayObject *b, \
                                                                int op_enum, int result_type)       \
     {                                                                                              \

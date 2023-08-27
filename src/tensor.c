@@ -304,6 +304,7 @@ static void Tensor_dealloc(Tensor *self)
     free_tensor_need_grad(self);
     free_slice_objs(self);
     PyObject_GC_Del(self);
+    DEBUG_PRINT("Tensor_dealloc done\n");
 }
 
 static int Tensor_clear(Tensor *self)
@@ -524,11 +525,19 @@ PyMODINIT_FUNC PyInit_Numboost(void)
     import_array();
     init_map();
     PyDataMem_SetHandler(PyCapsule_New(&my_handler, "mem_handler", NULL));
-
-    //still in progress, not sure if mem pool is needed
-    pool = (mem_pool *)malloc(sizeof(mem_pool));
-    pool->mem_for_small = malloc(sizeof(double) * 4194304); // allocate 32MB
-
+    mem_chain = (double_linked_list *)malloc(sizeof(double_linked_list));
+    cache *cache_struct = (cache *)malloc(sizeof(cache));
+    cache_struct->max_mem = Mem_Pool_Size;
+    cache_struct->mem_allocated = 0;
+    cache_struct->mem_pool = (void **)malloc(sizeof(void *) * Mem_Pool_Size);
+    cache_struct->tensor_size = 0;
+    cache_struct->next = cache_struct;
+    cache_struct->prev = cache_struct;
+    mem_chain->head = cache_struct;
+    mem_chain->tail = cache_struct;
+    mem_chain->max_possible_cache_size = 1;
+    cache_struct->mem_pool[0] = malloc(1);
+    HASH_ADD(hh, cache_pool, tensor_size, sizeof(size_t), cache_struct);
     PyObject *m = PyModule_Create(&custommodule);
     if (m == NULL)
         return NULL;

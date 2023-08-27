@@ -3,22 +3,38 @@
 #include "tensor.h"
 #include "uthash.h"
 
-typedef struct
+#define Thread_Hold_Value 0.9
+#define Mem_Pool_Size 100
+
+typedef struct cache
 {
-    void *mem_for_small;
-    size_t size;
+    struct cache *next;
+    struct cache *prev;
+    void **mem_pool;
+    size_t tensor_size;
+    int32_t mem_allocated;
+    int32_t max_mem;
     UT_hash_handle hh;
-} mem_chain;
+} cache;
 
 typedef struct
 {
-    void *mem_for_small;
-    void *prev_used_mem;
+    cache *head;
+    cache *tail;
+    size_t max_possible_cache_size;
+} double_linked_list;
 
-} mem_pool;
+typedef struct
+{
+    void *calloc;
+    void *free;
+    void *malloc;
+    void *realloc;
+} PyDataMem_Funcs;
 
-extern mem_pool *pool;
 extern PyDataMem_Handler my_handler;
+extern double_linked_list *mem_chain;
+extern cache *cache_pool;
 void handler_destructor(PyObject *handler);
 
 #endif
