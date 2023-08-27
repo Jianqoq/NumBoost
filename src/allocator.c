@@ -143,7 +143,7 @@ static void default_free(void *ctx, void *ptr, size_t size)
             {
                 if (size <= mem_chain->tail->tensor_size * (mem_chain->tail->mem_allocated + 1) && mem_chain->tail->mem_allocated >= 0)
                 {
-                    int to_free_num = size / mem_chain->tail->tensor_size + 1;
+                    int to_free_num = (size % mem_chain->tail->tensor_size) == 0 ? size / mem_chain->tail->tensor_size : size / mem_chain->tail->tensor_size + 1;
                     int end = mem_chain->tail->mem_allocated - to_free_num;
                     for (int i = mem_chain->tail->mem_allocated; i > end; i--)
                     {
