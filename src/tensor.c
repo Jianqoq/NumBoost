@@ -613,8 +613,13 @@ PyMODINIT_FUNC PyInit_Numboost(void)
     cache_struct->prev = cache_struct;
     mem_chain->head = cache_struct;
     mem_chain->tail = cache_struct;
-    mem_chain->max_possible_cache_size = 1;
+    mem_chain->max_possible_cache_size = 0;
     cache_struct->mem_pool[0] = malloc(1);
+
+    mem_chain->move_node_to_head = chain_move_node_to_head;
+    mem_chain->pop = chain_pop;
+    mem_chain->free_partial_mem_blocks = chain_free_partial_mem_blocks;
+
     HASH_ADD(hh, cache_pool, tensor_size, sizeof(size_t), cache_struct);
     PyObject *m = PyModule_Create(&custommodule);
     if (m == NULL)
