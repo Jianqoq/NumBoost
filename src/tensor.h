@@ -41,7 +41,6 @@ typedef struct
     PyObject *axis;
     PyObject *grad;
     int dim;
-
 } Tensor;
 
 typedef struct
