@@ -29,10 +29,10 @@ extern PyTypeObject *Tensor_type;
 
 typedef struct
 {
-    PyObject_HEAD
-        PyObject *data; /* ndarray */
-    PyObject *x;        /* Tensor */
-    PyObject *y;        /* Tensor|scalar */
+    PyObject ob_base;
+    PyObject *data; /* ndarray */
+    PyObject *x;    /* Tensor */
+    PyObject *y;    /* Tensor|scalar */
     int has_conv;
     unsigned long long vars;
     bool require_grad;
@@ -45,8 +45,8 @@ typedef struct
 
 typedef struct
 {
-    PyObject_HEAD
-        PyObject *data_iter;
+    PyObject ob_base;
+    PyObject *data_iter;
     int ndim;
 } TensorIteratorObject;
 

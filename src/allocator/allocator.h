@@ -17,11 +17,14 @@ typedef struct cache
     UT_hash_handle hh;
 } cache;
 
-typedef struct
+typedef struct double_linked_list
 {
     cache *head;
     cache *tail;
     size_t max_possible_cache_size;
+    void (*move_node_to_head)(struct double_linked_list *, cache *);
+    void (*pop)(struct double_linked_list *);
+    void (*free_partial_mem_blocks)(struct double_linked_list *, cache *, int32_t);
 } double_linked_list;
 
 typedef struct
@@ -35,6 +38,7 @@ typedef struct
 extern PyDataMem_Handler my_handler;
 extern double_linked_list *mem_chain;
 extern cache *cache_pool;
-void handler_destructor(PyObject *handler);
-
+void chain_move_node_to_head(double_linked_list *self, cache *s);
+void chain_pop(double_linked_list *self);
+void chain_free_partial_mem_blocks(double_linked_list *self, cache *s, int32_t to_free_num);
 #endif
