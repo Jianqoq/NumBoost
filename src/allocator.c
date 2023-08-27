@@ -132,7 +132,7 @@ static void default_free(void *ctx, void *ptr, size_t size)
                 {
                     free(mem_chain->tail->mem_pool[i]);
                 }
-                mem_chain->tail->mem_allocated = -1;
+                // mem_chain->tail->mem_allocated = -1;
                 size -= mem_chain->tail->tensor_size * (mem_chain->tail->mem_allocated + 1);
                 cache *temp = mem_chain->tail;
                 temp->prev->next = mem_chain->head;
