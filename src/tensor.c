@@ -233,17 +233,17 @@ void free_all_resources()
 {
     cache *s, *tmp;
 
-    HASH_ITER(hh, cache_pool, s, tmp)
-    {
-        HASH_DEL(cache_pool, s);
-        for (int i = 0; i <= s->mem_allocated; i++)
-        {
-            free(s->mem_pool[i]);
-        }
-        free(s->mem_pool);
-        free(s);
-    }
-    free(mem_chain);
+    // HASH_ITER(hh, cache_pool, s, tmp)
+    // {
+    //     HASH_DEL(cache_pool, s);
+    //     for (int i = 0; i <= s->mem_allocated; i++)
+    //     {
+    //         free(s->mem_pool[i]);
+    //     }
+    //     free(s->mem_pool);
+    //     free(s);
+    // }
+    // free(mem_chain);
 
     Dict *entry, *tmp2;
     HASH_ITER(hh, dict, entry, tmp2)
