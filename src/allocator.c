@@ -58,16 +58,11 @@ static void *default_malloc(void *ctx, size_t size)
         mem_chain->head->prev = cache_struct;
         mem_chain->tail->next = cache_struct;
         mem_chain->head = cache_struct;
-        Allocator_Debug_Print("malloc: mem_added to %llu: %ld, mem: %p, mem->next: %p, mem->prev: %p\n", cache_struct->tensor_size, cache_struct->mem_allocated + 1, cache_struct,
-                              cache_struct->next, cache_struct->prev);
         HASH_ADD(hh, cache_pool, tensor_size, sizeof(size_t), cache_struct);
-        Allocator_Debug_Print("=====================================\n");
         return ptr;
     }
     else
     {
-        Allocator_Debug_Print("malloc: mem_allocated: %ld in size %llu, tail: %p, tail->prev: %p\n", s->mem_allocated + 1, s->tensor_size, mem_chain->tail, mem_chain->tail->prev);
-        Allocator_Debug_Print("before: mem_chain->head: %p, mem_chain->head->next: %p\n", mem_chain->head, mem_chain->head->next);
         if (s != mem_chain->head)
         {
             s->prev->next = s->next;
@@ -78,22 +73,15 @@ static void *default_malloc(void *ctx, size_t size)
             mem_chain->tail->next = s;
             mem_chain->head = s;
         }
-        Allocator_Debug_Print("before: mem_chain->head: %p, mem_chain->head->next: %p\n", mem_chain->head, mem_chain->head->next);
-        Allocator_Debug_Print("malloc: already have callocated in size % llu, mem_allocated: %ld in size %llu, tail: %p, tail->prev: %p, tail->next: %p\n", size,
-                              s->mem_allocated + 1, s->tensor_size, mem_chain->tail, mem_chain->tail->prev, mem_chain->tail->next);
         if (s->mem_allocated >= 0)
         {
             mem_chain->max_possible_cache_size -= size;
-            Allocator_Debug_Print("malloc: retrieved from cache pool, s->mem_allocated: %ld\n", s->mem_allocated);
-            Allocator_Debug_Print("=====================================\n");
             void *ptr = s->mem_pool[s->mem_allocated--];
             assert(ptr);
             return ptr;
         }
         else
         {
-            Allocator_Debug_Print("malloc: no available mem in size %llu\n", size);
-            Allocator_Debug_Print("=====================================\n");
             return malloc(sizeof(char) * size);
         }
     }
@@ -115,7 +103,6 @@ static void default_free(void *ctx, void *ptr, size_t size)
 {
     cache *s = NULL;
     HASH_FIND(hh, cache_pool, &size, sizeof(size_t), s);
-    Allocator_Debug_Print("free: mem_allocated: %ld in size %llu\n", s->mem_allocated + 1, s->tensor_size);
     // when the first time allocation is pretty high, we need to free
     uint64_t mem;
     Available_Memory(mem);
@@ -125,16 +112,12 @@ static void default_free(void *ctx, void *ptr, size_t size)
         && predict_possible_cache_size > mem * Thread_Hold_Value /*Lru thread hold value, default 90% available mem*/
     )
     {
-        Allocator_Debug_Print("free: thread hold value..., tail->mem_allocated: %d, %p\n", mem_chain->tail->mem_allocated + 1, mem_chain->tail->mem_pool[0]);
         if (size <= mem_chain->tail->tensor_size * (mem_chain->tail->mem_allocated + 1) && mem_chain->tail->mem_allocated >= 0)
         {
             int to_free_num = (size % mem_chain->tail->tensor_size) == 0 ? size / mem_chain->tail->tensor_size : size / mem_chain->tail->tensor_size + 1;
             int end = mem_chain->tail->mem_allocated - to_free_num;
-            Allocator_Debug_Print("free: mem in size %llu, can free all mem in one node, allocated: %ld, mem_chain->tail->tensor_size: %llu, chain_len: %lu\n", size,
-                                  mem_chain->tail->mem_allocated, mem_chain->tail->tensor_size, to_free_num);
             for (int i = mem_chain->tail->mem_allocated; i > end; i--)
             {
-                Allocator_Debug_Print("free: freeing tail mem[%d], tail allocated: %ld, tail: %p, tail->prev: %p\n", i, mem_chain->tail->mem_allocated + 1, mem_chain->tail, mem_chain->tail->prev);
                 free(mem_chain->tail->mem_pool[i]);
             }
 
@@ -142,22 +125,16 @@ static void default_free(void *ctx, void *ptr, size_t size)
         }
         else if (size > mem_chain->tail->tensor_size * (mem_chain->tail->mem_allocated + 1) && mem_chain->tail->mem_allocated >= 0)
         {
-            Allocator_Debug_Print("free: mem in size %llu, cannot free all mem in one node, allocated: %ld\n", size,
-                                  mem_chain->tail->mem_allocated + 1);
             while (size > mem_chain->tail->tensor_size * (mem_chain->tail->mem_allocated + 1) &&
                    mem_chain->head != mem_chain->tail)
             {
                 for (int i = 0; i <= mem_chain->tail->mem_allocated; i++)
                 {
-                    Allocator_Debug_Print("free: freeing tail mem[%d], tail allocated: %ld, tail: %p, tail->prev: %p\n", i, mem_chain->tail->mem_allocated + 1, mem_chain->tail, mem_chain->tail->prev);
                     free(mem_chain->tail->mem_pool[i]);
-                    Allocator_Debug_Print("free: freed mem[%d]\n", i);
                 }
                 mem_chain->tail->mem_allocated = -1;
                 size -= mem_chain->tail->tensor_size * (mem_chain->tail->mem_allocated + 1);
-                Allocator_Debug_Print("free: freed all mem in size %llu\n", mem_chain->tail->tensor_size);
                 cache *temp = mem_chain->tail;
-                Allocator_Debug_Print("free: changed tail to %p\n", temp->prev);
                 temp->prev->next = mem_chain->head;
                 mem_chain->head->prev = temp->prev;
                 mem_chain->tail = temp->prev;
@@ -184,26 +161,20 @@ static void default_free(void *ctx, void *ptr, size_t size)
                 }
             }
         }
-        Allocator_Debug_Print("free: done free for thread hold value...\n");
     }
     else
     {
-        Allocator_Debug_Print("free: add to cache pool..., will have %ld in %llu, tail: %p, tail->prev: %p, s->next: %p, s->prev: %p, tail_size: %llu\n", s->mem_allocated + 2, size, mem_chain->tail, mem_chain->tail->prev,
-                              s->next, s->prev, mem_chain->tail->tensor_size);
         if (s != mem_chain->head)
         {
-            Allocator_Debug_Print("before: mem_chain->head: %p, mem_chain->head->next: %p\n", mem_chain->head, mem_chain->head->next);
             s->prev->next = s->next;
             s->next->prev = s->prev;
             s->next = mem_chain->head;
             mem_chain->head->prev = s;
             s->prev = mem_chain->tail;
             mem_chain->tail->next = s;
-            Allocator_Debug_Print("after: mem_chain->head: %p, mem_chain->head->next: %p\n", mem_chain->head, mem_chain->head->next);
             mem_chain->head = s;
         }
         mem_chain->max_possible_cache_size += size;
-        Allocator_Debug_Print("free: added to cache pool..., now tail: %p, tail->prev: %p, tail_size: %llu\n", mem_chain->tail, mem_chain->tail->prev, mem_chain->tail->tensor_size);
         if (s->mem_allocated + 1 < s->max_mem)
         {
             s->mem_pool[++s->mem_allocated] = ptr;
@@ -216,9 +187,7 @@ static void default_free(void *ctx, void *ptr, size_t size)
             s->mem_pool[++s->mem_allocated] = ptr;
             s->max_mem *= 2;
         }
-        Allocator_Debug_Print("free: done add to cache pool..., now mem_allocated %ld in size: %llu, tail: %p\n", s->mem_allocated + 1, s->tensor_size, mem_chain->tail);
     }
-    Allocator_Debug_Print("=====================================\n");
 }
 
 void handler_destructor(PyObject *handler)
