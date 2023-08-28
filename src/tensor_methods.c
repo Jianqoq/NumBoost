@@ -35,7 +35,7 @@ PyObject *__str__(Tensor *self)
         end = ")";
     }
     printf("self->data: %p\n", self->data);
-    //array string
+    // array string
     /*=======================================================================================*/
     PyObject *py_str = PyObject_Str(self->data);
     const char *str = PyUnicode_AsUTF8(py_str);
