@@ -22,9 +22,9 @@ Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, h
 7. ~~add __len__, __min__, __max__, iterator for Tensor~~
 8. improve speed when both uncontiguous arrays in same shape
 9. develop convenient api for fusion
-10. mem pool
+10. ~~mem pool~~
 11. vectorization
-12. bool calculation support
+12. ~~bool calculation support~~
 13. complex calculation support
 14. backward node fusion
 15. Runtime dynamic computation graph analysis and optimization
@@ -35,9 +35,9 @@ Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, h
 20. add mean(forward, backward)
 21. add trace(forward, backward)
 22. remove redundant calculation in backward(add require grad check)
-23. implement shape prediction instead of doing real calculation in jax tracing
-24. implement broadcast detection based on shape
+23. ~~implement shape prediction instead of doing real calculation in jax tracing~~
+24. ~~implement broadcast detection based on shape~~
 25. let cache can handle more scenario at the same function need to be jit
-26. Proof of concept(POC) Object Pool for Tensor
+26. ~~Proof of concept(POC) Object Pool for Tensor~~
 27. Better Tensor dealloc(directly use switch to free dict)
 28. To be determined(TBD)

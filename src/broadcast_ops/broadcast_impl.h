@@ -18,11 +18,6 @@ inline npy_intp dot_prod(npy_intp *strides, npy_intp *indice, int ndim)
 
 PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
 
-#define ThrowError(op_enum, msg)                  \
-    case op_enum:                                 \
-        PyErr_SetString(PyExc_RuntimeError, msg); \
-        return NULL;
-
 #define BroadCast(a, b, op) _BroadCast(a, b, op);
 
 #define Standard_Inner_Loop(type, op, inner_loop_size, stride_a, stride_b, a_ptr, b_ptr, result_ptr) \

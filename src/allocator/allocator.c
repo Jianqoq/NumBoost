@@ -6,7 +6,7 @@
 #include "omp.h"
 
 cache *cache_pool = NULL;
-double_linked_list *mem_chain = NULL;
+Mem_Chain *mem_chain = NULL;
 uint64_t available_memory = 0;
 
 #ifdef _WIN32
@@ -42,7 +42,7 @@ Being linked to mem_chain free_partial_mem_blocks function in tensor.c PyInit_Nu
 @param s node to be freed partial memory blocks
 @param to_free_num number of memory blocks to be freed
 */
-void chain_free_partial_mem_blocks(double_linked_list *self, cache *s, int32_t to_free_num)
+void chain_free_partial_mem_blocks(Mem_Chain *self, cache *s, int32_t to_free_num)
 {
     int end = s->mem_allocated - to_free_num;
     void **mem_pool = s->mem_pool;
@@ -58,7 +58,7 @@ Being linked to mem_chain move_node_to_head function in tensor.c PyInit_Numboost
 @param self mem_chain
 @param s node to move to head
 */
-void chain_move_node_to_head(double_linked_list *self, cache *s)
+void chain_move_node_to_head(Mem_Chain *self, cache *s)
 {
     if (s != self->head)
     {
@@ -81,7 +81,7 @@ It will free the memory block in the tail of the mem_chain.
 But this node will stay in hash table "cache_pool". This node will points to NULL in next and prev.
 @param self mem_chain
  */
-void chain_pop(double_linked_list *self)
+void chain_pop(Mem_Chain *self)
 {
     int32_t allocated = self->tail->mem_allocated;
     void **mem_pool = self->tail->mem_pool;

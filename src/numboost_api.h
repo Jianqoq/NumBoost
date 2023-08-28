@@ -16,12 +16,6 @@
 // #endif
 // #endif
 
-// PyArrayObject* a, PyArrayObject* b, PyArrayObject* result, int operation, ctype data_type, npy_dtype_enum npy_enum
-//
-//"result" need to allocate memory before calling this function
-//"operation" is enum defined in op.h file
-//"data_type" is the C type of the data, e.g. int, float, double, etc.
-//"npy_enum" is the numpy enum defined in numpy/ndarraytypes.h
 #define Perform_Binary_Operation(a, b, result, operation, data_type, npy_enum) OPERATION_PICKER(a, b, result, operation, data_type, npy_enum)
 
 #define nb_add(x, y) ((x) + (y))
