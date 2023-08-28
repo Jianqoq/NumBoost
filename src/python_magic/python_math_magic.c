@@ -225,7 +225,7 @@ PyObject *Tensor_Empty(PyObject *data)
 PyObject *
 tensor_add(PyObject *self, PyObject *other)
 {
-    Generic_Binary_Operation(self, other, PyNumber_Add(self, other), ADD, "AddBackward");                                                         
+    Generic_Binary_Operation(self, other, PyNumber_Add(self, other), ADD, "AddBackward");
 }
 
 PyObject *
@@ -415,6 +415,7 @@ tensor_negative(PyObject *self) // need to check
         Tensor_SetData(_self, numpy_result);
         Py_DECREF(negative_1);
         Py_DECREF(numpy_result);
+        Py_INCREF(self);
         return (PyObject *)_self;
     }
     else
@@ -586,6 +587,7 @@ tensor_imatmul(PyObject *self, PyObject *other)
 PyObject *
 tensor_positive(PyObject *self)
 {
+    Py_INCREF(self);
     return self;
 }
 

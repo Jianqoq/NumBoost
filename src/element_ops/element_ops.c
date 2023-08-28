@@ -13,11 +13,6 @@
 #include "../tensor.h"
 #include "../python_magic/python_math_magic.h"
 #include "../type_convertor/type_convertor.h"
-extern np_method *NP_METHOD;
-extern Array_Shape *ARRAY_SHAPE;
-extern Power_Dict *POWER_DICT;
-extern Log_Dict *LOG_DICT;
-extern Tensordot_Dict *TENSORDOT_DICT;
 
 void store_base(Tensor *key, PyObject *base)
 {

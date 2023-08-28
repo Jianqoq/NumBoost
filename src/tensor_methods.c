@@ -34,8 +34,8 @@ PyObject *__str__(Tensor *self)
         prefix = "\n\tTensor(";
         end = ")";
     }
-
-    //array string
+    printf("self->data: %p\n", self->data);
+    // array string
     /*=======================================================================================*/
     PyObject *py_str = PyObject_Str(self->data);
     const char *str = PyUnicode_AsUTF8(py_str);
@@ -274,7 +274,7 @@ PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     else
         return NULL;
-    Tensor *self = (Tensor *)PyObject_GC_New(Tensor, type);
+    Tensor *self = (Tensor *)type->tp_alloc(type, 0);
     if (require_grad == NULL)
         self->require_grad = false;
     else
@@ -282,19 +282,23 @@ PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self != NULL)
     {
         PyObject *zero = PyLong_FromLong(0);
+        if (!cache)
+            return NULL;
         self->data = cache;
-        Tensor_SetX_without_init_value(self, Py_None);
-        Tensor_SetY_without_init_value(self, Py_None);
-        Tensor_SetHasConv(self, 0);
-        Tensor_SetVars(self, 1);
-        Tensor_SetGradFn(self, "");
-        Tensor_SetGrad_without_init_value(self, zero);
-        Tensor_SetGraph_without_init_value(self, Py_None);
-        Tensor_SetAxis_without_init_value(self, Py_None);
-        Tensor_SetDim(self, 1);
-        Py_DECREF(zero);
+        self->x = Py_None;
+        self->y = Py_None;
+        self->grad = zero;
+        self->grad_fn = "";
+        self->graph = Py_None;
+        self->axis = Py_None;
+        self->vars = 1;
+        self->has_conv = 0;
+        self->dim = 1;
+        Py_INCREF(Py_None);
+        Py_INCREF(Py_None);
+        Py_INCREF(Py_None);
+        Py_INCREF(Py_None);
     }
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 }
 

@@ -1,6 +1,11 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 #include <Python.h>
+#include "object.h"
+#include "numpy/arrayobject.h"
+#include <stdbool.h>
+#include "libraries/hash/uthash.h"
+#include "import_module_methods.h"
 
 // #include <jemalloc/jemalloc.h>
 // #ifndef JELMALLOC
@@ -12,20 +17,6 @@
 // #define calloc(count, size) je_calloc(count, size)
 // #endif
 // #endif
-
-#include <stdbool.h>
-#include "libraries/hash/uthash.h"
-extern bool TRACK;
-PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf);
-
-#include "import_module_methods.h"
-
-extern XLA_OPS *xla_ops;
-
-#include "object.h"
-extern PyTypeObject *Tensor_type;
-
-#include "numpy/arrayobject.h"
 
 typedef struct
 {
@@ -86,6 +77,7 @@ int isEmpty(Stack *stack);
 PyObject *push(Stack *stack, Tuple item);
 Tuple pop(Stack *stack);
 PyObject *_Generic_backward(PyObject *self, PyObject *grad);
+PyObject *set_track(PyObject *self, PyObject *const *args, size_t nargsf);
 
 void add_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
 void sub_backward_fn(Tensor *self, PyObject *grad, PyObject **out1, PyObject **out2);
@@ -232,6 +224,21 @@ void free_tensordot_data();
 void store_for_slicebackward(Tensor *key, PyObject *slice_obj, npy_intp *ptr, int nd, Tensor *parent);
 void get_slice_objs(Tensor *key, npy_intp **origin_shape, PyObject **slice_obj, int *nd, PyObject **zeros_array);
 void free_slice_objs(Tensor *key);
+
+extern bool TRACK;
+extern XLA_OPS *xla_ops;
+extern PyTypeObject *Tensor_type;
+extern np_method *NP_METHOD;
+extern Zeros_Array_Dict *ZEROS_ARRAY_DICT;
+extern Slice_Dict *SLICE_DICT;
+extern Tensordot_Dict *TENSORDOT_DICT;
+extern Array_Shape *ARRAY_SHAPE;
+extern Power_Dict *POWER_DICT;
+extern Log_Dict *LOG_DICT;
+extern Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT;
+extern jnp_method *JNP_METHOD;
+extern Dict *dict;
+extern PyTypeObject *Tensor_type;
 
 Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
