@@ -1,14 +1,14 @@
 
 #define Concat_(a, b) a##b
-#define First_(a, ...) a
-#define First(...) First_(__VA_ARGS__)
-#define SECOND_(a, b, ...) b
-#define Second(...) SECOND_(__VA_ARGS__)
+#define _First_(a, ...) a
+#define _First(...) _First_(__VA_ARGS__)
+#define Second_(a, b, ...) b
+#define Second(...) Second_(__VA_ARGS__)
 #define Logic_Not(x) Second(Concat_(Is_, x), 0)
 #define Is_True(x) Logic_Not(Logic_Not(x))
 #define Is_0 Place_Holder, 1
 #define If(x) Concat_(If_, x)
-#define Has_Args(...) Is_True(First(End_Of_Arguments_ __VA_ARGS__)())
+#define Has_Args(...) Is_True(_First(End_Of_Arguments_ __VA_ARGS__)())
 #define If_1(...) __VA_ARGS__
 #define If_0(...) EMPTY EMPTY()()
 #define If2_1(...) __VA_ARGS__
@@ -17,6 +17,11 @@
 #define escape(...) __VA_ARGS__
 #define If2(x) Concat_(If2_, x)
 #define COMMA() ,
+
+#define MAP0_No_Comma(m, x, ...) \
+    m(x)                         \
+        If(Has_Args(__VA_ARGS__))(DEFER2(_MAP0_No_Comma)()(m, __VA_ARGS__))
+
 #define MAP0(m, x, ...)                 \
     m(x) If2(Has_Args(__VA_ARGS__))(, ) \
         If(Has_Args(__VA_ARGS__))(DEFER2(_MAP0)()(m, __VA_ARGS__))
@@ -33,6 +38,7 @@
     m(y, z, w, x)                \
         If(Has_Args(__VA_ARGS__))(DEFER2(_MAP3)()(m, y, z, w, __VA_ARGS__))
 
+#define _MAP0_No_Comma() MAP0_No_Comma
 #define _MAP0() MAP0
 #define _MAP() MAP
 #define _MAP2() MAP2
@@ -55,8 +61,9 @@
 #define _IF_0_ELSE(...) __VA_ARGS__
 #define DEFER1(m) m EMPTY()
 #define DEFER2(m) m EMPTY EMPTY()()
-#define Empty(x) x##_data_ptr_saved
-
+#define Ptr_Saved(x) x##_data_ptr_saved
+#define Stries_Last(x) stride_##x##_last
+#define Parameter_type(x) PyArrayObject *x,
 #define Alloc_Copy_Strides_And_Indices(x, type)                                          \
     npy_intp *__strides_##x = PyArray_STRIDES(x);                                        \
     npy_intp *strides_##x = (npy_intp *)malloc(sizeof(npy_intp) * PyArray_NDIM(result)); \
@@ -73,6 +80,25 @@
 #define Cache_Indice(x, i, shape_cpy) \
     indice_##x##_cache[i] = strides_##x[i] * shape_cpy[i];
 
+#define Adjust_Ptr(x, i, current_process) \
+    x##_data_ptr_saved += current_process[i] * strides_##x[i];
+
+#define Adjust_Ptr2(x, i) \
+    x##_data_ptr_saved += strides_##x[i];
+
+#define Adjust_Ptr3(x, i) \
+    x##_data_ptr_saved -= indice_##x##_cache[i];
+
+#define Free(x)               \
+    free(indice_##x##_cache); \
+    free(strides_##x);
+
+#define Replicate0_No_Comma(method, ...) \
+    Expand(MAP0_No_Comma(method, __VA_ARGS__))
+
+#define Replicate0_With_Comma(method, ...) \
+    Expand(MAP0_No_Comma(method, __VA_ARGS__))
+
 #define Replicate0(method, ...) \
     Expand(MAP0(method, __VA_ARGS__))
 
@@ -84,6 +110,8 @@
 
 #define Replicate3(method, x, y, ...) \
     Expand(MAP(method, x, y, __VA_ARGS__))
+
+#define INDIRECT_REPLICATE0(func, ...) Replicate0(func, __VA_ARGS__)
 
 #define Str(x) #x
 #define Omp_Parallel(num_threads, ...) _Pragma(Str(omp parallel num_threads(num_threads) firstprivate(__VA_ARGS__)))

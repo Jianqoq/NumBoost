@@ -34,7 +34,6 @@ PyObject *__str__(Tensor *self)
         prefix = "\n\tTensor(";
         end = ")";
     }
-    printf("self->data: %p\n", self->data);
     // array string
     /*=======================================================================================*/
     PyObject *py_str = PyObject_Str(self->data);
@@ -494,7 +493,11 @@ backward(PyObject *self, PyObject *args)
                     free_dict();
                     return NULL;
                 }
-                PyObject *new_grad = PyNumber_Add(tensor->grad, tuple.ndarray);
+                PyObject *new_grad = NULL;
+                if (tensor->grad == PyLong_FromLong(0))
+                    new_grad = tuple.ndarray;
+                else
+                    new_grad = tensor_add(tensor->grad, tuple.ndarray);
                 if (new_grad == NULL)
                 {
                     return NULL;
@@ -525,11 +528,8 @@ backward(PyObject *self, PyObject *args)
                 continue;
             }
         }
-        DEBUG_PRINT("grad_fn_name: %s\n", grad_fn);
         // Get the gradient function and apply it
         get_method(grad_fn)(tensor, tuple.ndarray, &current_grad1, &current_grad2);
-        DEBUG_PyObject_Print(current_grad1);
-        DEBUG_PyObject_Print(current_grad2);
         // If both gradients are NULL, return an error
         if (current_grad1 == NULL && current_grad2 == NULL)
         {

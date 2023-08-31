@@ -14,6 +14,7 @@
 #include "clinic/tensor_methods.c.h"
 #include "allocator/allocator.h"
 #include "allocator/tensor_alloc.h"
+#include "numboost_api.h"
 
 Dict *dict = NULL;
 XLA_OPS *xla_ops = NULL;

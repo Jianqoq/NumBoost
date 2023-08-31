@@ -635,6 +635,19 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype, int b_size)
         case RSHIFT:
             PyErr_SetString(PyExc_TypeError, "unsupported operand type(s) for >> or <<: 'float' and 'float'");
             return -1;
+        case SIN:
+        case COS:
+        case TAN:
+        case ARCSIN:
+        case ARCCOS:
+        case ARCTAN:
+        case SINH:
+        case COSH:
+        case TANH:
+        case ARCSINH:
+        case ARCCOSH:
+        case ARCTANH:
+            return float_type_based_on_size(max(a_size, b_size));
         default:
             return max(a_dtype, b_dtype);
         }
@@ -674,12 +687,52 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype, int b_size)
         case RSHIFT:
             PyErr_SetString(PyExc_TypeError, "unsupported operand type(s) for >> or <<: 'float' and 'float'");
             return -1;
+        case SIN:
+        case COS:
+        case TAN:
+        case ARCSIN:
+        case ARCCOS:
+        case ARCTAN:
+        case SINH:
+        case COSH:
+        case TANH:
+        case ARCSINH:
+        case ARCCOSH:
+        case ARCTANH:
+            return float_type_based_on_size(max(a_size, b_size));
         default:
             return max(a_dtype, b_dtype);
         }
         break;
     default:
         PyErr_SetString(PyExc_TypeError, "unsupported data type");
+        return -1;
+    }
+}
+
+int sequence_result_type(PyArrayObject **arr, int *op_set, int16_t size)
+{
+    int result_type;
+    int result_size;
+    if (size > 1)
+    {
+        int a_dtype = PyArray_TYPE(arr[0]);
+        int a_size = ((PyArrayObject_fields *)(arr[0]))->descr->elsize;
+        int b_dtype = PyArray_TYPE(arr[1]);
+        int b_size = ((PyArrayObject_fields *)(arr[1]))->descr->elsize;
+        result_type = binary_result_type(op_set[0], a_dtype, a_size, b_dtype, b_size);
+        for (int16_t i = 1; i < size - 1; i++)
+        {
+            Get_Size(result_type, result_size);
+            int b_dtype = PyArray_TYPE(arr[i + 1]);
+            int b_size = ((PyArrayObject_fields *)(arr[i + 1]))->descr->elsize;
+            result_type = binary_result_type(op_set[i], result_type, result_size, b_dtype, b_size);
+        }
+        return result_type;
+    }
+    else
+    {
+        PyErr_SetString(PyExc_ValueError, "One var is no needed for backward fusion.");
         return -1;
     }
 }

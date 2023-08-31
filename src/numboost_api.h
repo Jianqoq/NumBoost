@@ -61,11 +61,11 @@
     LARGE_INTEGER start##label, end##label;       \
     QueryPerformanceFrequency(&frequency##label); \
     QueryPerformanceCounter(&start##label);
-#define StopTimer(label)                  \
+#define EndTimer(label)                  \
     QueryPerformanceCounter(&end##label); \
     double elapsed##label = (end##label.QuadPart - start##label.QuadPart) * 1000.0 / frequency##label.QuadPart;
 #define PrintTimer(label) printf("%s: Time taken [%f] ms\n", #label, elapsed##label);
-#define GetElapsed(label) elapsed##label
+#define GetTime(label) elapsed##label
 #elif defined(unix) || defined(__unix__) || defined(__unix)
 #include <sys/time.h>
 #define StartTimer(label)      \
@@ -74,13 +74,13 @@
     long seconds;              \
     long useconds;             \
     gettimeofday(&start, NULL);
-#define StopTimer(label)                    \
+#define EndTimer(label)                    \
     gettimeofday(&end, NULL);               \
     seconds = end.tv_sec - start.tv_sec;    \
     useconds = end.tv_usec - start.tv_usec; \
     elapsed##label = ((seconds)*1000 + useconds / 1000.0) + 0.5;
 #define PrintTimer(label) printf("%s. Time taken: %lf ms\n", label, elapsed##label);
-#define GetElapsed(label) elapsed##label
+#define GetTime(label) elapsed##label
 #endif
 
 inline PyArrayObject *nb_copy(PyArrayObject *arr)
@@ -205,117 +205,93 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr)
         free(result_ptr_);                                                                                                  \
         free(indice_a_cache);                                                                                               \
         free(indice_b_cache);                                                                                               \
-        free(shape_cpy);                                                                                                    \
-        free(shape_copy);                                                                                                   \
         free(strides_a);                                                                                                    \
         free(strides_b);                                                                                                    \
-    } while (0)
-
-#define BinaryOperation_Universal(type, a, b, result, op, inner_loop_body)                                                  \
-    do                                                                                                                      \
-    {                                                                                                                       \
-        int ndim = PyArray_NDIM(result);                                                                                    \
-        npy_intp max_dim = ndim - 1;                                                                                        \
-        npy_intp *__strides_a = PyArray_STRIDES(a);                                                                         \
-        npy_intp *strides_a = (npy_intp *)malloc(sizeof(npy_intp) * PyArray_NDIM(result));                                  \
-        npy_intp *indice_a_cache = (npy_intp *)malloc(sizeof(npy_intp) * ndim);                                             \
-        type *a_data_ptr_saved = (type *)PyArray_DATA(a);                                                                   \
-        memcpy(strides_a, __strides_a, sizeof(npy_intp) * PyArray_NDIM(result));                                            \
-                                                                                                                            \
-        npy_intp *__strides_b = PyArray_STRIDES(b);                                                                         \
-        npy_intp *strides_b = (npy_intp *)malloc(sizeof(npy_intp) * PyArray_NDIM(result));                                  \
-        npy_intp *indice_b_cache = (npy_intp *)malloc(sizeof(npy_intp) * ndim);                                             \
-        type *b_data_ptr_saved = (type *)PyArray_DATA(b);                                                                   \
-        memcpy(strides_b, __strides_b, sizeof(npy_intp) * PyArray_NDIM(result));                                            \
-                                                                                                                            \
-        for (int i = 0; i < ndim; i++)                                                                                      \
-        {                                                                                                                   \
-            strides_a[i] /= sizeof(type);                                                                                   \
-            strides_b[i] /= sizeof(type);                                                                                   \
-        }                                                                                                                   \
-        npy_intp stride_a_last = strides_a[max_dim];                                                                        \
-        npy_intp stride_b_last = strides_b[max_dim];                                                                        \
-                                                                                                                            \
-        npy_intp _size = PyArray_SIZE(result);                                                                              \
-        npy_intp *shape_cpy = (npy_intp *)malloc(sizeof(npy_intp) * PyArray_NDIM(result));                                  \
-        npy_intp *__shape = PyArray_SHAPE(result);                                                                          \
-        memcpy(shape_cpy, PyArray_SHAPE(result), sizeof(npy_intp) * PyArray_NDIM(result));                                  \
-        int axis_sep = ndim - 1;                                                                                            \
-        npy_intp inner_loop_size = PyArray_SHAPE(result)[axis_sep];                                                         \
-        npy_intp outter_loop_size = _size / inner_loop_size;                                                                \
-        npy_intp outer_start = max_dim - axis_sep;                                                                          \
-        npy_intp *shape_copy = (npy_intp *)malloc(sizeof(npy_intp) * ndim);                                                 \
-        type *result_data_ptr_saved = (type *)PyArray_DATA(result);                                                         \
-        type *result_data_ptr_ = (type *)PyArray_DATA(result);                                                              \
-        type *result_data_ptr_cpy = (type *)PyArray_DATA(result);                                                           \
-        for (int i = 0; i < ndim; i++)                                                                                      \
-        {                                                                                                                   \
-            shape_cpy[i]--;                                                                                                 \
-            shape_copy[i] = 0;                                                                                              \
-            indice_a_cache[i] = strides_a[i] * shape_cpy[i];                                                                \
-            indice_b_cache[i] = strides_b[i] * shape_cpy[i];                                                                \
-        }                                                                                                                   \
-        npy_intp k = 0;                                                                                                     \
-        npy_intp num_threads = outter_loop_size < omp_get_max_threads() ? outter_loop_size : omp_get_max_threads();         \
-        type **result_ptr_ = (type **)malloc(sizeof(type *) * num_threads);                                                 \
-        npy_intp **current_shape_process_ = (npy_intp **)malloc(sizeof(npy_intp *) * num_threads);                          \
-        for (npy_intp id = 0; id < num_threads; id++)                                                                       \
-        {                                                                                                                   \
-            npy_intp start_index = id * (outter_loop_size / num_threads) + min(id, outter_loop_size % num_threads);         \
-            npy_intp end_index = start_index + outter_loop_size / num_threads + (id < outter_loop_size % num_threads);      \
-            result_ptr_[id] = result_data_ptr_cpy;                                                                          \
-            result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;                                             \
-            npy_intp prd = result_ptr_[id] - result_data_ptr_saved;                                                         \
-            npy_intp *current_shape_process = (npy_intp *)calloc(ndim, sizeof(npy_intp));                                   \
-            for (npy_intp j = max_dim; j >= 0; j--)                                                                         \
-            {                                                                                                               \
-                current_shape_process[j] = prd % __shape[j];                                                                \
-                prd /= __shape[j];                                                                                          \
-            }                                                                                                               \
-            current_shape_process_[id] = current_shape_process;                                                             \
-        }                                                                                                                   \
-        _Pragma("omp parallel num_threads(num_threads) firstprivate(result_data_ptr_, a_data_ptr_saved, b_data_ptr_saved)") \
-        {                                                                                                                   \
-            int thread_id = omp_get_thread_num();                                                                           \
-            result_data_ptr_ = result_ptr_[thread_id];                                                                      \
-            npy_intp *current_process = current_shape_process_[thread_id];                                                  \
-            for (npy_intp j = max_dim; j >= 0; j--)                                                                         \
-            {                                                                                                               \
-                a_data_ptr_saved += current_process[j] * strides_a[j]; /*can clone*/                                        \
-                b_data_ptr_saved += current_process[j] * strides_b[j];                                                      \
-            }                                                                                                               \
-            _Pragma("omp for schedule(static)") for (k = 0; k < outter_loop_size; k++)                                      \
-            {                                                                                                               \
-                inner_loop_body(type, op, inner_loop_size, stride_a_last,                                                   \
-                                stride_b_last, a_data_ptr_saved, b_data_ptr_saved, result_data_ptr_);                       \
-                result_data_ptr_ += inner_loop_size;                                                                        \
-                for (npy_intp j = outer_start; j >= 0; j--)                                                                 \
-                {                                                                                                           \
-                    if (current_process[j] < __shape[j])                                                                    \
-                    {                                                                                                       \
-                        current_process[j]++;                                                                               \
-                        a_data_ptr_saved += strides_a[j];                                                                   \
-                        b_data_ptr_saved += strides_b[j];                                                                   \
-                        break;                                                                                              \
-                    }                                                                                                       \
-                    else                                                                                                    \
-                    {                                                                                                       \
-                        current_process[j] = 0;                                                                             \
-                        a_data_ptr_saved -= indice_a_cache[j];                                                              \
-                        b_data_ptr_saved -= indice_b_cache[j];                                                              \
-                    }                                                                                                       \
-                }                                                                                                           \
-            }                                                                                                               \
-            free(current_process);                                                                                          \
-        }                                                                                                                   \
-        free(current_shape_process_);                                                                                       \
-        free(result_ptr_);                                                                                                  \
-        free(indice_a_cache);                                                                                               \
-        free(indice_b_cache);                                                                                               \
         free(shape_cpy);                                                                                                    \
         free(shape_copy);                                                                                                   \
-        free(strides_a);                                                                                                    \
-        free(strides_b);                                                                                                    \
     } while (0)
 
+#define wrapper(inner_loop_body, type, inner_loop_size, result_data_ptr_, ...) inner_loop_body(type, inner_loop_size, result_data_ptr_, __VA_ARGS__)
+
+#define BinaryOperation_Universal(type, result, inner_loop_body, ...)                                                                                    \
+    int ndim = PyArray_NDIM(result);                                                                                                                     \
+    npy_intp max_dim = ndim - 1;                                                                                                                         \
+    Replicate(Alloc_Copy_Strides_And_Indices, type, __VA_ARGS__);                                                                                        \
+    for (int i = 0; i < ndim; i++)                                                                                                                       \
+    {                                                                                                                                                    \
+        Replicate(Normalize_Strides_By_Type, type, __VA_ARGS__);                                                                                         \
+    }                                                                                                                                                    \
+    Replicate(Retrieve_Last_Stride, max_dim, __VA_ARGS__);                                                                                               \
+    npy_intp _size = PyArray_SIZE(result);                                                                                                               \
+    npy_intp *shape_cpy = (npy_intp *)malloc(sizeof(npy_intp) * PyArray_NDIM(result));                                                                   \
+    npy_intp *__shape = PyArray_SHAPE(result);                                                                                                           \
+    memcpy(shape_cpy, PyArray_SHAPE(result), sizeof(npy_intp) * PyArray_NDIM(result));                                                                   \
+    int axis_sep = ndim - 1;                                                                                                                             \
+    npy_intp inner_loop_size = PyArray_SHAPE(result)[axis_sep];                                                                                          \
+    npy_intp outter_loop_size = _size / inner_loop_size;                                                                                                 \
+    npy_intp outer_start = max_dim - axis_sep;                                                                                                           \
+    npy_intp *shape_copy = (npy_intp *)malloc(sizeof(npy_intp) * ndim);                                                                                  \
+    type *result_data_ptr_saved = (type *)PyArray_DATA(result);                                                                                          \
+    type *result_data_ptr_ = (type *)PyArray_DATA(result);                                                                                               \
+    type *result_data_ptr_cpy = (type *)PyArray_DATA(result);                                                                                            \
+    for (int i = 0; i < ndim; i++)                                                                                                                       \
+    {                                                                                                                                                    \
+        shape_cpy[i]--;                                                                                                                                  \
+        shape_copy[i] = 0;                                                                                                                               \
+        Replicate2(Cache_Indice, i, shape_cpy, __VA_ARGS__);                                                                                             \
+    }                                                                                                                                                    \
+    npy_intp k = 0;                                                                                                                                      \
+    npy_intp num_threads = outter_loop_size < omp_get_max_threads() ? outter_loop_size : omp_get_max_threads();                                          \
+    type **result_ptr_ = (type **)malloc(sizeof(type *) * num_threads);                                                                                  \
+    npy_intp **current_shape_process_ = (npy_intp **)malloc(sizeof(npy_intp *) * num_threads);                                                           \
+    for (npy_intp id = 0; id < num_threads; id++)                                                                                                        \
+    {                                                                                                                                                    \
+        npy_intp start_index = id * (outter_loop_size / num_threads) + min(id, outter_loop_size % num_threads);                                          \
+        npy_intp end_index = start_index + outter_loop_size / num_threads + (id < outter_loop_size % num_threads);                                       \
+        result_ptr_[id] = result_data_ptr_cpy;                                                                                                           \
+        result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;                                                                              \
+        npy_intp prd = result_ptr_[id] - result_data_ptr_saved;                                                                                          \
+        npy_intp *current_shape_process = (npy_intp *)calloc(ndim, sizeof(npy_intp));                                                                    \
+        for (npy_intp j = max_dim; j >= 0; j--)                                                                                                          \
+        {                                                                                                                                                \
+            current_shape_process[j] = prd % __shape[j];                                                                                                 \
+            prd /= __shape[j];                                                                                                                           \
+        }                                                                                                                                                \
+        current_shape_process_[id] = current_shape_process;                                                                                              \
+    }                                                                                                                                                    \
+    Omp_Parallel(num_threads, result_ptr_, Replicate0(Ptr_Saved, __VA_ARGS__))                                                                           \
+    {                                                                                                                                                    \
+        int thread_id = omp_get_thread_num();                                                                                                            \
+        result_data_ptr_ = result_ptr_[thread_id];                                                                                                       \
+        npy_intp *current_process = current_shape_process_[thread_id];                                                                                   \
+        for (npy_intp j = max_dim; j >= 0; j--)                                                                                                          \
+        {                                                                                                                                                \
+            Replicate2(Adjust_Ptr, j, current_process, __VA_ARGS__);                                                                                     \
+        }                                                                                                                                                \
+        _Pragma("omp for schedule(static)") for (k = 0; k < outter_loop_size; k++)                                                                       \
+        {                                                                                                                                                \
+            wrapper(inner_loop_body, type, inner_loop_size, result_data_ptr_, Replicate0(Stries_Last, __VA_ARGS__), Replicate0(Ptr_Saved, __VA_ARGS__)); \
+            result_data_ptr_ += inner_loop_size;                                                                                                         \
+            for (npy_intp j = outer_start; j >= 0; j--)                                                                                                  \
+            {                                                                                                                                            \
+                if (current_process[j] < __shape[j])                                                                                                     \
+                {                                                                                                                                        \
+                    current_process[j]++;                                                                                                                \
+                    Replicate(Adjust_Ptr2, j, __VA_ARGS__);                                                                                              \
+                    break;                                                                                                                               \
+                }                                                                                                                                        \
+                else                                                                                                                                     \
+                {                                                                                                                                        \
+                    current_process[j] = 0;                                                                                                              \
+                    Replicate(Adjust_Ptr3, j, __VA_ARGS__);                                                                                              \
+                }                                                                                                                                        \
+            }                                                                                                                                            \
+        }                                                                                                                                                \
+        free(current_process);                                                                                                                           \
+    }                                                                                                                                                    \
+    free(current_shape_process_);                                                                                                                        \
+    free(result_ptr_);                                                                                                                                   \
+    Replicate0_No_Comma(Free, __VA_ARGS__);                                                                                                              \
+    free(shape_cpy);                                                                                                                                     \
+    free(shape_copy);
 #endif // NUMBOOST_API_H

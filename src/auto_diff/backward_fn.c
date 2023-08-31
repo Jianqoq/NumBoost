@@ -2,9 +2,14 @@
 #define NO_IMPORT_ARRAY
 #include <numpy/arrayobject.h>
 #include "../tensor.h"
+#include "../binary_ops/binary_op_impl.h"
+#include "../numboost_api.h"
+#include "ufunc_backward_def.h"
 extern Array_Shape *ARRAY_SHAPE;
 extern jnp_method *JNP_METHOD;
 extern Zeros_Array_Dict *ZEROS_ARRAY_DICT;
+
+double time_spent = 0.0;
 
 void power_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
 {
@@ -26,9 +31,9 @@ void power_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **
 void sin_backward_fn(Tensor *self, PyObject *grad, PyObject **out, PyObject **null)
 {
     Tensor *tmp1 = (Tensor *)self->x;
-    PyObject *cos = _cos_internal(tmp1->data, NULL);
-    *out = PyNumber_Multiply(grad, cos);
-    Py_DECREF(cos);
+    int op_set[] = {COS, MUL};
+    *out = sin_backward_arr[1]((PyArrayObject *)tmp1->data, (PyArrayObject *)grad, op_set);
+    Py_INCREF(*out);
     *null = NULL;
 };
 
