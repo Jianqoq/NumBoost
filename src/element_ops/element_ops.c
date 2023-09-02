@@ -1169,6 +1169,7 @@ Tensor *_sin(PyObject *self, PyObject *const *args, size_t nargsf)
     Tensor *tensor = (Tensor *)args[0];
     Tensor *out = nargsf > 1 && !Py_IsNone(args[1]) ? (Tensor *)args[1] : NULL;
     PyArrayObject *array = (PyArrayObject *)tensor->data;
+    int result_type = elementwise_result_type(SIN, PyArray_TYPE(array));
     int typenum = PyArray_TYPE(array);
     if (typenum == NPY_FLOAT)
     {

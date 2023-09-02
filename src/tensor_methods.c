@@ -7,6 +7,7 @@
 #include "set_tensor_properties.h"
 #include "libraries/hash/uthash.h"
 #include "numboost_api.h"
+#include "allocator/tensor_alloc.h"
 
 extern jnp_method *JNP_METHOD;
 extern Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT;
@@ -475,6 +476,7 @@ backward(PyObject *self, PyObject *args)
             if (PyErr_Occurred())
             {
                 PyErr_SetString(PyExc_RuntimeError, "grad_fn_name is NULL");
+                free_all_resources();
                 return NULL;
             }
             continue;
@@ -490,14 +492,19 @@ backward(PyObject *self, PyObject *args)
                 if (tensor == NULL)
                 {
                     PyErr_SetString(PyExc_RuntimeError, "can't convert object from stack to Tensor");
-                    free_dict();
+                    free_all_resources();
                     return NULL;
                 }
                 PyObject *new_grad = NULL;
                 if (tensor->grad == PyLong_FromLong(0))
+                {
                     new_grad = tuple.ndarray;
+                    Py_INCREF(new_grad);
+                }
                 else
+                {
                     new_grad = tensor_add(tensor->grad, tuple.ndarray);
+                }
                 if (new_grad == NULL)
                 {
                     return NULL;
@@ -533,7 +540,7 @@ backward(PyObject *self, PyObject *args)
         // If both gradients are NULL, return an error
         if (current_grad1 == NULL && current_grad2 == NULL)
         {
-            free_dict();
+            free_all_resources();
             return NULL;
         }
         // Handle the tensor x

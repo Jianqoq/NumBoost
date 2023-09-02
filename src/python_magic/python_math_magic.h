@@ -113,7 +113,6 @@ PyObject *tensor_ifloordiv(PyObject *self, PyObject *other);
         numpy_result = (PyObject *)numboost_binary_scalar_right(a, other, op_enum);                       \
         if (numpy_result == NULL)                                                                         \
             return NULL;                                                                                  \
-        Py_DECREF(numpy_result);                                                                          \
         return numpy_result;                                                                              \
     }                                                                                                     \
     else if (PyArray_Check(other) && PyArray_IsPythonNumber(self))                                        \
@@ -122,8 +121,7 @@ PyObject *tensor_ifloordiv(PyObject *self, PyObject *other);
         numpy_result = (PyObject *)numboost_binary_scalar_left(self, b, op_enum);                         \
         if (numpy_result == NULL)                                                                         \
             return NULL;                                                                                  \
-        Py_DECREF(numpy_result);                                                                          \
-        return numpy_result;                                                                                \
+        return numpy_result;                                                                              \
     }                                                                                                     \
     else                                                                                                  \
     {                                                                                                     \

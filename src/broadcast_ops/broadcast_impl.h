@@ -7,7 +7,7 @@
 #include "omp.h"
 #include "numpy/npy_math.h"
 #include "../numboost_api.h"
-
+#include <xmmintrin.h>
 inline npy_intp dot_prod(npy_intp *strides, npy_intp *indice, int ndim)
 {
     npy_intp index_ = 0;

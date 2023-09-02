@@ -41,11 +41,14 @@ void as_type(PyArrayObject **a, PyArrayObject **result, int target_type);
 int div_result_type_pick(int npy_enum);
 
 int binary_result_type(int op, int a_dtype, int a_size, int b_dtype, int b_size);
-int sequence_result_type(PyArrayObject **arr, int *op_set, int16_t size);
+
+int elementwise_result_type(int op, int a_dtype);
 
 PyObject *binary_result_type_(PyObject *self, PyObject *const *args, size_t nargsf);
 
 PyObject *set_global_float_type(PyObject *self, PyObject *const *args, size_t nargsf);
+
+extern int type_2_size[];
 
 inline npy_half float_cast_half(npy_float value)
 {

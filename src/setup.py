@@ -49,7 +49,7 @@ current_path = os.getcwd()
 files_and_dirs = os.listdir(current_path)
 files = [f for f in files_and_dirs if os.path.isfile(os.path.join(current_path, f))]
 if platform.system() == 'Windows':
-    args = ['/openmp', '/Ox', '/Zc:preprocessor']
+    args = ['/openmp', '/Ox', '/Zc:preprocessor', '/DUSE_SOFT_INTRINSICS']
     extra_link_args = []
     numboost_files = [f for f in files if f.startswith('Numboost') and f.endswith('.pyd')]
 else:

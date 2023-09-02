@@ -292,11 +292,11 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
 #define Float_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
     for (i = 0; i < size; i++)                                               \
     {                                                                        \
-        if (!a_ptr[i])                                                       \
+        if (!b)                                                       \
         {                                                                    \
-            if (a > 0)                                                       \
+            if (a_ptr[i] > 0)                                                       \
                 result_ptr[i] = NPY_INFINITYF;                               \
-            else if (a < 0)                                                  \
+            else if (a_ptr[i] < 0)                                                  \
                 result_ptr[i] = -NPY_INFINITYF;                              \
             else                                                             \
                 result_ptr[i] = NPY_NANF;                                    \
@@ -309,11 +309,11 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
 #define Double_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
     for (i = 0; i < size; i++)                                                \
     {                                                                         \
-        if (!a_ptr[i])                                                        \
+        if (!b)                                                        \
         {                                                                     \
-            if (a > 0)                                                        \
+            if (a_ptr[i] > 0)                                                        \
                 result_ptr[i] = NPY_INFINITY;                                 \
-            else if (a < 0)                                                   \
+            else if (a_ptr[i] < 0)                                                   \
                 result_ptr[i] = -NPY_INFINITY;                                \
             else                                                              \
                 result_ptr[i] = NPY_NAN;                                      \
@@ -326,11 +326,11 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b, int o
 #define LongDouble_Div_Binary_Loop_B_SCALAR(a_ptr, b, result_ptr, op, size, type) \
     for (i = 0; i < size; i++)                                                    \
     {                                                                             \
-        if (!a_ptr[i])                                                            \
+        if (!b)                                                            \
         {                                                                         \
-            if (a > 0)                                                            \
+            if (a_ptr[i] > 0)                                                            \
                 result_ptr[i] = NPY_INFINITYL;                                    \
-            else if (a < 0)                                                       \
+            else if (a_ptr[i] < 0)                                                       \
                 result_ptr[i] = -NPY_INFINITYL;                                   \
             else                                                                  \
                 result_ptr[i] = NPY_NANL;                                         \

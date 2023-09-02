@@ -26,6 +26,10 @@
     m(x) If2(Has_Args(__VA_ARGS__))(, ) \
         If(Has_Args(__VA_ARGS__))(DEFER2(_MAP0)()(m, __VA_ARGS__))
 
+#define MAP_Or(m, x, ...)               \
+    m(x) If2(Has_Args(__VA_ARGS__))(||) \
+        If(Has_Args(__VA_ARGS__))(DEFER2(_MAP0)()(m, __VA_ARGS__))
+
 #define MAP(m, x, y, ...) \
     m(y, x)               \
         If(Has_Args(__VA_ARGS__))(DEFER2(_MAP)()(m, x, __VA_ARGS__))
@@ -40,6 +44,7 @@
 
 #define _MAP0_No_Comma() MAP0_No_Comma
 #define _MAP0() MAP0
+#define _MAP_Or() MAP_Or
 #define _MAP() MAP
 #define _MAP2() MAP2
 #define _MAP3() MAP3
@@ -63,13 +68,32 @@
 #define DEFER2(m) m EMPTY EMPTY()()
 #define Ptr_Saved(x) x##_data_ptr_saved
 #define Stries_Last(x) stride_##x##_last
-#define Parameter_type(x) PyArrayObject *x,
+#define Parameter_type(x) PyArrayObject *x
+#define Parameter_type_(x) PyArrayObject *
 #define Alloc_Copy_Strides_And_Indices(x, type)                                          \
     npy_intp *__strides_##x = PyArray_STRIDES(x);                                        \
     npy_intp *strides_##x = (npy_intp *)malloc(sizeof(npy_intp) * PyArray_NDIM(result)); \
     npy_intp *indice_##x##_cache = (npy_intp *)malloc(sizeof(npy_intp) * ndim);          \
     type *x##_data_ptr_saved = (type *)PyArray_DATA(x);                                  \
     memcpy(strides_##x, __strides_##x, sizeof(npy_intp) * PyArray_NDIM(result));
+
+#define Correct_Type(x, result_type, type) \
+    if (PyArray_TYPE(x) != result_type)    \
+    {                                      \
+        PyArrayObject *x##_ = NULL;        \
+        as_type(&x, &x##_, result_type);   \
+        handler_##x = x##_;                \
+    }
+
+#define Ptrs(x, type) \
+    type *x##_data_ptr_saved = (type *)PyArray_DATA(x);
+
+#define Handlers(x) \
+    PyArrayObject *handler_##x = NULL;
+
+#define Free_Array(x) \
+    if (handler_##x)  \
+        Py_DECREF(handler_##x);
 
 #define Normalize_Strides_By_Type(x, type) \
     strides_##x[i] /= sizeof(type);
@@ -89,6 +113,9 @@
 #define Adjust_Ptr3(x, i) \
     x##_data_ptr_saved -= indice_##x##_cache[i];
 
+#define Contiguous_OrNot(x) \
+    !PyArray_ISCONTIGUOUS(x)
+
 #define Free(x)               \
     free(indice_##x##_cache); \
     free(strides_##x);
@@ -97,10 +124,13 @@
     Expand(MAP0_No_Comma(method, __VA_ARGS__))
 
 #define Replicate0_With_Comma(method, ...) \
-    Expand(MAP0_No_Comma(method, __VA_ARGS__))
+    Expand(MAP0(method, __VA_ARGS__))
 
 #define Replicate0(method, ...) \
     Expand(MAP0(method, __VA_ARGS__))
+
+#define Replicate_Or(method, ...) \
+    Expand(MAP_Or(method, __VA_ARGS__))
 
 #define Replicate(method, x, ...) \
     Expand(MAP(method, x, __VA_ARGS__))

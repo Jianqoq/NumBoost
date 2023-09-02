@@ -21,7 +21,7 @@ int gloabal_float_type = NPY_FLOAT;
         if (is_float_number(b_dtype))                             \
             return float_type_based_on_size(max(a_size, b_size)); \
         else                                                      \
-            return a_dtype;                                       \
+            return max(a_dtype, b_dtype);                         \
     case DIV:                                                     \
         return float_type_based_on_size(max(a_size, b_size));     \
     case MOD:                                                     \
@@ -41,6 +41,11 @@ int gloabal_float_type = NPY_FLOAT;
     case RSHIFT:                                                  \
         if (is_float_number(b_dtype))                             \
             return -1;                                            \
+        else                                                      \
+            return max(a_dtype, b_dtype);                         \
+    case SQUARE:                                                  \
+        if (is_float_number(b_dtype))                             \
+            return float_type_based_on_size(max(a_size, b_size)); \
         else                                                      \
             return max(a_dtype, b_dtype);                         \
     default:                                                      \
@@ -77,6 +82,11 @@ int gloabal_float_type = NPY_FLOAT;
     case RSHIFT:                                                  \
         if (is_float_number(b_dtype))                             \
             return -1;                                            \
+        else                                                      \
+            return max(a_dtype, b_dtype);                         \
+    case SQUARE:                                                  \
+        if (is_float_number(b_dtype))                             \
+            return float_type_based_on_size(max(a_size, b_size)); \
         else                                                      \
             return max(a_dtype, b_dtype);                         \
     default:                                                      \
@@ -635,18 +645,7 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype, int b_size)
         case RSHIFT:
             PyErr_SetString(PyExc_TypeError, "unsupported operand type(s) for >> or <<: 'float' and 'float'");
             return -1;
-        case SIN:
-        case COS:
-        case TAN:
-        case ARCSIN:
-        case ARCCOS:
-        case ARCTAN:
-        case SINH:
-        case COSH:
-        case TANH:
-        case ARCSINH:
-        case ARCCOSH:
-        case ARCTANH:
+        case SQUARE:
             return float_type_based_on_size(max(a_size, b_size));
         default:
             return max(a_dtype, b_dtype);
@@ -687,18 +686,7 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype, int b_size)
         case RSHIFT:
             PyErr_SetString(PyExc_TypeError, "unsupported operand type(s) for >> or <<: 'float' and 'float'");
             return -1;
-        case SIN:
-        case COS:
-        case TAN:
-        case ARCSIN:
-        case ARCCOS:
-        case ARCTAN:
-        case SINH:
-        case COSH:
-        case TANH:
-        case ARCSINH:
-        case ARCCOSH:
-        case ARCTANH:
+        case SQUARE:
             return float_type_based_on_size(max(a_size, b_size));
         default:
             return max(a_dtype, b_dtype);
@@ -710,30 +698,30 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype, int b_size)
     }
 }
 
-int sequence_result_type(PyArrayObject **arr, int *op_set, int16_t size)
+int elementwise_result_type(int op, int a_dtype)
 {
-    int result_type;
-    int result_size;
-    if (size > 1)
+    int a_size = type_2_size[a_dtype];
+    int gloabal_float_size = type_2_size[gloabal_float_type];
+    switch (op)
     {
-        int a_dtype = PyArray_TYPE(arr[0]);
-        int a_size = ((PyArrayObject_fields *)(arr[0]))->descr->elsize;
-        int b_dtype = PyArray_TYPE(arr[1]);
-        int b_size = ((PyArrayObject_fields *)(arr[1]))->descr->elsize;
-        result_type = binary_result_type(op_set[0], a_dtype, a_size, b_dtype, b_size);
-        for (int16_t i = 1; i < size - 1; i++)
-        {
-            Get_Size(result_type, result_size);
-            int b_dtype = PyArray_TYPE(arr[i + 1]);
-            int b_size = ((PyArrayObject_fields *)(arr[i + 1]))->descr->elsize;
-            result_type = binary_result_type(op_set[i], result_type, result_size, b_dtype, b_size);
-        }
-        return result_type;
-    }
-    else
-    {
-        PyErr_SetString(PyExc_ValueError, "One var is no needed for backward fusion.");
-        return -1;
+    case SIN:
+    case COS:
+    case TAN:
+    case ARCSIN:
+    case ARCCOS:
+    case ARCTAN:
+    case SINH:
+    case COSH:
+    case TANH:
+    case ARCSINH:
+    case ARCCOSH:
+    case ARCTANH:
+    case SQRT:
+    case EXP:
+    case LOG:
+        return float_type_based_on_size(max(a_size, gloabal_float_size));
+    default:
+        return a_dtype;
     }
 }
 
@@ -749,3 +737,30 @@ PyObject *binary_result_type_(PyObject *self, PyObject *const *args, size_t narg
     int result = binary_result_type((int)op, (int)a_dtype, (int)a_size, (int)b_dtype, (int)b_size);
     return PyLong_FromLong(result);
 }
+
+int type_2_size[] = {
+    [NPY_BOOL] = sizeof(npy_bool),
+    [NPY_BYTE] = sizeof(npy_byte),
+    [NPY_UBYTE] = sizeof(npy_ubyte),
+    [NPY_SHORT] = sizeof(npy_short),
+    [NPY_USHORT] = sizeof(npy_ushort),
+    [NPY_INT] = sizeof(npy_int),
+    [NPY_UINT] = sizeof(npy_uint),
+    [NPY_LONG] = sizeof(npy_long),
+    [NPY_ULONG] = sizeof(npy_ulong),
+    [NPY_LONGLONG] = sizeof(npy_longlong),
+    [NPY_ULONGLONG] = sizeof(npy_ulonglong),
+    [NPY_FLOAT] = sizeof(npy_float),
+    [NPY_DOUBLE] = sizeof(npy_double),
+    [NPY_LONGDOUBLE] = sizeof(npy_longdouble),
+    [NPY_CFLOAT] = sizeof(npy_cfloat),
+    [NPY_CDOUBLE] = sizeof(npy_cdouble),
+    [NPY_CLONGDOUBLE] = sizeof(npy_clongdouble),
+    [NPY_HALF] = sizeof(npy_half),
+    [NPY_STRING] = 0,
+    [NPY_UNICODE] = 0,
+    [NPY_VOID] = 0,
+    [NPY_OBJECT] = 0,
+    [NPY_DATETIME] = sizeof(npy_datetime),
+    [NPY_TIMEDELTA] = sizeof(npy_timedelta),
+};
