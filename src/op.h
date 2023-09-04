@@ -17,5 +17,24 @@ typedef enum
     BITWISE_INVERT,
     POSITIVE,
     NEGATIVE,
+    SQUARE,
+    /*====== seperator for binary and elementwise operation ======*/
+    SIN,
+    COS,
+    TAN,
+    ARCSIN,
+    ARCCOS,
+    ARCTAN,
+    SINH,
+    COSH,
+    TANH,
+    ARCSINH,
+    ARCCOSH,
+    ARCTANH,
+    SQRT,
+    EXP,
+    LOG,
+    ABS
 } op_type;
+
 #endif

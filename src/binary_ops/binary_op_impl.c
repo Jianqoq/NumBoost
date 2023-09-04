@@ -8,6 +8,7 @@
 #include "../op.h"
 #include "binary_op_impl.h"
 #include "binary_op_def.h"
+#include "binary_node_fuse.h"
 
 PyArrayObject *numboost_binary(PyArrayObject *a, PyArrayObject *b, int op_enum)
 {
@@ -36,6 +37,7 @@ PyArrayObject *numboost_binary(PyArrayObject *a, PyArrayObject *b, int op_enum)
     }
 
     PyArrayObject *result = operations[op_enum][npy_type](a_, b_);
+
     if (a_handler)
         Py_DECREF(a_handler);
     if (b_handler)

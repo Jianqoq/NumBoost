@@ -14,6 +14,7 @@
 #include "clinic/tensor_methods.c.h"
 #include "allocator/allocator.h"
 #include "allocator/tensor_alloc.h"
+#include "numboost_api.h"
 
 Dict *dict = NULL;
 XLA_OPS *xla_ops = NULL;
@@ -367,6 +368,8 @@ void init_map()
     add_entry("TensordotBackward", tensordot_backward_fn);
     add_entry("TransposeBackward", transpose_backward_fn);
     add_entry("SliceBackward", slice_backward_fn);
+    add_entry("AbsBackward", abs_backward_fn);
+
 }
 
 PyMODINIT_FUNC PyInit_Numboost(void)

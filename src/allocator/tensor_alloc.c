@@ -123,7 +123,6 @@ void free_slice_objs(Tensor *key)
 
 void Tensor_dealloc(Tensor *self)
 {
-    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->data); // pretty expensive
     Py_CLEAR(self->x);
     Py_CLEAR(self->y);
@@ -137,8 +136,7 @@ void Tensor_dealloc(Tensor *self)
     free_slice_objs(self);
     if (tensor_pool_maintainer.index < Tensor_Pool_Size - 1)
     {
-        PyObject_GC_Track(self);
-        Py_NewRef(self);
+        Py_INCREF(self);
         tensor_pool_maintainer.tensor_pool[++tensor_pool_maintainer.index] = self;
     }
     else

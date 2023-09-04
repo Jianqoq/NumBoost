@@ -56,7 +56,7 @@ PyObject *tensor_iremainder(PyObject *self, PyObject *other);
 PyObject *tensor_floordiv(PyObject *self, PyObject *other);
 PyObject *tensor_ifloordiv(PyObject *self, PyObject *other);
 
-#define Generic_Binary_Operation(self, other, pynumber_method, op_enum, backward_name)                            \
+#define Generic_Binary_Operation(self, other, pynumber_method, op_enum, backward_name)                    \
     Tensor *tmp;                                                                                          \
     if (TRACK)                                                                                            \
     {                                                                                                     \
@@ -105,6 +105,23 @@ PyObject *tensor_ifloordiv(PyObject *self, PyObject *other);
         PyObject *new_tensor = new_Tensor_scalar(tmp, numpy_result, other, backward_name);                \
         Py_DECREF(numpy_result);                                                                          \
         return new_tensor;                                                                                \
+    }                                                                                                     \
+    else if (PyArray_Check(self) && PyArray_IsPythonNumber(other))                                        \
+    {                                                                                                     \
+        tmp = (Tensor *)self;                                                                                       \
+        PyArrayObject *a = (PyArrayObject *)self;                                                         \
+        numpy_result = (PyObject *)numboost_binary_scalar_right(a, other, op_enum);                       \
+        if (numpy_result == NULL)                                                                         \
+            return NULL;                                                                                  \
+        return numpy_result;                                                                              \
+    }                                                                                                     \
+    else if (PyArray_Check(other) && PyArray_IsPythonNumber(self))                                        \
+    {                                                                                                     \
+        PyArrayObject *b = (PyArrayObject *)other;                                                        \
+        numpy_result = (PyObject *)numboost_binary_scalar_left(self, b, op_enum);                         \
+        if (numpy_result == NULL)                                                                         \
+            return NULL;                                                                                  \
+        return numpy_result;                                                                              \
     }                                                                                                     \
     else                                                                                                  \
     {                                                                                                     \
