@@ -389,20 +389,11 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b,
     macro(a, b_val, op, npy_##data_type, npy_enum)                             \
   }
 
-#define Register_Binary_Operation_Err(name, data_type, sufix, a_type, b_type)  \
-  static PyArrayObject *Binary_##name##data_type##sufix(a_type *a,             \
-                                                        b_type *b) {           \
-    const char *string[] = {"Operation not supported for", #data_type,         \
-                            "type"};                                           \
-    size_t length =                                                            \
-        strlen(string[0]) + strlen(string[1]) + strlen(string[2]) + 1;         \
-    char *string_cat = (char *)malloc(length);                                 \
-    strcpy(string_cat, string[0]);                                             \
-    strcat(string_cat, string[1]);                                             \
-    strcat(string_cat, string[2]);                                             \
-    PyErr_SetString(PyExc_TypeError, string_cat);                              \
-    free(string_cat);                                                          \
-    return NULL;                                                               \
+#define Register_Binary_Operation_Err(name, data_type, sufix, a_type, b_type)          \
+  static PyArrayObject *Binary_##name##data_type##sufix(a_type *a,                     \
+                                                        b_type *b) {                   \
+    PyErr_SetString(PyExc_TypeError, Str(Operation not supported for data_type type)); \
+    return NULL;                                                                       \
   }
 
 #define Binary_Operation(a, b, op, data_type, npy_enum, loop_body)             \
@@ -982,17 +973,6 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b,
     break;                                                                     \
   }
 
-#define NotImplement_Err(name, sufix, a_type, b_type)                          \
-  Register_Binary_Operation_Err(name, cfloat, sufix, a_type, b_type);          \
-  Register_Binary_Operation_Err(name, cdouble, sufix, a_type, b_type);         \
-  Register_Binary_Operation_Err(name, clongdouble, sufix, a_type, b_type);     \
-  Register_Binary_Operation_Err(name, object, sufix, a_type, b_type);          \
-  Register_Binary_Operation_Err(name, string, sufix, a_type, b_type);          \
-  Register_Binary_Operation_Err(name, unicode, sufix, a_type, b_type);         \
-  Register_Binary_Operation_Err(name, void, sufix, a_type, b_type);            \
-  Register_Binary_Operation_Err(name, datetime, sufix, a_type, b_type);        \
-  Register_Binary_Operation_Err(name, timedelta, sufix, a_type, b_type);
-
 #define Register_Int_Binary_Operations(name, sufix, Operation, nb_method,      \
                                        npy_enum_convert, loop_body)            \
   Register_Binary_Operation##sufix(name, bool, Operation, nb_method,           \
@@ -1019,19 +999,6 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b,
                                    npy_enum_convert(NPY_ULONGLONG),            \
                                    loop_body);
 
-#define Register_Int_Binary_OperationsErr(name, sufix, a_type, b_type)         \
-  Register_Binary_Operation_Err(name, bool, sufix, a_type, b_type);            \
-  Register_Binary_Operation_Err(name, byte, sufix, a_type, b_type);            \
-  Register_Binary_Operation_Err(name, ubyte, sufix, a_type, b_type);           \
-  Register_Binary_Operation_Err(name, short, sufix, a_type, b_type);           \
-  Register_Binary_Operation_Err(name, ushort, sufix, a_type, b_type);          \
-  Register_Binary_Operation_Err(name, int, sufix, a_type, b_type);             \
-  Register_Binary_Operation_Err(name, uint, sufix, a_type, b_type);            \
-  Register_Binary_Operation_Err(name, long, sufix, a_type, b_type);            \
-  Register_Binary_Operation_Err(name, ulong, sufix, a_type, b_type);           \
-  Register_Binary_Operation_Err(name, longlong, sufix, a_type, b_type);        \
-  Register_Binary_Operation_Err(name, ulonglong, sufix, a_type, b_type);
-
 #define Pow_LoopBody(type, i, result_ptr, stride_a_last, stride_pow_last,      \
                      a_ptr, power_ptr)                                         \
   Use_Float_When_Half(type) a_val =                                            \
@@ -1039,7 +1006,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b,
   Use_Float_When_Half(type) power_val =                                        \
       Cast_Float_When_Half(type, power_ptr[i * stride_pow_last]);              \
   Use_Float_When_Half(type) result =                                           \
-      Use_Method(type, npy_pow, a_val, power_val);                             \
+      Use_Method(Use_Float_When_Half(type), npy_pow, a_val, power_val);        \
   result_ptr[i] = Cast_Half_When_Half(type, result);
 
 #define Pow_LoopBody_Sequential(type, i, result_ptr, a_ptr, power_ptr)         \
@@ -1047,7 +1014,7 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b,
   Use_Float_When_Half(type) power_val =                                        \
       Cast_Float_When_Half(type, power_ptr[i]);                                \
   Use_Float_When_Half(type) result =                                           \
-      Use_Method(type, npy_pow, a_val, power_val);                             \
+      Use_Method(Use_Float_When_Half(type), npy_pow, a_val, power_val);        \
   result_ptr[i] = Cast_Half_When_Half(type, result);
 
 #define Register_Binary_Operation_New(                                         \

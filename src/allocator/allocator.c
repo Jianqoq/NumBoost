@@ -26,8 +26,9 @@ uint64_t available_memory = 0;
     sysinfo(&info);           \
     (mem) = info.freeram;
 #define Numboost_Parallel_Memset(ptr, size, value)         \
-    _Pragma("omp parallel for") for (i = 0; i < size; i++) \
-        ptr[i] = value;
+    npy_intp __i;
+    _Pragma("omp parallel for") for (__i = 0; __i < size; __i++) \
+        ptr[__i] = value;
 #endif
 
 #ifdef Allocator_Debug
@@ -166,7 +167,6 @@ static void *default_calloc(void *ctx, size_t nelem, size_t elsize)
     if (!ptr)
         return NULL;
     char *tmp = (char *)ptr;
-    size_t i;
     Numboost_Parallel_Memset(tmp, total_size, 0);
     return ptr;
 }

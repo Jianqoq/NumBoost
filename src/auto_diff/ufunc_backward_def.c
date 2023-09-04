@@ -3,7 +3,7 @@
 #include "ufunc_backward_def.h"
 #include "omp.h"
 
-#define Div(val1, val2, result, type)                                          \
+#define Div(val1, val2, result, input_type, output_type)                       \
   if (!(val2)) {                                                               \
     if (val1 > 0)                                                              \
       result = Use_Inf(type);                                                  \
@@ -13,18 +13,22 @@
       result = Use_Nan(type);                                                  \
     continue;                                                                  \
   } else                                                                       \
-    result = Cast_Half_When_Half(type, val1 / (val2));
+    result = Cast_Half_When_Half(output_type,                                  \
+                                 Cast_Half_When_Half(input_type, val1) /       \
+                                     Cast_Half_When_Half(input_type, val2));
 
-#define Div2(val1, val2, result, type)                                         \
+#define Div2(val1, val2, result, input_type, output_type)                      \
   if (!(val2)) {                                                               \
     if (val1 > 0)                                                              \
-      result = Use_Inf(type);                                                  \
+      result = Use_Inf(output_type);                                           \
     else if (val1 < 0)                                                         \
-      result = -Use_Inf(type);                                                 \
+      result = -Use_Inf(output_type);                                          \
     else                                                                       \
-      result = Use_Nan(type);                                                  \
+      result = Use_Nan(output_type);                                           \
   } else                                                                       \
-    result = Cast_Half_When_Half(type, val1 / (val2));
+    result = Cast_Half_When_Half(output_type,                                  \
+                                 Cast_Half_When_Half(input_type, val1) /       \
+                                     Cast_Half_When_Half(input_type, val2));
 
 /*==========================================================================================================================================================*/
 /*sin backward fusion*/
@@ -76,14 +80,14 @@ Register_FuseBackward_Operation_Array(cos, a, b);
   Use_Float_When_Half(type) grad =                                             \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
   Use_Float_When_Half(type) val3;                                              \
-  Div(1, cos_x, val3, type);                                                   \
+  Div(1, cos_x, val3, Use_Float_When_Half(type), Use_Float_When_Half(type));   \
   result_ptr[i] = Cast_Half_When_Half(type, grad * val3 * val3);
 
 #define TanBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)     \
   Use_Float_When_Half(type) cos_x = Use_Method(type, npy_cos, a_ptr[i]);       \
   Use_Float_When_Half(type) val2 = Cast_Float_When_Half(type, b_ptr[i]);       \
   Use_Float_When_Half(type) val3;                                              \
-  Div(1, cos_x, val3, type);                                                   \
+  Div(1, cos_x, val3, Use_Float_When_Half(type), Use_Float_When_Half(type));   \
   result_ptr[i] = Cast_Half_When_Half(type, val2 * val3 * val3);
 
 Register_FuseBackward_Operation_FloatingTypes(tan, TanBackward_LoopBody,
@@ -101,9 +105,10 @@ Register_FuseBackward_Operation_Array(tan, a, b);
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
   Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(type, npy_sqrt, sub_result);                                  \
+      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
   Use_Float_When_Half(type) reciprocal_sqrt_result;                            \
-  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type));     \
+  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type),      \
+       Use_Float_When_Half(type));                                             \
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
   result_ptr[i] = Cast_Half_When_Half(type, b_val * reciprocal_sqrt_result);
@@ -113,9 +118,10 @@ Register_FuseBackward_Operation_Array(tan, a, b);
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
   Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(type, npy_sqrt, sub_result);                                  \
+      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
   Use_Float_When_Half(type) reciprocal_sqrt_result;                            \
-  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type));     \
+  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type),      \
+       Use_Float_When_Half(type));                                             \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
   result_ptr[i] = Cast_Half_When_Half(type, b_val * reciprocal_sqrt_result);
 
@@ -133,9 +139,10 @@ Register_FuseBackward_Operation_Array(arcsin, a, b);
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
   Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(type, npy_sqrt, sub_result);                                  \
+      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
   Use_Float_When_Half(type) reciprocal_sqrt_result;                            \
-  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type));     \
+  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type),      \
+       Use_Float_When_Half(type));                                             \
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
   result_ptr[i] = -Cast_Half_When_Half(type, b_val * reciprocal_sqrt_result);
@@ -145,9 +152,10 @@ Register_FuseBackward_Operation_Array(arcsin, a, b);
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
   Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(type, npy_sqrt, sub_result);                                  \
+      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
   Use_Float_When_Half(type) reciprocal_sqrt_result;                            \
-  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type));     \
+  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type),      \
+       Use_Float_When_Half(type));                                             \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
   result_ptr[i] = -Cast_Half_When_Half(type, b_val * reciprocal_sqrt_result);
 
@@ -165,7 +173,8 @@ Register_FuseBackward_Operation_Array(arccos, a, b);
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) add_result = 1 + square_result;                    \
   Use_Float_When_Half(type) reciprocal_add_result;                             \
-  Div2(1, add_result, reciprocal_add_result, Use_Float_When_Half(type));       \
+  Div2(1, add_result, reciprocal_add_result, Use_Float_When_Half(type),        \
+       Use_Float_When_Half(type));                                             \
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
   result_ptr[i] = Cast_Half_When_Half(type, b_val * reciprocal_add_result);
@@ -175,7 +184,8 @@ Register_FuseBackward_Operation_Array(arccos, a, b);
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) add_result = 1 + square_result;                    \
   Use_Float_When_Half(type) reciprocal_add_result;                             \
-  Div2(1, add_result, reciprocal_add_result, Use_Float_When_Half(type));       \
+  Div2(1, add_result, reciprocal_add_result, Use_Float_When_Half(type),        \
+       Use_Float_When_Half(type));                                             \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
   result_ptr[i] = Cast_Half_When_Half(type, b_val * reciprocal_add_result);
 
@@ -256,19 +266,19 @@ Register_FuseBackward_Operation_Array(tanh, a, b);
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) add_result = 1 + square_result;                    \
   Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(type, npy_sqrt, add_result);                                  \
+      Use_Method(Use_Float_When_Half(type), npy_sqrt, add_result);             \
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Div(b_val, sqrt_result, result_ptr[i], npy_float);
+  Div(b_val, sqrt_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 #define ArcsinhBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr) \
   Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) add_result = 1 + square_result;                    \
   Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(type, npy_sqrt, add_result);                                  \
+      Use_Method(Use_Float_When_Half(type), npy_sqrt, add_result);             \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Div(b_val, sqrt_result, result_ptr[i], npy_float);
+  Div(b_val, sqrt_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(
     arcsinh, ArcsinhBackward_LoopBody, ArcsinhBackward_LoopBody_Sequential, a,
@@ -285,19 +295,19 @@ Register_FuseBackward_Operation_Array(arcsinh, a, b);
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) sub_result = square_result - 1;                    \
   Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(type, npy_sqrt, sub_result);                                  \
+      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Div(b_val, sqrt_result, result_ptr[i], npy_float);
+  Div(b_val, sqrt_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 #define ArccoshBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr) \
   Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) sub_result = square_result - 1;                    \
   Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(type, npy_sqrt, sub_result);                                  \
+      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Div(b_val, sqrt_result, result_ptr[i], npy_float);
+  Div(b_val, sqrt_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(
     arccosh, ArccoshBackward_LoopBody, ArccoshBackward_LoopBody_Sequential, a,
@@ -315,14 +325,14 @@ Register_FuseBackward_Operation_Array(arccosh, a, b);
   Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Div(b_val, sub_result, result_ptr[i], npy_float);
+  Div(b_val, sub_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 #define ArctanhBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr) \
   Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
   Use_Float_When_Half(type) square_result = a_val * a_val;                     \
   Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Div(b_val, sub_result, result_ptr[i], npy_float);
+  Div(b_val, sub_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(
     arctanh, ArctanhBackward_LoopBody, ArctanhBackward_LoopBody_Sequential, a,
@@ -336,14 +346,16 @@ Register_FuseBackward_Operation_Array(arctanh, a, b);
                              stride_b_last, a_ptr, b_ptr)                      \
   Use_Float_When_Half(type) a_val =                                            \
       Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) exp_result = Use_Method(type, npy_exp, a_val);     \
+  Use_Float_When_Half(type) exp_result =                                       \
+      Use_Method(Use_Float_When_Half(type), npy_exp, a_val);                   \
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
   result_ptr[i] = Cast_Half_When_Half(type, exp_result * b_val);
 
 #define ExpBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)     \
   Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) exp_result = Use_Method(type, npy_exp, a_val);     \
+  Use_Float_When_Half(type) exp_result =                                       \
+      Use_Method(Use_Float_When_Half(type), npy_exp, a_val);                   \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
   result_ptr[i] = Cast_Half_When_Half(type, exp_result * b_val);
 
@@ -361,12 +373,12 @@ Register_FuseBackward_Operation_Array(exp, a, b);
       Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Div(a_val, b_val, result_ptr[i], npy_float);
+  Div(a_val, b_val, result_ptr[i], Use_Float_When_Half(type), type);
 
 #define LogBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)     \
   Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Div(a_val, b_val, result_ptr[i], npy_float);
+  Div(a_val, b_val, result_ptr[i], Use_Float_When_Half(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(log, LogBackward_LoopBody,
                                               LogBackward_LoopBody_Sequential,
@@ -382,18 +394,20 @@ Register_FuseBackward_Operation_Array(log, a, b);
       Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Use_Float_When_Half(type) log_result = Use_Method(type, npy_log, 10);        \
+  Use_Float_When_Half(type) log_result =                                       \
+      Use_Method(Use_Float_When_Half(type), npy_log, 10);                      \
   Use_Float_When_Half(type) mul_result =                                       \
       Cast_Half_When_Half(type, log_result * b_val);                           \
-  Div(a_val, mul_result, result_ptr[i], npy_float);
+  Div(a_val, mul_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 #define Log10Backward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)   \
   Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Use_Float_When_Half(type) log_result = Use_Method(type, npy_log, 10);        \
+  Use_Float_When_Half(type) log_result =                                       \
+      Use_Method(Use_Float_When_Half(type), npy_log, 10);                      \
   Use_Float_When_Half(type) mul_result =                                       \
       Cast_Half_When_Half(type, log_result * b_val);                           \
-  Div(a_val, mul_result, result_ptr[i], npy_float);
+  Div(a_val, mul_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(log10, Log10Backward_LoopBody,
                                               Log10Backward_LoopBody_Sequential,
@@ -413,13 +427,13 @@ Register_FuseBackward_Operation_Array(log10, a, b);
   Use_Float_When_Half(type) b_val =                                            \
       Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
   Use_Float_When_Half(type) mul_result = a_val * 2;                            \
-  Div(b_val, mul_result, result_ptr[i], npy_float);
+  Div(b_val, mul_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 #define SqrtBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)    \
   Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
   Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
   Use_Float_When_Half(type) mul_result = a_val * 2;                            \
-  Div(b_val, mul_result, result_ptr[i], npy_float);
+  Div(b_val, mul_result, result_ptr[i], Use_Float_When_Half(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(sqrt, SqrtBackward_LoopBody,
                                               SqrtBackward_LoopBody_Sequential,
@@ -462,8 +476,8 @@ Register_FuseBackward_Operation_Array(abs, a, b);
   Use_Float_When_Half(type) grad_val =                                         \
       Cast_Float_When_Half(type, grad_ptr[i * stride_grad_last]);              \
   Use_Float_When_Half(type) tmp =                                              \
-      Use_Method(type, npy_pow, a_val, power_val - 1);                         \
-  result_ptr[i] = tmp * power_val * grad_val;
+      Use_Method(Use_Float_When_Half(type), npy_pow, a_val, power_val - 1);    \
+  result_ptr[i] = Cast_Half_When_Half(type, tmp * power_val * grad_val);
 
 #define PowerBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr,          \
                                           power_ptr, grad_ptr)                 \
@@ -473,8 +487,8 @@ Register_FuseBackward_Operation_Array(abs, a, b);
   Use_Float_When_Half(type) grad_val =                                         \
       Cast_Float_When_Half(type, grad_ptr[i]);                                 \
   Use_Float_When_Half(type) tmp =                                              \
-      Use_Method(type, npy_pow, a_val, power_val - 1);                         \
-  result_ptr[i] = tmp * power_val * grad_val;
+      Use_Method(Use_Float_When_Half(type), npy_pow, a_val, power_val - 1);    \
+  result_ptr[i] = Cast_Half_When_Half(type, tmp * power_val * grad_val);
 
 Register_FuseBackward_Operation_FloatingTypes(power, PowerBackward_LoopBody,
                                               PowerBackward_LoopBody_Sequential,

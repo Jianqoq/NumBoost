@@ -413,7 +413,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     Replicate0_No_Comma(Handlers, __VA_ARGS__);                                \
     Replicate2(Correct_Type, result_type, type, __VA_ARGS__);                  \
     npy_intp *shapes[] = {Replicate0(Shapes, __VA_ARGS__)};                    \
-    npy_intp ndims[] = {Replicate0(NDims, __VA_ARGS__)};                       \
+    int ndims[] = {Replicate0(NDims, __VA_ARGS__)};                       \
     npy_intp *shape_ref = shapes[0];                                           \
     int ndim_ref = ndims[0];                                                   \
     for (int i = 0; i < Args_Num(__VA_ARGS__); i++) {                          \

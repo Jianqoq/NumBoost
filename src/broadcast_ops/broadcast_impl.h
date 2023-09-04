@@ -136,8 +136,6 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
     indice_b_[i] = strides_b_[i] * shape_[i];                                  \
   }
 
-#define n(x) #x
-
 #define Register_Broadcast_Operation(type, suffix, op, inner_loop_body)        \
   static PyArrayObject *Broadcast_Standard_##type##_##suffix(                  \
       PyArrayObject *a_, PyArrayObject *b_, int op_enum, int result_type) {    \
@@ -280,31 +278,6 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
     free(shape);                                                               \
     free(handler);                                                             \
     return result;                                                             \
-  }
-
-#define Register_Broadcast_Operation_All_Err(type)                             \
-  Register_Broadcast_Operation_Err(type, add_);                                \
-  Register_Broadcast_Operation_Err(type, sub_);                                \
-  Register_Broadcast_Operation_Err(type, mul_);                                \
-  Register_Broadcast_Operation_Err(type, div_);                                \
-  Register_Broadcast_Operation_Err(type, mod_);                                \
-  Register_Broadcast_Operation_Err(type, lshift_);                             \
-  Register_Broadcast_Operation_Err(type, rshift_);                             \
-  Register_Broadcast_Operation_Err(type, pow_);
-
-#define Register_Broadcast_Operation_Err(type, suffix)                         \
-  static PyArrayObject *Broadcast_Standard_##type##_##suffix(                  \
-      PyArrayObject *a, PyArrayObject *b, int op_enum, int result_type) {      \
-    const char *string[] = {"Operation not supported for", #type, "type"};     \
-    size_t length =                                                            \
-        strlen(string[0]) + strlen(string[1]) + strlen(string[2]) + 1;         \
-    char *string_cat = (char *)malloc(length);                                 \
-    strcpy(string_cat, string[0]);                                             \
-    strcat(string_cat, string[1]);                                             \
-    strcat(string_cat, string[2]);                                             \
-    PyErr_SetString(PyExc_TypeError, string_cat);                              \
-    free(string_cat);                                                          \
-    return NULL;                                                               \
   }
 
 #endif

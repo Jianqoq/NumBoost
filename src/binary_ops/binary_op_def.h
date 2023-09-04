@@ -3,6 +3,30 @@
 #include "binary_op_impl.h"
 #include "numpy/arrayobject.h"
 
+#define NotImplement_Err(name, sufix, a_type, b_type)                          \
+  Register_Binary_Operation_Err(name, cfloat, sufix, a_type, b_type);          \
+  Register_Binary_Operation_Err(name, cdouble, sufix, a_type, b_type);         \
+  Register_Binary_Operation_Err(name, clongdouble, sufix, a_type, b_type);     \
+  Register_Binary_Operation_Err(name, object, sufix, a_type, b_type);          \
+  Register_Binary_Operation_Err(name, string, sufix, a_type, b_type);          \
+  Register_Binary_Operation_Err(name, unicode, sufix, a_type, b_type);         \
+  Register_Binary_Operation_Err(name, void, sufix, a_type, b_type);            \
+  Register_Binary_Operation_Err(name, datetime, sufix, a_type, b_type);        \
+  Register_Binary_Operation_Err(name, timedelta, sufix, a_type, b_type);
+
+#define Register_Int_Binary_OperationsErr(name, sufix, a_type, b_type)         \
+  Register_Binary_Operation_Err(name, bool, sufix, a_type, b_type);            \
+  Register_Binary_Operation_Err(name, byte, sufix, a_type, b_type);            \
+  Register_Binary_Operation_Err(name, ubyte, sufix, a_type, b_type);           \
+  Register_Binary_Operation_Err(name, short, sufix, a_type, b_type);           \
+  Register_Binary_Operation_Err(name, ushort, sufix, a_type, b_type);          \
+  Register_Binary_Operation_Err(name, int, sufix, a_type, b_type);             \
+  Register_Binary_Operation_Err(name, uint, sufix, a_type, b_type);            \
+  Register_Binary_Operation_Err(name, long, sufix, a_type, b_type);            \
+  Register_Binary_Operation_Err(name, ulong, sufix, a_type, b_type);           \
+  Register_Binary_Operation_Err(name, longlong, sufix, a_type, b_type);        \
+  Register_Binary_Operation_Err(name, ulonglong, sufix, a_type, b_type);
+
 #define Register_Binary_Operation_Array(op, sufix, a_type, b_type)             \
   PyArrayObject *(*op##_operations##sufix[])(a_type *, b_type *) = {           \
       Binary_##op##_bool##sufix,        Binary_##op##_byte##sufix,             \
