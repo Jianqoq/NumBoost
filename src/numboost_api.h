@@ -59,14 +59,21 @@
 #define Empty(x)
 #define Is_Type(x) Concat_(Is_Type_, x)
 #define Should_Use_Specific_Method(x) Second(Is_Type(x), 0)
-#define Use_Method(x, name, ...)                                               \
-  Should_Use(Should_Use_Specific_Method(x))(x)(name)(Replicate_With_Comma(     \
-      Cast_Float_If_Is_Half, Should_Cast_To, x, __VA_ARGS__))
 
-/*================================== check specific method end
- * ===================*/
+/*
+@params:
+    type: the type of the input parameters
+    method_name: the name of the double method, npy_pow, npy_sin, etc.
+    ...: the parameters of the method
+*/
+#define Use_Method(type, method_name, ...)                                            \
+  Should_Use(Should_Use_Specific_Method(type))(type)(                          \
+      method_name)(Replicate_With_Comma(Cast_Float_If_Is_Half, Should_Cast_To, type,  \
+                                 __VA_ARGS__))
 
-/*================================== use sepcific inf/nan ===================*/
+/*================= check specific method end ===================*/
+
+/*================ use sepcific inf/nan ===================*/
 #define Should_Use_Specific_Inf_Nan(x) Second(Is_Type(x), 0)
 #define Should_Use_Inf_Nan(x) Concat_(Should_Use_Inf_Nan_, x)
 #define Inf_npy_half 0x7C00
@@ -78,12 +85,12 @@
 #define Nan_npy_double NPY_NAN
 #define Nan_npy_longdouble NPY_NANL
 #define Should_Use_Inf_1(x) Inf_##x
-#define Should_Use_Inf_0(x)                                                    \
-  0 /*Should not happen, numboost will always predict div result type as       \
-       floating type*/
+#define Should_Use_Inf_0(x) 0
+/*Should not happen, numboost will always predict div result type as
+     floating type*/
 #define Should_Use_Nan_1(x) Nan_##x
-#define Should_Use_Nan_0(x)                                                    \
-  0 /*Should not happen, numboost will always predict div result type as       \
+#define Should_Use_Nan_0(x) 0
+/*Should not happen, numboost will always predict div result type as
        floating type*/
 #define Should_Use_Inf(x) Concat_(Should_Use_Inf_, x)
 #define Use_Inf(x) Should_Use_Inf(Should_Use_Specific_Inf_Nan(x))(x)
@@ -413,7 +420,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     Replicate0_No_Comma(Handlers, __VA_ARGS__);                                \
     Replicate2(Correct_Type, result_type, type, __VA_ARGS__);                  \
     npy_intp *shapes[] = {Replicate0(Shapes, __VA_ARGS__)};                    \
-    int ndims[] = {Replicate0(NDims, __VA_ARGS__)};                       \
+    int ndims[] = {Replicate0(NDims, __VA_ARGS__)};                            \
     npy_intp *shape_ref = shapes[0];                                           \
     int ndim_ref = ndims[0];                                                   \
     for (int i = 0; i < Args_Num(__VA_ARGS__); i++) {                          \

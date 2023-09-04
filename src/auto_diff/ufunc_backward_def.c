@@ -3,6 +3,9 @@
 #include "ufunc_backward_def.h"
 #include "omp.h"
 
+#define Generic(x) Use_Float_When_Half(x)
+#define Map_Method(...) Use_Method(__VA_ARGS__)
+
 #define Div(val1, val2, result, input_type, output_type)                       \
   if (!(val2)) {                                                               \
     if (val1 > 0)                                                              \
@@ -34,15 +37,13 @@
 /*sin backward fusion*/
 #define SinBackward_LoopBody(type, i, result_ptr, stride_a_last,               \
                              stride_b_last, a_ptr, b_ptr)                      \
-  Use_Float_When_Half(type) val1 =                                             \
-      Use_Method(type, npy_cos, a_ptr[i * stride_a_last]);                     \
-  Use_Float_When_Half(type) val2 =                                             \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) val1 = Map_Method(type, npy_cos, a_ptr[i * stride_a_last]);    \
+  Generic(type) val2 = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);   \
   result_ptr[i] = Cast_Half_When_Half(type, val1 * val2);
 
 #define SinBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)     \
-  Use_Float_When_Half(type) val1 = Use_Method(type, npy_cos, a_ptr[i]);        \
-  Use_Float_When_Half(type) val2 = Cast_Float_When_Half(type, b_ptr[i]);       \
+  Generic(type) val1 = Map_Method(type, npy_cos, a_ptr[i]);                    \
+  Generic(type) val2 = Cast_Float_When_Half(type, b_ptr[i]);                   \
   result_ptr[i] = Cast_Half_When_Half(type, val1 * val2);
 
 Register_FuseBackward_Operation_FloatingTypes(sin, SinBackward_LoopBody,
@@ -55,15 +56,13 @@ Register_FuseBackward_Operation_Array(sin, a, b)
 /*cos backward fusion*/
 #define CosBackward_LoopBody(type, i, result_ptr, stride_a_last,               \
                              stride_b_last, a_ptr, b_ptr)                      \
-  Use_Float_When_Half(type) val1 =                                             \
-      -Use_Method(type, npy_sin, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) val2 =                                             \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) val1 = -Map_Method(type, npy_sin, a_ptr[i * stride_a_last]);   \
+  Generic(type) val2 = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);   \
   result_ptr[i] = Cast_Half_When_Half(type, val1 * val2);
 
 #define CosBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)     \
-  Use_Float_When_Half(type) val1 = -Use_Method(type, npy_sin, a_ptr[i]);       \
-  Use_Float_When_Half(type) val2 = Cast_Float_When_Half(type, b_ptr[i]);       \
+  Generic(type) val1 = -Map_Method(type, npy_sin, a_ptr[i]);                   \
+  Generic(type) val2 = Cast_Float_When_Half(type, b_ptr[i]);                   \
   result_ptr[i] = Cast_Half_When_Half(type, val1 * val2);
 
     Register_FuseBackward_Operation_FloatingTypes(
@@ -75,19 +74,17 @@ Register_FuseBackward_Operation_Array(cos, a, b);
 /*tan backward pow(1 / cos(x), 2)*/
 #define TanBackward_LoopBody(type, i, result_ptr, stride_a_last,               \
                              stride_b_last, a_ptr, b_ptr)                      \
-  Use_Float_When_Half(type) cos_x =                                            \
-      Use_Method(type, npy_cos, a_ptr[i * stride_a_last]);                     \
-  Use_Float_When_Half(type) grad =                                             \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Use_Float_When_Half(type) val3;                                              \
-  Div(1, cos_x, val3, Use_Float_When_Half(type), Use_Float_When_Half(type));   \
+  Generic(type) cos_x = Map_Method(type, npy_cos, a_ptr[i * stride_a_last]);   \
+  Generic(type) grad = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);   \
+  Generic(type) val3;                                                          \
+  Div(1, cos_x, val3, Generic(type), Generic(type));                           \
   result_ptr[i] = Cast_Half_When_Half(type, grad * val3 * val3);
 
 #define TanBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)     \
-  Use_Float_When_Half(type) cos_x = Use_Method(type, npy_cos, a_ptr[i]);       \
-  Use_Float_When_Half(type) val2 = Cast_Float_When_Half(type, b_ptr[i]);       \
-  Use_Float_When_Half(type) val3;                                              \
-  Div(1, cos_x, val3, Use_Float_When_Half(type), Use_Float_When_Half(type));   \
+  Generic(type) cos_x = Map_Method(type, npy_cos, a_ptr[i]);                   \
+  Generic(type) val2 = Cast_Float_When_Half(type, b_ptr[i]);                   \
+  Generic(type) val3;                                                          \
+  Div(1, cos_x, val3, Generic(type), Generic(type));                           \
   result_ptr[i] = Cast_Half_When_Half(type, val2 * val3 * val3);
 
 Register_FuseBackward_Operation_FloatingTypes(tan, TanBackward_LoopBody,
@@ -100,29 +97,23 @@ Register_FuseBackward_Operation_Array(tan, a, b);
 /*arcsin backward fusion*/
 #define ArcsinBackward_LoopBody(type, i, result_ptr, stride_a_last,            \
                                 stride_b_last, a_ptr, b_ptr)                   \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
-  Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
-  Use_Float_When_Half(type) reciprocal_sqrt_result;                            \
-  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type),      \
-       Use_Float_When_Half(type));                                             \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) sub_result = 1 - square_result;                                \
+  Generic(type) sqrt_result = Map_Method(Generic(type), npy_sqrt, sub_result); \
+  Generic(type) reciprocal_sqrt_result;                                        \
+  Div2(1, sqrt_result, reciprocal_sqrt_result, Generic(type), Generic(type));  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
   result_ptr[i] = Cast_Half_When_Half(type, b_val * reciprocal_sqrt_result);
 
 #define ArcsinBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)  \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
-  Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
-  Use_Float_When_Half(type) reciprocal_sqrt_result;                            \
-  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type),      \
-       Use_Float_When_Half(type));                                             \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) sub_result = 1 - square_result;                                \
+  Generic(type) sqrt_result = Map_Method(Generic(type), npy_sqrt, sub_result); \
+  Generic(type) reciprocal_sqrt_result;                                        \
+  Div2(1, sqrt_result, reciprocal_sqrt_result, Generic(type), Generic(type));  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
   result_ptr[i] = Cast_Half_When_Half(type, b_val * reciprocal_sqrt_result);
 
 Register_FuseBackward_Operation_FloatingTypes(
@@ -134,29 +125,23 @@ Register_FuseBackward_Operation_Array(arcsin, a, b);
 /*arccos backward fusion*/
 #define ArccosBackward_LoopBody(type, i, result_ptr, stride_a_last,            \
                                 stride_b_last, a_ptr, b_ptr)                   \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
-  Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
-  Use_Float_When_Half(type) reciprocal_sqrt_result;                            \
-  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type),      \
-       Use_Float_When_Half(type));                                             \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) sub_result = 1 - square_result;                                \
+  Generic(type) sqrt_result = Map_Method(Generic(type), npy_sqrt, sub_result); \
+  Generic(type) reciprocal_sqrt_result;                                        \
+  Div2(1, sqrt_result, reciprocal_sqrt_result, Generic(type), Generic(type));  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
   result_ptr[i] = -Cast_Half_When_Half(type, b_val * reciprocal_sqrt_result);
 
 #define ArccosBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)  \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
-  Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
-  Use_Float_When_Half(type) reciprocal_sqrt_result;                            \
-  Div2(1, sqrt_result, reciprocal_sqrt_result, Use_Float_When_Half(type),      \
-       Use_Float_When_Half(type));                                             \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) sub_result = 1 - square_result;                                \
+  Generic(type) sqrt_result = Map_Method(Generic(type), npy_sqrt, sub_result); \
+  Generic(type) reciprocal_sqrt_result;                                        \
+  Div2(1, sqrt_result, reciprocal_sqrt_result, Generic(type), Generic(type));  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
   result_ptr[i] = -Cast_Half_When_Half(type, b_val * reciprocal_sqrt_result);
 
 Register_FuseBackward_Operation_FloatingTypes(
@@ -168,25 +153,21 @@ Register_FuseBackward_Operation_Array(arccos, a, b);
 /*arctan backward fusion*/
 #define ArctanBackward_LoopBody(type, i, result_ptr, stride_a_last,            \
                                 stride_b_last, a_ptr, b_ptr)                   \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) add_result = 1 + square_result;                    \
-  Use_Float_When_Half(type) reciprocal_add_result;                             \
-  Div2(1, add_result, reciprocal_add_result, Use_Float_When_Half(type),        \
-       Use_Float_When_Half(type));                                             \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) add_result = 1 + square_result;                                \
+  Generic(type) reciprocal_add_result;                                         \
+  Div2(1, add_result, reciprocal_add_result, Generic(type), Generic(type));    \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
   result_ptr[i] = Cast_Half_When_Half(type, b_val * reciprocal_add_result);
 
 #define ArctanBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)  \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) add_result = 1 + square_result;                    \
-  Use_Float_When_Half(type) reciprocal_add_result;                             \
-  Div2(1, add_result, reciprocal_add_result, Use_Float_When_Half(type),        \
-       Use_Float_When_Half(type));                                             \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) add_result = 1 + square_result;                                \
+  Generic(type) reciprocal_add_result;                                         \
+  Div2(1, add_result, reciprocal_add_result, Generic(type), Generic(type));    \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
   result_ptr[i] = Cast_Half_When_Half(type, b_val * reciprocal_add_result);
 
 Register_FuseBackward_Operation_FloatingTypes(
@@ -198,15 +179,13 @@ Register_FuseBackward_Operation_Array(arctan, a, b);
 /*sinh backward fusion*/
 #define SinhBackward_LoopBody(type, i, result_ptr, stride_a_last,              \
                               stride_b_last, a_ptr, b_ptr)                     \
-  Use_Float_When_Half(type) a_val =                                            \
-      Use_Method(type, npy_cosh, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) a_val = Map_Method(type, npy_cosh, a_ptr[i * stride_a_last]);  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
   result_ptr[i] = Cast_Half_When_Half(type, a_val * b_val);
 
 #define SinhBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)    \
-  Use_Float_When_Half(type) a_val = Use_Method(type, npy_cosh, a_ptr[i]);      \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
+  Generic(type) a_val = Map_Method(type, npy_cosh, a_ptr[i]);                  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
   result_ptr[i] = Cast_Half_When_Half(type, a_val * b_val);
 
 Register_FuseBackward_Operation_FloatingTypes(sinh, SinhBackward_LoopBody,
@@ -219,15 +198,13 @@ Register_FuseBackward_Operation_Array(sinh, a, b);
 /*cosh backward fusion*/
 #define CoshBackward_LoopBody(type, i, result_ptr, stride_a_last,              \
                               stride_b_last, a_ptr, b_ptr)                     \
-  Use_Float_When_Half(type) a_val =                                            \
-      Use_Method(type, npy_sinh, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) a_val = Map_Method(type, npy_sinh, a_ptr[i * stride_a_last]);  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
   result_ptr[i] = Cast_Half_When_Half(type, a_val * b_val);
 
 #define CoshBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)    \
-  Use_Float_When_Half(type) a_val = Use_Method(type, npy_sinh, a_ptr[i]);      \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
+  Generic(type) a_val = Map_Method(type, npy_sinh, a_ptr[i]);                  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
   result_ptr[i] = Cast_Half_When_Half(type, a_val * b_val);
 
 Register_FuseBackward_Operation_FloatingTypes(cosh, CoshBackward_LoopBody,
@@ -240,15 +217,13 @@ Register_FuseBackward_Operation_Array(cosh, a, b);
 /*tanh backward fusion*/
 #define TanhBackward_LoopBody(type, i, result_ptr, stride_a_last,              \
                               stride_b_last, a_ptr, b_ptr)                     \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
   result_ptr[i] = Cast_Half_When_Half(type, (1 - a_val * a_val) * b_val);
 
 #define TanhBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)    \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
   result_ptr[i] = Cast_Half_When_Half(type, (1 - a_val * a_val) * b_val);
 
 Register_FuseBackward_Operation_FloatingTypes(tanh, TanhBackward_LoopBody,
@@ -261,24 +236,20 @@ Register_FuseBackward_Operation_Array(tanh, a, b);
 /*arcsinh backward fusion*/
 #define ArcsinhBackward_LoopBody(type, i, result_ptr, stride_a_last,           \
                                  stride_b_last, a_ptr, b_ptr)                  \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) add_result = 1 + square_result;                    \
-  Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(Use_Float_When_Half(type), npy_sqrt, add_result);             \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Div(b_val, sqrt_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) add_result = 1 + square_result;                                \
+  Generic(type) sqrt_result = Map_Method(Generic(type), npy_sqrt, add_result); \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
+  Div(b_val, sqrt_result, result_ptr[i], Generic(type), type);
 
 #define ArcsinhBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr) \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) add_result = 1 + square_result;                    \
-  Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(Use_Float_When_Half(type), npy_sqrt, add_result);             \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Div(b_val, sqrt_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) add_result = 1 + square_result;                                \
+  Generic(type) sqrt_result = Map_Method(Generic(type), npy_sqrt, add_result); \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
+  Div(b_val, sqrt_result, result_ptr[i], Generic(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(
     arcsinh, ArcsinhBackward_LoopBody, ArcsinhBackward_LoopBody_Sequential, a,
@@ -290,24 +261,20 @@ Register_FuseBackward_Operation_Array(arcsinh, a, b);
 /*arccosh backward fusion*/
 #define ArccoshBackward_LoopBody(type, i, result_ptr, stride_a_last,           \
                                  stride_b_last, a_ptr, b_ptr)                  \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) sub_result = square_result - 1;                    \
-  Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Div(b_val, sqrt_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) sub_result = square_result - 1;                                \
+  Generic(type) sqrt_result = Map_Method(Generic(type), npy_sqrt, sub_result); \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
+  Div(b_val, sqrt_result, result_ptr[i], Generic(type), type);
 
 #define ArccoshBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr) \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) sub_result = square_result - 1;                    \
-  Use_Float_When_Half(type) sqrt_result =                                      \
-      Use_Method(Use_Float_When_Half(type), npy_sqrt, sub_result);             \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Div(b_val, sqrt_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) sub_result = square_result - 1;                                \
+  Generic(type) sqrt_result = Map_Method(Generic(type), npy_sqrt, sub_result); \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
+  Div(b_val, sqrt_result, result_ptr[i], Generic(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(
     arccosh, ArccoshBackward_LoopBody, ArccoshBackward_LoopBody_Sequential, a,
@@ -319,20 +286,18 @@ Register_FuseBackward_Operation_Array(arccosh, a, b);
 /*arctanh backward fusion*/
 #define ArctanhBackward_LoopBody(type, i, result_ptr, stride_a_last,           \
                                  stride_b_last, a_ptr, b_ptr)                  \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Div(b_val, sub_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) sub_result = 1 - square_result;                                \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
+  Div(b_val, sub_result, result_ptr[i], Generic(type), type);
 
 #define ArctanhBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr) \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) square_result = a_val * a_val;                     \
-  Use_Float_When_Half(type) sub_result = 1 - square_result;                    \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Div(b_val, sub_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) square_result = a_val * a_val;                                 \
+  Generic(type) sub_result = 1 - square_result;                                \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
+  Div(b_val, sub_result, result_ptr[i], Generic(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(
     arctanh, ArctanhBackward_LoopBody, ArctanhBackward_LoopBody_Sequential, a,
@@ -344,19 +309,15 @@ Register_FuseBackward_Operation_Array(arctanh, a, b);
 /*exp backward fusion*/
 #define ExpBackward_LoopBody(type, i, result_ptr, stride_a_last,               \
                              stride_b_last, a_ptr, b_ptr)                      \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) exp_result =                                       \
-      Use_Method(Use_Float_When_Half(type), npy_exp, a_val);                   \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) exp_result = Map_Method(Generic(type), npy_exp, a_val);        \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
   result_ptr[i] = Cast_Half_When_Half(type, exp_result * b_val);
 
 #define ExpBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)     \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) exp_result =                                       \
-      Use_Method(Use_Float_When_Half(type), npy_exp, a_val);                   \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) exp_result = Map_Method(Generic(type), npy_exp, a_val);        \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
   result_ptr[i] = Cast_Half_When_Half(type, exp_result * b_val);
 
 Register_FuseBackward_Operation_FloatingTypes(exp, ExpBackward_LoopBody,
@@ -369,16 +330,14 @@ Register_FuseBackward_Operation_Array(exp, a, b);
 /*log backward fusion*/
 #define LogBackward_LoopBody(type, i, result_ptr, stride_a_last,               \
                              stride_b_last, a_ptr, b_ptr)                      \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Div(a_val, b_val, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
+  Div(a_val, b_val, result_ptr[i], Generic(type), type);
 
 #define LogBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)     \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Div(a_val, b_val, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
+  Div(a_val, b_val, result_ptr[i], Generic(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(log, LogBackward_LoopBody,
                                               LogBackward_LoopBody_Sequential,
@@ -390,24 +349,18 @@ Register_FuseBackward_Operation_Array(log, a, b);
 /*log10 backward fusion*/
 #define Log10Backward_LoopBody(type, i, result_ptr, stride_a_last,             \
                                stride_b_last, a_ptr, b_ptr)                    \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Use_Float_When_Half(type) log_result =                                       \
-      Use_Method(Use_Float_When_Half(type), npy_log, 10);                      \
-  Use_Float_When_Half(type) mul_result =                                       \
-      Cast_Half_When_Half(type, log_result * b_val);                           \
-  Div(a_val, mul_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
+  Generic(type) log_result = Map_Method(Generic(type), npy_log, 10);           \
+  Generic(type) mul_result = Cast_Half_When_Half(type, log_result * b_val);    \
+  Div(a_val, mul_result, result_ptr[i], Generic(type), type);
 
 #define Log10Backward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)   \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Use_Float_When_Half(type) log_result =                                       \
-      Use_Method(Use_Float_When_Half(type), npy_log, 10);                      \
-  Use_Float_When_Half(type) mul_result =                                       \
-      Cast_Half_When_Half(type, log_result * b_val);                           \
-  Div(a_val, mul_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
+  Generic(type) log_result = Map_Method(Generic(type), npy_log, 10);           \
+  Generic(type) mul_result = Cast_Half_When_Half(type, log_result * b_val);    \
+  Div(a_val, mul_result, result_ptr[i], Generic(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(log10, Log10Backward_LoopBody,
                                               Log10Backward_LoopBody_Sequential,
@@ -422,18 +375,16 @@ Register_FuseBackward_Operation_Array(log10, a, b);
 /*sqrt backward fusion*/
 #define SqrtBackward_LoopBody(type, i, result_ptr, stride_a_last,              \
                               stride_b_last, a_ptr, b_ptr)                     \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
-  Use_Float_When_Half(type) mul_result = a_val * 2;                            \
-  Div(b_val, mul_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
+  Generic(type) mul_result = a_val * 2;                                        \
+  Div(b_val, mul_result, result_ptr[i], Generic(type), type);
 
 #define SqrtBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)    \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
-  Use_Float_When_Half(type) mul_result = a_val * 2;                            \
-  Div(b_val, mul_result, result_ptr[i], Use_Float_When_Half(type), type);
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
+  Generic(type) mul_result = a_val * 2;                                        \
+  Div(b_val, mul_result, result_ptr[i], Generic(type), type);
 
 Register_FuseBackward_Operation_FloatingTypes(sqrt, SqrtBackward_LoopBody,
                                               SqrtBackward_LoopBody_Sequential,
@@ -445,15 +396,13 @@ Register_FuseBackward_Operation_Array(sqrt, a, b);
 /*abs backward fusion*/
 #define AbsBackward_LoopBody(type, i, result_ptr, stride_a_last,               \
                              stride_b_last, a_ptr, b_ptr)                      \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) b_val =                                            \
-      Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);                    \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i * stride_b_last]);  \
   result_ptr[i] = Cast_Half_When_Half(type, a_val > 0 ? b_val : -b_val);
 
 #define AbsBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr, b_ptr)     \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);      \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) b_val = Cast_Float_When_Half(type, b_ptr[i]);                  \
   result_ptr[i] = Cast_Half_When_Half(type, a_val > 0 ? b_val : -b_val);
 
 Register_FuseBackward_Operation_FloatingTypes(abs, AbsBackward_LoopBody,
@@ -469,25 +418,22 @@ Register_FuseBackward_Operation_Array(abs, a, b);
 #define PowerBackward_LoopBody(type, i, result_ptr, stride_a_last,             \
                                stride_power_last, stride_grad_last, a_ptr,     \
                                power_ptr, grad_ptr)                            \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) power_val =                                        \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) power_val =                                                    \
       Cast_Float_When_Half(type, power_ptr[i * stride_power_last]);            \
-  Use_Float_When_Half(type) grad_val =                                         \
+  Generic(type) grad_val =                                                     \
       Cast_Float_When_Half(type, grad_ptr[i * stride_grad_last]);              \
-  Use_Float_When_Half(type) tmp =                                              \
-      Use_Method(Use_Float_When_Half(type), npy_pow, a_val, power_val - 1);    \
+  Generic(type) tmp =                                                          \
+      Map_Method(Generic(type), npy_pow, a_val, power_val - 1);                \
   result_ptr[i] = Cast_Half_When_Half(type, tmp * power_val * grad_val);
 
 #define PowerBackward_LoopBody_Sequential(type, i, result_ptr, a_ptr,          \
                                           power_ptr, grad_ptr)                 \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) power_val =                                        \
-      Cast_Float_When_Half(type, power_ptr[i]);                                \
-  Use_Float_When_Half(type) grad_val =                                         \
-      Cast_Float_When_Half(type, grad_ptr[i]);                                 \
-  Use_Float_When_Half(type) tmp =                                              \
-      Use_Method(Use_Float_When_Half(type), npy_pow, a_val, power_val - 1);    \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) power_val = Cast_Float_When_Half(type, power_ptr[i]);          \
+  Generic(type) grad_val = Cast_Float_When_Half(type, grad_ptr[i]);            \
+  Generic(type) tmp =                                                          \
+      Map_Method(Generic(type), npy_pow, a_val, power_val - 1);                \
   result_ptr[i] = Cast_Half_When_Half(type, tmp * power_val * grad_val);
 
 Register_FuseBackward_Operation_FloatingTypes(power, PowerBackward_LoopBody,
