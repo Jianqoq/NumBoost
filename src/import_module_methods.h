@@ -53,7 +53,7 @@ typedef struct
     PyObject *allgather;
     PyObject *allreduce;
     PyObject *alltoall;
-    PyObject *and;
+    PyObject *and_;
     PyObject *approx_topK;
     PyObject *approx_topK_fallback;
     PyObject *approx_TopK_reduction_output_size;
@@ -131,9 +131,9 @@ typedef struct
     PyObject *ne;
     PyObject *neg;
     PyObject *next_after;
-    PyObject * not ;
+    PyObject * not_;
     PyObject *optimization_barrier;
-    PyObject * or ;
+    PyObject * or_;
     PyObject *outfeed_with_token;
     PyObject *pad;
     PyObject *parameter;
@@ -185,7 +185,7 @@ typedef struct
     PyObject *triangular_solve;
     PyObject *tuple;
     PyObject *While;
-    PyObject * xor ;
+    PyObject * xor_;
     PyObject *zeta;
 
 } XLA_OPS;
@@ -227,6 +227,7 @@ typedef struct
     PyObject *reshape;
     PyObject *tensordot;
     PyObject *concatenate;
+    PyObject *where;
 } np_method;
 #endif
 

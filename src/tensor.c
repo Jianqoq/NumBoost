@@ -368,6 +368,8 @@ void init_map()
     add_entry("TensordotBackward", tensordot_backward_fn);
     add_entry("TransposeBackward", transpose_backward_fn);
     add_entry("SliceBackward", slice_backward_fn);
+    add_entry("AbsBackward", abs_backward_fn);
+
 }
 
 PyMODINIT_FUNC PyInit_Numboost(void)

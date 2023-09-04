@@ -65,9 +65,9 @@ if len(files) > 0:
         os.remove(f)
 
 mymodule = Extension('Numboost',
-                     sources=['auto_diff/ufunc_backward_def.c', 'tensor.c', 'python_magic/python_math_magic.c',
+                     sources=['element_ops/element_ops_def.c', 'auto_diff/ufunc_backward_def.c', 'tensor.c', 'python_magic/python_math_magic.c',
                               'auto_diff/backward_fn.c', 'stack.c', 'set_tensor_properties.c',
-                              'element_ops/element_ops.c', 'auto_diff/binaray_backward_fn.c', 'random/pcg_basic.c',
+                              'element_ops/element_ops_impl.c', 'auto_diff/binaray_backward_fn.c', 'random/pcg_basic.c',
                               'import_module_methods.c', 'broadcast_ops/broadcast_impl.c', 'shape.c',
                               'binary_ops/binary_op_impl.c', 'type_convertor/type_convertor.c', 'tensor_methods.c',
                               'Iterator/nb_iter.c', 'allocator/allocator.c', 'binary_ops/binary_op_def.c',

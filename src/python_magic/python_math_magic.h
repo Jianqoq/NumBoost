@@ -108,7 +108,7 @@ PyObject *tensor_ifloordiv(PyObject *self, PyObject *other);
     }                                                                                                     \
     else if (PyArray_Check(self) && PyArray_IsPythonNumber(other))                                        \
     {                                                                                                     \
-        tmp = self;                                                                                       \
+        tmp = (Tensor *)self;                                                                                       \
         PyArrayObject *a = (PyArrayObject *)self;                                                         \
         numpy_result = (PyObject *)numboost_binary_scalar_right(a, other, op_enum);                       \
         if (numpy_result == NULL)                                                                         \
