@@ -1001,20 +1001,16 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b,
 
 #define Pow_LoopBody(type, i, result_ptr, stride_a_last, stride_pow_last,      \
                      a_ptr, power_ptr)                                         \
-  Use_Float_When_Half(type) a_val =                                            \
-      Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);                    \
-  Use_Float_When_Half(type) power_val =                                        \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
+  Generic(type) power_val =                                                    \
       Cast_Float_When_Half(type, power_ptr[i * stride_pow_last]);              \
-  Use_Float_When_Half(type) result =                                           \
-      Use_Method(Use_Float_When_Half(type), npy_pow, a_val, power_val);        \
+  Generic(type) result = Map_Method(Generic(type), npy_pow, a_val, power_val); \
   result_ptr[i] = Cast_Half_When_Half(type, result);
 
 #define Pow_LoopBody_Sequential(type, i, result_ptr, a_ptr, power_ptr)         \
-  Use_Float_When_Half(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);      \
-  Use_Float_When_Half(type) power_val =                                        \
-      Cast_Float_When_Half(type, power_ptr[i]);                                \
-  Use_Float_When_Half(type) result =                                           \
-      Use_Method(Use_Float_When_Half(type), npy_pow, a_val, power_val);        \
+  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
+  Generic(type) power_val = Cast_Float_When_Half(type, power_ptr[i]);          \
+  Generic(type) result = Map_Method(Generic(type), npy_pow, a_val, power_val); \
   result_ptr[i] = Cast_Half_When_Half(type, result);
 
 #define Register_Binary_Operation_New(                                         \

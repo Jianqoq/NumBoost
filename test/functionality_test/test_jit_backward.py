@@ -25,7 +25,7 @@ def test_C_Tensor_addition_backward(array, array2, grad):
     result1 = autograd_grad_operands1 + autograd_grad_operands2
     result2 = torch_operands1 + torch_operands2
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -42,7 +42,7 @@ def test_C_Tensor_subtraction_backward(array, array2, grad):
     result1 = autograd_grad_operands1 - autograd_grad_operands2
     result2 = torch_operands1 - torch_operands2
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -59,7 +59,7 @@ def test_C_Tensor_division_backward(array, array2, grad):
     result1 = autograd_grad_operands1 / autograd_grad_operands2
     result2 = torch_operands1 / torch_operands2
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -76,7 +76,7 @@ def test_C_Tensor_matmul_backward(array, array2, grad):
     result1 = autograd_grad_operands1 @ autograd_grad_operands2
     result2 = torch_operands1 @ torch_operands2
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -90,7 +90,7 @@ def test_C_Tensor_negative_backward(array, grad):
     result2 = -torch_operands1
     torch_grad = torch.tensor(grad)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(grad))
+        res = jax.jit(result1.backward)(grad)
     result2.backward(torch_grad)
     assert np.allclose(res[p], torch_operands1.grad.numpy()), f"correct: {torch_operands1.grad.numpy()} | got: {res[p]}"
 
@@ -106,7 +106,7 @@ def test_C_Tensor_mul_backward(array, array2, grad):
     result1 = autograd_grad_operands1 * autograd_grad_operands2
     result2 = torch_operands1 * torch_operands2
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -121,7 +121,7 @@ def test_C_Tensor_sin_backward(array, grad):
     result1 = core.sin(autograd_grad_operands1)
     result2 = torch.sin(torch_operands1)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -136,7 +136,7 @@ def test_C_Tensor_cos_backward(array, grad):
     result1 = core.cos(autograd_grad_operands1)
     result2 = torch.cos(torch_operands1)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -151,7 +151,7 @@ def test_C_Tensor_tan_backward(array, grad):
     result1 = core.tan(autograd_grad_operands1)
     result2 = torch.tan(torch_operands1)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -166,7 +166,7 @@ def test_C_Tensor_sinh_backward(array, grad):
     result1 = core.sinh(autograd_grad_operands1)
     result2 = torch.sinh(torch_operands1)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -181,7 +181,7 @@ def test_C_Tensor_cosh_backward(array, grad):
     result1 = core.cosh(autograd_grad_operands1)
     result2 = torch.cosh(torch_operands1)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -195,9 +195,13 @@ def test_C_Tensor_tanh_backward(array, grad):
     torch_grad = torch.tensor(grad)
     result1 = core.tanh(autograd_grad_operands1)
     result2 = torch.tanh(torch_operands1)
+    print("tanh", result1)
+    print("tanh", result2)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
+    print("tanh", res[autograd_grad_operands1])
+    print("tanh", torch_operands1.grad.numpy())
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
 
@@ -210,9 +214,13 @@ def test_C_Tensor_arcsin_backward(array, grad):
     torch_grad = torch.tensor(grad)
     result1 = core.arcsin(autograd_grad_operands1)
     result2 = torch.arcsin(torch_operands1)
+    print("arcsin", result1)
+    print("arcsin", result2)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
+    print("arcsin", res[autograd_grad_operands1])
+    print("arcsin", torch_operands1.grad.numpy())
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
 
@@ -226,7 +234,7 @@ def test_C_Tensor_arctan_backward(array, grad):
     result1 = core.arctan(autograd_grad_operands1)
     result2 = torch.arctan(torch_operands1)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -241,7 +249,7 @@ def test_C_Tensor_arcsinh_backward(array, grad):
     result1 = core.arcsinh(autograd_grad_operands1)
     result2 = torch.arcsinh(torch_operands1)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -256,7 +264,7 @@ def test_C_Tensor_power_backward(array, grad):
     result1 = core.power(autograd_grad_operands1, 3)
     result2 = torch.pow(torch_operands1, 3)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -271,7 +279,7 @@ def test_C_Tensor_sqrt_backward(array, grad):
     result1 = core.sqrt(autograd_grad_operands1)
     result2 = torch.sqrt(torch_operands1)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -286,7 +294,7 @@ def test_C_Tensor_reshape_backward(array, grad):
     result1 = core.reshape(autograd_grad_operands1, (3, ))
     result2 = torch.reshape(torch_operands1, (3, ))
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -301,7 +309,7 @@ def test_C_Tensor_log_backward(array, grad):
     result1 = core.log(autograd_grad_operands1)
     result2 = torch.log(torch_operands1)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -316,7 +324,7 @@ def test_C_Tensor_power_backward(array, grad):
     result1 = core.power(autograd_grad_operands1, 3)
     result2 = torch.pow(torch_operands1, 3)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
@@ -331,7 +339,7 @@ def test_C_Tensor_tensordot_backward(array, grad):
     result1 = core.tensordot(autograd_grad_operands1, autograd_grad_operands2, 3)
     result2 = torch.tensordot(torch_operands1, torch_operands2, 3)
     with core.enable_track():
-        res = to_dict(jax.jit(result1.backward)(result1.data))
+        res = jax.jit(result1.backward)(result1.data)
     result2.backward(result2)
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True), \
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"

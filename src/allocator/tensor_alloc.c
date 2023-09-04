@@ -17,11 +17,14 @@ Tensor *tensor_alloc(PyTypeObject *type, Py_ssize_t size)
     Tensor *tensor = NULL;
     if (tensor_pool_maintainer.index >= 0)
     {
+        DEBUG_PRINT("Getting from tensor pool\n");
         tensor = tensor_pool[tensor_pool_maintainer.index--];
+        DEBUG_PRINT("Got from tensor pool\n");
         return tensor;
     }
     else
     {
+        DEBUG_PRINT("Allocating new tensor\n");
         tensor = PyObject_GC_New(Tensor, type);
         if (tensor == NULL)
         {
@@ -29,6 +32,7 @@ Tensor *tensor_alloc(PyTypeObject *type, Py_ssize_t size)
             return NULL;
         }
         PyObject_GC_Track(tensor);
+        DEBUG_PRINT("Allocating new tensor done\n");
         return tensor;
     }
 }
@@ -82,11 +86,15 @@ static inline void free_tensordot_data_self(Tensor *self)
         Py_DECREF(entry->metadata->transposed_reshape_b);
         free(entry->metadata);
         free(entry);
+        DEBUG_PRINT("Freed Tensordot data\n");
+    } else {
+        DEBUG_PRINT("Tensordot data not found\n");
     }
 }
 
 inline void free_tensor_need_grad(Tensor *self)
-{
+{;
+    DEBUG_PRINT("Freeing Tensor need grad\n")
     Tensor_need_grad_Dict *entry = NULL;
     HASH_FIND_PTR(TENSOR_NEED_GRAD_DICT, &self, entry);
     if (entry != NULL)
@@ -94,6 +102,7 @@ inline void free_tensor_need_grad(Tensor *self)
         HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
         free(entry);
     }
+    DEBUG_PRINT("Freeing Tensor need grad done\n")
 }
 
 void free_slice_objs(Tensor *key)
@@ -132,17 +141,22 @@ void Tensor_dealloc(Tensor *self)
     free_tensordot_data_self(self);
     free_array_shape(self);
     free_power(self);
+    DEBUG_PRINT("free_tensor_need_grad\n");
     free_tensor_need_grad(self);
+    DEBUG_PRINT("free_slice_objs\n");
     free_slice_objs(self);
-    if (tensor_pool_maintainer.index < Tensor_Pool_Size - 1)
-    {
-        Py_INCREF(self);
-        tensor_pool_maintainer.tensor_pool[++tensor_pool_maintainer.index] = self;
-    }
-    else
-    {
-        PyObject_GC_Del(self);
-    }
+    DEBUG_PRINT("free_slice_objs done\n");
+    // if (tensor_pool_maintainer.index < Tensor_Pool_Size - 1)
+    // {
+    //     Py_INCREF(self);
+    //     DEBUG_PRINT("Adding to tensor pool\n");
+    //     tensor_pool_maintainer.tensor_pool[++tensor_pool_maintainer.index] = self;
+    //     DEBUG_PRINT("Added to tensor pool\n");
+    // }
+    // else
+    // {
+    //     PyObject_GC_Del(self);
+    // }
 }
 
 int Tensor_clear(Tensor *self)

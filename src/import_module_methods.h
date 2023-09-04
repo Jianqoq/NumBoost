@@ -4,7 +4,7 @@
 #endif
 
 #ifdef DEBUG
-#define DEBUG_PRINT(...) printf(__VA_ARGS__);
+#define DEBUG_PRINT(...) printf("%s: ", __func__); printf(__VA_ARGS__);
 
 #define DEBUG_PRINTLN(...)   \
     {                        \

@@ -9,3 +9,77 @@ Register_ElementWise_Operations_Interger_Types(abs, Abs_LoopBody, Abs_LoopBody_S
 Register_ElementWise_Operation_Err_Not_Support_Types(abs);
 Register_ElementWise_Operation_Array(abs, );
 Register_ElementWise_Operation_Method(abs, ABS);
+
+Register_ElementWise_Operations_Floating_Types(sin, Sin_LoopBody, Sin_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(sin);
+Register_ElementWise_Operation_Err_Not_Support_Types(sin);
+Register_ElementWise_Operation_Array(sin, );
+Register_ElementWise_Operation_Method(sin, SIN);
+
+Register_ElementWise_Operations_Floating_Types(cos, Cos_LoopBody, Cos_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(cos);
+Register_ElementWise_Operation_Err_Not_Support_Types(cos);
+Register_ElementWise_Operation_Array(cos, );
+Register_ElementWise_Operation_Method(cos, COS);
+
+Register_ElementWise_Operations_Floating_Types(tan, Tan_LoopBody, Tan_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(tan);
+Register_ElementWise_Operation_Err_Not_Support_Types(tan);
+Register_ElementWise_Operation_Array(tan, );
+Register_ElementWise_Operation_Method(tan, TAN);
+
+Register_ElementWise_Operations_Floating_Types(asin, Asin_LoopBody, Asin_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(asin);
+Register_ElementWise_Operation_Err_Not_Support_Types(asin);
+Register_ElementWise_Operation_Array(asin, );
+Register_ElementWise_Operation_Method(asin, ARCSIN);
+
+Register_ElementWise_Operations_Floating_Types(acos, Acos_LoopBody, Acos_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(acos);
+Register_ElementWise_Operation_Err_Not_Support_Types(acos);
+Register_ElementWise_Operation_Array(acos, );
+Register_ElementWise_Operation_Method(acos, ARCCOS);
+
+Register_ElementWise_Operations_Floating_Types(atan, Atan_LoopBody, Atan_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(atan);
+Register_ElementWise_Operation_Err_Not_Support_Types(atan);
+Register_ElementWise_Operation_Array(atan, );
+Register_ElementWise_Operation_Method(atan, ARCTAN);
+
+Register_ElementWise_Operations_Floating_Types(sinh, Sinh_LoopBody, Sinh_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(sinh);
+Register_ElementWise_Operation_Err_Not_Support_Types(sinh);
+Register_ElementWise_Operation_Array(sinh, );
+Register_ElementWise_Operation_Method(sinh, SINH);
+
+Register_ElementWise_Operations_Floating_Types(cosh, Cosh_LoopBody, Cosh_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(cosh);
+Register_ElementWise_Operation_Err_Not_Support_Types(cosh);
+Register_ElementWise_Operation_Array(cosh, );
+Register_ElementWise_Operation_Method(cosh, COSH);
+
+
+Register_ElementWise_Operations_Floating_Types(tanh, Tanh_LoopBody, Tanh_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(tanh);
+Register_ElementWise_Operation_Err_Not_Support_Types(tanh);
+Register_ElementWise_Operation_Array(tanh, );
+Register_ElementWise_Operation_Method(tanh, TANH);
+
+Register_ElementWise_Operations_Floating_Types(asinh, Asinh_LoopBody, Asinh_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(asinh);
+Register_ElementWise_Operation_Err_Not_Support_Types(asinh);
+Register_ElementWise_Operation_Array(asinh, );
+Register_ElementWise_Operation_Method(asinh, ARCSINH);
+
+Register_ElementWise_Operations_Floating_Types(acosh, Acosh_LoopBody, Acosh_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(acosh);
+Register_ElementWise_Operation_Err_Not_Support_Types(acosh);
+Register_ElementWise_Operation_Array(acosh, );
+Register_ElementWise_Operation_Method(acosh, ARCCOSH);
+
+Register_ElementWise_Operations_Floating_Types(atanh, Atanh_LoopBody, Atanh_LoopBody_Sequential);
+Register_ElementWise_Operation_Err_Interger_Types(atanh);
+Register_ElementWise_Operation_Err_Not_Support_Types(atanh);
+Register_ElementWise_Operation_Array(atanh, );
+Register_ElementWise_Operation_Method(atanh, ARCTANH);
+

@@ -36,7 +36,7 @@
   Cast_Half_If_Is_Half(Should_Cast_To(x))(args)
 #define Cast_Float_When_Half(x, args)                                          \
   Cast_Float_If_Is_Half(Should_Cast_To(x))(args)
-#define Use_Float_When_Half(x)                                                 \
+#define Generic(x)                                                 \
   To_Float_If_Is_Half(Should_Change_Type_To_Float(x))(x)
 /*================================== check half end ===================*/
 
@@ -66,7 +66,7 @@
     method_name: the name of the double method, npy_pow, npy_sin, etc.
     ...: the parameters of the method
 */
-#define Use_Method(type, method_name, ...)                                            \
+#define Map_Method(type, method_name, ...)                                            \
   Should_Use(Should_Use_Specific_Method(type))(type)(                          \
       method_name)(Replicate_With_Comma(Cast_Float_If_Is_Half, Should_Cast_To, type,  \
                                  __VA_ARGS__))

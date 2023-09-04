@@ -558,13 +558,13 @@ bool is_uint_number(int dtype) {
 int float_type_based_on_size(int size) {
   switch (size) {
   case 2:
-    return max(NPY_HALF, gloabal_float_type);
+    return NPY_HALF;
   case 4:
-    return max(NPY_FLOAT, gloabal_float_type);
+    return NPY_FLOAT;
   case 8:
-    return max(NPY_DOUBLE, gloabal_float_type);
+    return NPY_DOUBLE;
   case 16:
-    return max(NPY_LONGDOUBLE, gloabal_float_type);
+    return NPY_LONGDOUBLE;
   default:
     return gloabal_float_type;
   }
@@ -675,6 +675,8 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
 int elementwise_result_type(int op, int a_dtype) {
   int a_size = type_2_size[a_dtype];
   int gloabal_float_size = type_2_size[gloabal_float_type];
+  printf("a_dtype: %d, a_size: %d, gloabal_float_size: %d\n", a_dtype, a_size,
+         gloabal_float_size);
   switch (op) {
   case SIN:
   case COS:
@@ -691,6 +693,8 @@ int elementwise_result_type(int op, int a_dtype) {
   case SQRT:
   case EXP:
   case LOG:
+  printf("max: %d\n", max(a_size, gloabal_float_size));
+  printf("float_type_based_on_size: %d\n", float_type_based_on_size(max(a_size, gloabal_float_size)));
     return float_type_based_on_size(max(a_size, gloabal_float_size));
   case ABS:
     return a_dtype;

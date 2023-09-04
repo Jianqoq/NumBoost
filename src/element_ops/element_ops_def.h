@@ -34,7 +34,7 @@
     PyErr_SetString(PyExc_TypeError, Str(name not supported for type));        \
     return NULL;                                                               \
   }
-  
+
 #define Register_ElementWise_Operation(                                        \
     name, type, result_type, inner_loop_body_universal, inner_loop_body_seq)   \
   PyObject *elementwise_##name##_##type(PyObject *a) {                         \
@@ -113,10 +113,23 @@
       return NULL;                                                             \
     }                                                                          \
     assert(result_type <= NPY_HALF);                                           \
+    printf("result_type: %d\n", result_type);                                  \
     PyObject *result = name##_operations[result_type](a);                      \
     return result;                                                             \
   }
 
 PyObject *numboost_abs(PyObject *a);
+PyObject *numboost_sin(PyObject *a);
+PyObject *numboost_cos(PyObject *a);
+PyObject *numboost_tan(PyObject *a);
+PyObject *numboost_asin(PyObject *a);
+PyObject *numboost_acos(PyObject *a);
+PyObject *numboost_atan(PyObject *a);
+PyObject *numboost_sinh(PyObject *a);
+PyObject *numboost_cosh(PyObject *a);
+PyObject *numboost_tanh(PyObject *a);
+PyObject *numboost_asinh(PyObject *a);
+PyObject *numboost_acosh(PyObject *a);
+PyObject *numboost_atanh(PyObject *a);
 
 #endif
