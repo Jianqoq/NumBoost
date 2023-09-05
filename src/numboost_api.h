@@ -32,12 +32,11 @@
 #define Float_0
 #define To_Float_1(x) npy_float
 #define To_Float_0(x) x
-#define Cast_Half_When_Half(x, args)                                           \
+#define Demote(x, args)                                           \
   Cast_Half_If_Is_Half(Should_Cast_To(x))(args)
-#define Cast_Float_When_Half(x, args)                                          \
+#define Promote(x, args)                                          \
   Cast_Float_If_Is_Half(Should_Cast_To(x))(args)
-#define Generic(x)                                                 \
-  To_Float_If_Is_Half(Should_Change_Type_To_Float(x))(x)
+#define Generic(x) To_Float_If_Is_Half(Should_Change_Type_To_Float(x))(x)
 /*================================== check half end ===================*/
 
 /*================================== check specific method ===================*/
@@ -66,16 +65,15 @@
     method_name: the name of the double method, npy_pow, npy_sin, etc.
     ...: the parameters of the method
 */
-#define Map_Method(type, method_name, ...)                                            \
+#define Map_Method(type, method_name, ...)                                     \
   Should_Use(Should_Use_Specific_Method(type))(type)(                          \
-      method_name)(Replicate_With_Comma(Cast_Float_If_Is_Half, Should_Cast_To, type,  \
-                                 __VA_ARGS__))
+      method_name)(Replicate_With_Comma(Cast_Float_If_Is_Half, Should_Cast_To, \
+                                        type, __VA_ARGS__))
 
 /*================= check specific method end ===================*/
 
 /*================ use sepcific inf/nan ===================*/
 #define Should_Use_Specific_Inf_Nan(x) Second(Is_Type(x), 0)
-#define Should_Use_Inf_Nan(x) Concat_(Should_Use_Inf_Nan_, x)
 #define Inf_npy_half 0x7C00
 #define Inf_npy_float NPY_INFINITYF
 #define Inf_npy_double NPY_INFINITY
@@ -96,6 +94,18 @@
 #define Use_Inf(x) Should_Use_Inf(Should_Use_Specific_Inf_Nan(x))(x)
 #define Should_Use_Nan(x) Concat_(Should_Use_Nan_, x)
 #define Use_Nan(x) Should_Use_Nan(Should_Use_Specific_Inf_Nan(x))(x)
+
+/*================= check is sequential method ===================*/
+#define Cat_Seq(x) Concat_(Is_Sequential_, x)
+#define If_Seq(x) Second(Cat_Seq(x), 1)
+#define Is_Sequential_Seq Place_Holder, 0
+#define If_Sequential_1(x, stride) x *stride
+#define If_Sequential_0(x, stride) x
+#define Should_Use_Stride(x, index, stride)                                    \
+  Concat_(If_Sequential_, x)(index, stride)
+#define Use_Stride(x, index, stride) Should_Use_Stride(If_Seq(x), index, stride)
+
+#define Replicate6(x, y, ...) Expand(MAP6(x, y, __VA_ARGS__))
 
 #define Perform_Binary_Operation(a, b, result, operation, data_type, npy_enum) \
   OPERATION_PICKER(a, b, result, operation, data_type, npy_enum)
@@ -311,9 +321,10 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     free(shape_copy);                                                          \
   } while (0)
 
-#define wrapper(body, type, i, inner_loop_size, result_data_ptr_, ...)         \
+#define wrapper(body, generic_type, type, i, inner_loop_size,                  \
+                result_data_ptr_, ...)                                         \
   for (i = 0; i < inner_loop_size; ++i) {                                      \
-    body(type, i, result_data_ptr_, __VA_ARGS__)                               \
+    body(generic_type, type, i, result_data_ptr_, __VA_ARGS__)                 \
   }
 
 #define Universal_Operation_Sequential(type, result, inner_loop_body, ...)     \
@@ -322,9 +333,10 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     npy_intp _size = PyArray_SIZE(result);                                     \
     type *result_data_ptr_ = (type *)PyArray_DATA(result);                     \
     npy_intp i;                                                                \
-    _Pragma("omp parallel for schedule(static)")                               \
-        wrapper(inner_loop_body, type, i, _size, result_data_ptr_,             \
-                Replicate0(Ptr_Saved, __VA_ARGS__));                           \
+    _Pragma("omp parallel for schedule(static)") wrapper(                      \
+        inner_loop_body, Generic(type), type, i, _size, result_data_ptr_,      \
+        Replicate6(Seq, i, Replicate0(Stries_Last, __VA_ARGS__)),              \
+        Replicate0(Ptr_Saved, __VA_ARGS__));                                   \
   } while (0)
 
 #define Universal_Operation(type, result, inner_loop_body, new_shapes, ...)    \
@@ -389,8 +401,9 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       npy_intp i;                                                              \
       _Pragma("omp for schedule(static)") for (k = 0; k < outter_loop_size;    \
                                                k++) {                          \
-        wrapper(inner_loop_body, type, i, inner_loop_size, result_data_ptr_,   \
-                Replicate0(Stries_Last, __VA_ARGS__),                          \
+        wrapper(inner_loop_body, Generic(type), type, i, inner_loop_size,      \
+                result_data_ptr_,                                              \
+                Replicate6(Not_Seq, i, Replicate0(Stries_Last, __VA_ARGS__)),  \
                 Replicate0(Ptr_Saved, __VA_ARGS__));                           \
         result_data_ptr_ += inner_loop_size;                                   \
         for (npy_intp j = outer_start; j >= 0; j--) {                          \
@@ -413,8 +426,8 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     free(shape_copy);                                                          \
   } while (0)
 
-#define Perform_Universal_Operation(                                           \
-    type, result_type, inner_loop_body_universal, inner_loop_body_seq, ...)    \
+#define Perform_Universal_Operation(type, result_type,                         \
+                                    inner_loop_body, ...)            \
   do {                                                                         \
     bool shape_equal = true;                                                   \
     Replicate0_No_Comma(Handlers, __VA_ARGS__);                                \
@@ -466,7 +479,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       }                                                                        \
       PyArrayObject *result = (PyArrayObject *)PyArray_EMPTY(                  \
           PyArray_NDIM(biggest_array), broadcast_shape, result_type, 0);       \
-      Universal_Operation(type, result, inner_loop_body_universal, new_shapes, \
+      Universal_Operation(type, result, inner_loop_body, new_shapes,           \
                           __VA_ARGS__);                                        \
       Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
       return (PyObject *)result;                                               \
@@ -475,7 +488,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
           PyArray_NDIM((PyArrayObject *)_First_(__VA_ARGS__)),                 \
           PyArray_DIMS((PyArrayObject *)_First_(__VA_ARGS__)), result_type,    \
           0);                                                                  \
-      Universal_Operation_Sequential(type, result, inner_loop_body_seq,        \
+      Universal_Operation_Sequential(type, result, inner_loop_body,            \
                                      __VA_ARGS__);                             \
       Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
       return (PyObject *)result;                                               \

@@ -1074,22 +1074,22 @@ Tensor *_tanh(PyObject *self, PyObject *const *args, size_t nargsf) {
 
 Tensor *_asinh(PyObject *self, PyObject *const *args, size_t nargsf) {
   PyObject *result = numboost_asinh(((Tensor *)args[0])->data);
-  Tensor *to_return =
-      (Tensor *)__new_Tensor((Tensor *)args[0], result, NULL, "ArcSinhBackward");
+  Tensor *to_return = (Tensor *)__new_Tensor((Tensor *)args[0], result, NULL,
+                                             "ArcSinhBackward");
   return to_return;
 }
 
 Tensor *_acosh(PyObject *self, PyObject *const *args, size_t nargsf) {
   PyObject *result = numboost_acosh(((Tensor *)args[0])->data);
-  Tensor *to_return =
-      (Tensor *)__new_Tensor((Tensor *)args[0], result, NULL, "ArcCoshBackward");
+  Tensor *to_return = (Tensor *)__new_Tensor((Tensor *)args[0], result, NULL,
+                                             "ArcCoshBackward");
   return to_return;
 }
 
 Tensor *_atanh(PyObject *self, PyObject *const *args, size_t nargsf) {
   PyObject *result = numboost_atanh(((Tensor *)args[0])->data);
-  Tensor *to_return =
-      (Tensor *)__new_Tensor((Tensor *)args[0], result, NULL, "ArcTanhBackward");
+  Tensor *to_return = (Tensor *)__new_Tensor((Tensor *)args[0], result, NULL,
+                                             "ArcTanhBackward");
   return to_return;
 }
 

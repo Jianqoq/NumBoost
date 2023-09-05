@@ -35,49 +35,38 @@
     return NULL;                                                               \
   }
 
-#define Register_ElementWise_Operation(                                        \
-    name, type, result_type, inner_loop_body_universal, inner_loop_body_seq)   \
+#define Register_ElementWise_Operation(name, type, result_type,                \
+                                       inner_loop_body_universal)              \
   PyObject *elementwise_##name##_##type(PyObject *a) {                         \
     Perform_Universal_Operation(npy_##type, result_type,                       \
-                                inner_loop_body_universal,                     \
-                                inner_loop_body_seq, a);                       \
+                                inner_loop_body_universal, a);                 \
   }
 
-#define Register_ElementWise_Operations_Floating_Types(                        \
-    name, universal_loop_body, sequential_loop_body)                           \
-  Register_ElementWise_Operation(name, float, NPY_FLOAT, universal_loop_body,  \
-                                 sequential_loop_body);                        \
+#define Register_ElementWise_Operations_Floating_Types(name,                   \
+                                                       universal_loop_body)    \
+  Register_ElementWise_Operation(name, float, NPY_FLOAT, universal_loop_body); \
   Register_ElementWise_Operation(name, double, NPY_DOUBLE,                     \
-                                 universal_loop_body, sequential_loop_body);   \
+                                 universal_loop_body);                         \
   Register_ElementWise_Operation(name, longdouble, NPY_LONGDOUBLE,             \
-                                 universal_loop_body, sequential_loop_body);   \
-  Register_ElementWise_Operation(name, half, NPY_HALF, universal_loop_body,    \
-                                 sequential_loop_body);
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, half, NPY_HALF, universal_loop_body);
 
-#define Register_ElementWise_Operations_Interger_Types(                        \
-    name, universal_loop_body, sequential_loop_body)                           \
-  Register_ElementWise_Operation(name, bool, NPY_BOOL, universal_loop_body,    \
-                                 sequential_loop_body);                        \
-  Register_ElementWise_Operation(name, byte, NPY_BYTE, universal_loop_body,    \
-                                 sequential_loop_body);                        \
-  Register_ElementWise_Operation(name, ubyte, NPY_UBYTE, universal_loop_body,  \
-                                 sequential_loop_body);                        \
-  Register_ElementWise_Operation(name, short, NPY_SHORT, universal_loop_body,  \
-                                 sequential_loop_body);                        \
+#define Register_ElementWise_Operations_Interger_Types(name,                   \
+                                                       universal_loop_body)    \
+  Register_ElementWise_Operation(name, bool, NPY_BOOL, universal_loop_body);   \
+  Register_ElementWise_Operation(name, byte, NPY_BYTE, universal_loop_body);   \
+  Register_ElementWise_Operation(name, ubyte, NPY_UBYTE, universal_loop_body); \
+  Register_ElementWise_Operation(name, short, NPY_SHORT, universal_loop_body); \
   Register_ElementWise_Operation(name, ushort, NPY_USHORT,                     \
-                                 universal_loop_body, sequential_loop_body);   \
-  Register_ElementWise_Operation(name, int, NPY_INT, universal_loop_body,      \
-                                 sequential_loop_body);                        \
-  Register_ElementWise_Operation(name, uint, NPY_UINT, universal_loop_body,    \
-                                 sequential_loop_body);                        \
-  Register_ElementWise_Operation(name, long, NPY_LONG, universal_loop_body,    \
-                                 sequential_loop_body);                        \
-  Register_ElementWise_Operation(name, ulong, NPY_ULONG, universal_loop_body,  \
-                                 sequential_loop_body);                        \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, int, NPY_INT, universal_loop_body);     \
+  Register_ElementWise_Operation(name, uint, NPY_UINT, universal_loop_body);   \
+  Register_ElementWise_Operation(name, long, NPY_LONG, universal_loop_body);   \
+  Register_ElementWise_Operation(name, ulong, NPY_ULONG, universal_loop_body); \
   Register_ElementWise_Operation(name, longlong, NPY_LONGLONG,                 \
-                                 universal_loop_body, sequential_loop_body);   \
+                                 universal_loop_body);                         \
   Register_ElementWise_Operation(name, ulonglong, NPY_ULONGLONG,               \
-                                 universal_loop_body, sequential_loop_body);
+                                 universal_loop_body);
 
 #define Register_ElementWise_Operation_Err_Interger_Types(name)                \
   Register_ElementWise_Operation_Err(name, bool);                              \
@@ -113,7 +102,6 @@
       return NULL;                                                             \
     }                                                                          \
     assert(result_type <= NPY_HALF);                                           \
-    printf("result_type: %d\n", result_type);                                  \
     PyObject *result = name##_operations[result_type](a);                      \
     return result;                                                             \
   }

@@ -999,26 +999,18 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b,
                                    npy_enum_convert(NPY_ULONGLONG),            \
                                    loop_body);
 
-#define Pow_LoopBody(type, i, result_ptr, stride_a_last, stride_pow_last,      \
-                     a_ptr, power_ptr)                                         \
-  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i * stride_a_last]);  \
-  Generic(type) power_val =                                                    \
-      Cast_Float_When_Half(type, power_ptr[i * stride_pow_last]);              \
-  Generic(type) result = Map_Method(Generic(type), npy_pow, a_val, power_val); \
-  result_ptr[i] = Cast_Half_When_Half(type, result);
+#define Pow_LoopBody(generic_type, type, i, result_ptr, a_idx, pow_idx, a_ptr, \
+                     power_ptr)                                                \
+  generic_type a_val = Promote(type, a_ptr[a_idx]);                            \
+  generic_type power_val = Promote(type, power_ptr[pow_idx]);                  \
+  generic_type result = Map_Method(generic_type, npy_pow, a_val, power_val);   \
+  result_ptr[i] = Demote(type, result);
 
-#define Pow_LoopBody_Sequential(type, i, result_ptr, a_ptr, power_ptr)         \
-  Generic(type) a_val = Cast_Float_When_Half(type, a_ptr[i]);                  \
-  Generic(type) power_val = Cast_Float_When_Half(type, power_ptr[i]);          \
-  Generic(type) result = Map_Method(Generic(type), npy_pow, a_val, power_val); \
-  result_ptr[i] = Cast_Half_When_Half(type, result);
-
-#define Register_Binary_Operation_New(                                         \
-    name, type, result_type, inner_loop_body_universal, inner_loop_body_seq)   \
+#define Register_Binary_Operation_New(name, type, result_type,                 \
+                                      inner_loop_body_universal)               \
   PyObject *binary_##name##_##type(PyObject *a, PyObject *b) {                 \
     Perform_Universal_Operation(npy_##type, result_type,                       \
-                                inner_loop_body_universal,                     \
-                                inner_loop_body_seq, a, b);                    \
+                                inner_loop_body_universal, a, b);              \
   }
 
 #define Register_Binary_Operation_New_Err(name, type)                          \

@@ -57,41 +57,25 @@
       binary_##name##_void##sufix,        binary_##name##_datetime##sufix,     \
       binary_##name##_timedelta##sufix,   binary_##name##_half##sufix};
 
-#define Register_Binary_Operations_Floating_Types(name, universal_loop_body,   \
-                                                  sequential_loop_body)        \
-  Register_Binary_Operation_New(name, float, NPY_FLOAT, universal_loop_body,   \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, double, NPY_DOUBLE, universal_loop_body, \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, longdouble, NPY_LONGDOUBLE,              \
-                                universal_loop_body, sequential_loop_body);    \
-  Register_Binary_Operation_New(name, half, NPY_HALF, universal_loop_body,     \
-                                sequential_loop_body);
+#define Register_Binary_Operations_Floating_Types(name, loop_body)             \
+  Register_Binary_Operation_New(name, float, NPY_FLOAT, loop_body);            \
+  Register_Binary_Operation_New(name, double, NPY_DOUBLE, loop_body);          \
+  Register_Binary_Operation_New(name, longdouble, NPY_LONGDOUBLE, loop_body);  \
+  Register_Binary_Operation_New(name, half, NPY_HALF, loop_body);
 
-#define Register_Binary_Operations_Interger_Types(                             \
-    name, op_enum, universal_loop_body, sequential_loop_body)                  \
-  Register_Binary_Operation_New(name, bool, NPY_BOOL, universal_loop_body,     \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, byte, NPY_BYTE, universal_loop_body,     \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, ubyte, NPY_UBYTE, universal_loop_body,   \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, short, NPY_SHORT, universal_loop_body,   \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, ushort, NPY_USHORT, universal_loop_body, \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, int, NPY_INT, universal_loop_body,       \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, uint, NPY_UINT, universal_loop_body,     \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, long, NPY_LONG, universal_loop_body,     \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, ulong, NPY_ULONG, universal_loop_body,   \
-                                sequential_loop_body);                         \
-  Register_Binary_Operation_New(name, longlong, NPY_LONGLONG,                  \
-                                universal_loop_body, sequential_loop_body);    \
-  Register_Binary_Operation_New(name, ulonglong, NPY_ULONGLONG,                \
-                                universal_loop_body, sequential_loop_body);
+#define Register_Binary_Operations_Interger_Types(name, op_enum, loop_body,    \
+                                                  sequential_loop_body)        \
+  Register_Binary_Operation_New(name, bool, NPY_BOOL, loop_body);              \
+  Register_Binary_Operation_New(name, byte, NPY_BYTE, loop_body);              \
+  Register_Binary_Operation_New(name, ubyte, NPY_UBYTE, loop_body);            \
+  Register_Binary_Operation_New(name, short, NPY_SHORT, loop_body);            \
+  Register_Binary_Operation_New(name, ushort, NPY_USHORT, loop_body);          \
+  Register_Binary_Operation_New(name, int, NPY_INT, loop_body);                \
+  Register_Binary_Operation_New(name, uint, NPY_UINT, loop_body);              \
+  Register_Binary_Operation_New(name, long, NPY_LONG, loop_body);              \
+  Register_Binary_Operation_New(name, ulong, NPY_ULONG, loop_body);            \
+  Register_Binary_Operation_New(name, longlong, NPY_LONGLONG, loop_body);      \
+  Register_Binary_Operation_New(name, ulonglong, NPY_ULONGLONG, loop_body);
 
 #define Register_Binary_Operation_Err_Interger_Types(name)                     \
   Register_Binary_Operation_New_Err(name, bool);                               \

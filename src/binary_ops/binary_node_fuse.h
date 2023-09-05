@@ -31,7 +31,7 @@
       If(Has_Args(__VA_ARGS__))(DEFER2(_MAP0)()(m, __VA_ARGS__))
 
 #define MAP1(m0, m, type, x, ...)                                              \
-  m0(m(type))(x) If(Has_Args(__VA_ARGS__))(, )                                    \
+  m0(m(type))(x) If(Has_Args(__VA_ARGS__))(, )                                 \
       If(Has_Args(__VA_ARGS__))(DEFER2(_MAP1)()(m0, m, type, __VA_ARGS__))
 
 #define MAP_Or(m, x, ...)                                                      \
@@ -56,6 +56,10 @@
   m(w, x, y, z)                                                                \
       If(Has_Args(__VA_ARGS__))(DEFER2(_MAP5)()(m, x, y, z + 1, __VA_ARGS__))
 
+#define MAP6(seq, index, x, ...)                                               \
+  Should_Use_Stride(If_Seq(seq), index, x) If(Has_Args(__VA_ARGS__))(, )       \
+      If(Has_Args(__VA_ARGS__))(DEFER2(_MAP6)()(seq, index, __VA_ARGS__))
+
 #define NEXT(x, ...)                                                           \
   If(Has_Args(__VA_ARGS__))(+1)                                                \
       If(Has_Args(__VA_ARGS__))(DEFER2(_NEXT)()(__VA_ARGS__))
@@ -75,6 +79,7 @@
 #define _MAP3() MAP3
 #define _MAP4() MAP4
 #define _MAP5() MAP5
+#define _MAP6() MAP6
 #define Expand(...) Expand32(__VA_ARGS__)
 #define Expand1024(...) Expand512(Expand512(__VA_ARGS__))
 #define Expand512(...) Expand256(Expand256(__VA_ARGS__))

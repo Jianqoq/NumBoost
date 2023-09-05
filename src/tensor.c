@@ -387,27 +387,27 @@ PyMODINIT_FUNC PyInit_Numboost(void)
         return NULL;
     import_array();
     init_map();
-    PyDataMem_SetHandler(PyDataMem_DefaultHandler);
+    // PyDataMem_SetHandler(PyDataMem_DefaultHandler);
     
-    // PyDataMem_SetHandler(PyCapsule_New(&my_handler, "mem_handler", NULL));
-    // mem_chain = (Mem_Chain *)malloc(sizeof(Mem_Chain));
-    // cache *cache_struct = (cache *)malloc(sizeof(cache));
-    // cache_struct->max_mem = Mem_Pool_Size;
-    // cache_struct->mem_allocated = 0;
-    // cache_struct->mem_pool = (void **)malloc(sizeof(void *) * Mem_Pool_Size);
-    // cache_struct->tensor_size = 0;
-    // cache_struct->next = cache_struct;
-    // cache_struct->prev = cache_struct;
-    // mem_chain->head = cache_struct;
-    // mem_chain->tail = cache_struct;
-    // mem_chain->max_possible_cache_size = 0;
-    // cache_struct->mem_pool[0] = malloc(1);
+    PyDataMem_SetHandler(PyCapsule_New(&my_handler, "mem_handler", NULL));
+    mem_chain = (Mem_Chain *)malloc(sizeof(Mem_Chain));
+    cache *cache_struct = (cache *)malloc(sizeof(cache));
+    cache_struct->max_mem = Mem_Pool_Size;
+    cache_struct->mem_allocated = 0;
+    cache_struct->mem_pool = (void **)malloc(sizeof(void *) * Mem_Pool_Size);
+    cache_struct->tensor_size = 0;
+    cache_struct->next = cache_struct;
+    cache_struct->prev = cache_struct;
+    mem_chain->head = cache_struct;
+    mem_chain->tail = cache_struct;
+    mem_chain->max_possible_cache_size = 0;
+    cache_struct->mem_pool[0] = malloc(1);
 
-    // mem_chain->move_node_to_head = chain_move_node_to_head;
-    // mem_chain->pop = chain_pop;
-    // mem_chain->free_partial_mem_blocks = chain_free_partial_mem_blocks;
+    mem_chain->move_node_to_head = chain_move_node_to_head;
+    mem_chain->pop = chain_pop;
+    mem_chain->free_partial_mem_blocks = chain_free_partial_mem_blocks;
 
-    // HASH_ADD(hh, cache_pool, tensor_size, sizeof(size_t), cache_struct);
+    HASH_ADD(hh, cache_pool, tensor_size, sizeof(size_t), cache_struct);
     PyObject *m = PyModule_Create(&custommodule);
     if (m == NULL)
         return NULL;

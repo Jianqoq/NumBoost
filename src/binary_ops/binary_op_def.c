@@ -227,7 +227,7 @@ Register_Binary_Operation_Array(pow, , PyArrayObject, PyArrayObject);
 Register_Binary_Operation_Array(pow, _a_scalar, Python_Number, PyArrayObject);
 Register_Binary_Operation_Array(pow, _b_scalar, PyArrayObject, Python_Number);
 
-Register_Binary_Operations_Floating_Types(pow, Pow_LoopBody, Pow_LoopBody_Sequential);
+Register_Binary_Operations_Floating_Types(pow, Pow_LoopBody);
 Register_Binary_Operation_Err_Interger_Types(pow);
 Register_Binary_Operation_Err_Not_Support_Types(pow);
 Register_Binary_Operation_Array_New(pow, );
