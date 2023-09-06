@@ -147,7 +147,7 @@ PyArrayObject *numboost_broadcast(PyArrayObject *a, PyArrayObject *b,
     b_handler = b_;
   }
   PyArrayObject *result =
-      broadcast_operations[enum_op][result_type](a_, b_, enum_op, result_type);
+      broadcast_operations[enum_op][result_type](a_, b_, result_type);
   if (a_handler)
     Py_DECREF(a_handler);
   if (b_handler)

@@ -1,6 +1,7 @@
 #define NO_IMPORT_ARRAY
-#include "tensor.h"
 #include "import_module_methods.h"
+#include "tensor.h"
+
 
 #ifdef _MSC_VER
 #define Format_String "%s %lld"
@@ -19,9 +20,7 @@ _Generic_check_import_if_success(PyObject **struct_with_methods,
       char line[100];
       // 23 is the number of ops in the list above, need to change if num ops
       // are changed
-      sprintf(line, Format_String,
-              "Failed to import xla ops at import_methods.c line",
-              p - begin + start_line);
+      sprintf(line, Format_String, message, p - begin + start_line);
       PyErr_SetString(PyExc_RuntimeError, (const char *)line);
       free(struct_with_methods);
       return NULL;

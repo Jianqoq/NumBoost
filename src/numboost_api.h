@@ -32,10 +32,8 @@
 #define Float_0
 #define To_Float_1(x) npy_float
 #define To_Float_0(x) x
-#define Demote(x, args)                                           \
-  Cast_Half_If_Is_Half(Should_Cast_To(x))(args)
-#define Promote(x, args)                                          \
-  Cast_Float_If_Is_Half(Should_Cast_To(x))(args)
+#define Demote(x, args) Cast_Half_If_Is_Half(Should_Cast_To(x))(args)
+#define Promote(x, args) Cast_Float_If_Is_Half(Should_Cast_To(x))(args)
 #define Generic(x) To_Float_If_Is_Half(Should_Change_Type_To_Float(x))(x)
 /*================================== check half end ===================*/
 
@@ -343,7 +341,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   do {                                                                         \
     int ndim = PyArray_NDIM(result);                                           \
     npy_intp max_dim = ndim - 1;                                               \
-    Replicate5(Alloc_Copy_Strides_And_Indices, type, new_shapes, __VA_ARGS__); \
+    Replicate5(Alloc_Copy_Strides_And_Indices, type, new_shapes, result, __VA_ARGS__); \
     for (int i = 0; i < ndim; i++) {                                           \
       Replicate(Normalize_Strides_By_Type, type, __VA_ARGS__);                 \
     }                                                                          \
@@ -426,8 +424,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     free(shape_copy);                                                          \
   } while (0)
 
-#define Perform_Universal_Operation(type, result_type,                         \
-                                    inner_loop_body, ...)            \
+#define Perform_Universal_Operation(type, result_type, inner_loop_body, ...)   \
   do {                                                                         \
     bool shape_equal = true;                                                   \
     Replicate0_No_Comma(Handlers, __VA_ARGS__);                                \
@@ -477,21 +474,21 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
                                 PyArray_NDIM(biggest_array),                   \
                                 &broadcast_shape);                             \
       }                                                                        \
-      PyArrayObject *result = (PyArrayObject *)PyArray_EMPTY(                  \
+      PyArrayObject *__result = (PyArrayObject *)PyArray_EMPTY(                  \
           PyArray_NDIM(biggest_array), broadcast_shape, result_type, 0);       \
-      Universal_Operation(type, result, inner_loop_body, new_shapes,           \
+      Universal_Operation(type, __result, inner_loop_body, new_shapes,           \
                           __VA_ARGS__);                                        \
       Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
-      return (PyObject *)result;                                               \
+      return (PyObject *)__result;                                               \
     } else {                                                                   \
-      PyArrayObject *result = (PyArrayObject *)PyArray_EMPTY(                  \
+      PyArrayObject *__result = (PyArrayObject *)PyArray_EMPTY(                  \
           PyArray_NDIM((PyArrayObject *)_First_(__VA_ARGS__)),                 \
           PyArray_DIMS((PyArrayObject *)_First_(__VA_ARGS__)), result_type,    \
           0);                                                                  \
-      Universal_Operation_Sequential(type, result, inner_loop_body,            \
+      Universal_Operation_Sequential(type, __result, inner_loop_body,            \
                                      __VA_ARGS__);                             \
       Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
-      return (PyObject *)result;                                               \
+      return (PyObject *)__result;                                               \
     }                                                                          \
   } while (0)
 

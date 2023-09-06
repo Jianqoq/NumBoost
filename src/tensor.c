@@ -36,7 +36,7 @@ void store_for_slicebackward(Tensor *key, PyObject *slice_obj, npy_intp *ptr, in
     HASH_FIND_PTR(SLICE_DICT, &key, entry);
     if (entry == NULL)
     {
-        Slice_Dict *entry = (Slice_Dict *)malloc(sizeof(Slice_Dict));
+        entry = (Slice_Dict *)malloc(sizeof(Slice_Dict));
         entry->key = key;
         entry->slice_obj = slice_obj;
         entry->origin_shape = ptr;
@@ -48,7 +48,7 @@ void store_for_slicebackward(Tensor *key, PyObject *slice_obj, npy_intp *ptr, in
     HASH_FIND_PTR(ZEROS_ARRAY_DICT, &parent, entry2);
     if (entry2 == NULL)
     {
-        Zeros_Array_Dict *entry2 = (Zeros_Array_Dict *)malloc(sizeof(Zeros_Array_Dict));
+        entry2 = (Zeros_Array_Dict *)malloc(sizeof(Zeros_Array_Dict));
         PyObject *zeros = PyArray_Zeros(nd, (npy_intp const *)ptr, NULL, 0);
         entry2->parent = parent;
         entry2->zeros_array = zeros;
@@ -101,24 +101,25 @@ Tensor *get_tensor(long long index)
 
 PyObject *convert_tensor_dict_to_Py_dict(PyObject *self, PyObject *const *args, size_t nargsf)
 {
-    PyObject *dict = PyDict_New();
+    (void) nargsf;
+    PyObject *py_dict = PyDict_New();
     Tensor_need_grad_Dict *entry = NULL, *tmp = NULL;
     if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) == 1)
     {
         HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, entry, tmp)
         {
-            PyDict_SetItem(dict, (PyObject *)entry->tensor, args[0]);
+            PyDict_SetItem(py_dict, (PyObject *)entry->tensor, args[0]);
                     HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
         }
-        return dict;
+        return py_dict;
     }
     else
         HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, entry, tmp)
         {
-            PyDict_SetItem(dict, (PyObject *)entry->tensor, PyTuple_GetItem(args[0], entry->index));
+            PyDict_SetItem(py_dict, (PyObject *)entry->tensor, PyTuple_GetItem(args[0], entry->index));
                     HASH_DEL(TENSOR_NEED_GRAD_DICT, entry);
         }
-    return dict;
+    return py_dict;
 }
 
 void INCREF_TENSOR(Tensor *self)
@@ -272,9 +273,9 @@ static PyMethodDef module_methods[] = {
     {"sum", (PyCFunction)_sum, METH_FASTCALL, "Method docstring"},
     {"max", (PyCFunction)_max, METH_FASTCALL, "Method docstring"},
     {"min", (PyCFunction)_min, METH_FASTCALL, "Method docstring"},
-    {"sin", (PyCFunction)_sin, METH_FASTCALL, "Method docstring"},
-    {"cos", (PyCFunction)_cos, METH_FASTCALL, "Method docstring"},
-    {"tan", (PyCFunction)_tan, METH_FASTCALL, "Method docstring"},
+    {"sin", (PyCFunction)_sin, METH_O, "Method docstring"},
+    {"cos", (PyCFunction)_cos, METH_O, "Method docstring"},
+    {"tan", (PyCFunction)_tan, METH_O, "Method docstring"},
     {"arcsin", (PyCFunction)_asin, METH_FASTCALL, "Method docstring"},
     {"arccos", (PyCFunction)_acos, METH_FASTCALL, "Method docstring"},
     {"arctan", (PyCFunction)_atan, METH_FASTCALL, "Method docstring"},
@@ -306,7 +307,7 @@ static PyModuleDef custommodule = {
     .m_doc = "Tensor is a numpy wrapper which supports autograd",
     .m_size = -1,
     .m_methods = module_methods,
-    .m_free = free_all_resources,
+    .m_free = (freefunc)free_all_resources,
 };
 
 static PySequenceMethods sequence_methods = {

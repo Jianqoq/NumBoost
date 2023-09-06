@@ -120,13 +120,16 @@ Register_Broadcast_Operation_Err(double, rshift_);
 Register_Broadcast_Operation(double, pow_, nb_power_double, Pow_Inner_Loop);
 
 Register_Broadcast_Operation(longdouble, add_, nb_add, Standard_Inner_Loop);
-Register_Broadcast_Operation(longdouble, sub_, nb_subtract, Standard_Inner_Loop);
-Register_Broadcast_Operation(longdouble, mul_, nb_multiply, Standard_Inner_Loop);
+Register_Broadcast_Operation(longdouble, sub_, nb_subtract,
+                             Standard_Inner_Loop);
+Register_Broadcast_Operation(longdouble, mul_, nb_multiply,
+                             Standard_Inner_Loop);
 Register_Broadcast_Operation(longdouble, div_, nb_divide, Standard_Inner_Loop);
 Register_Broadcast_Operation_Err(longdouble, mod_);
 Register_Broadcast_Operation_Err(longdouble, lshift_);
 Register_Broadcast_Operation_Err(longdouble, rshift_);
-Register_Broadcast_Operation(longdouble, pow_, nb_power_long_double, Powl_Inner_Loop);
+Register_Broadcast_Operation(longdouble, pow_, nb_power_long_double,
+                             Powl_Inner_Loop);
 
 Register_Broadcast_Operation_All_Err(cfloat);
 Register_Broadcast_Operation_All_Err(cdouble);
@@ -156,5 +159,7 @@ Register_Broadcast_Operation_Array(pow_);
 Register_Broadcast_Operation_Array(lshift_);
 Register_Broadcast_Operation_Array(rshift_);
 
-PyArrayObject *(**broadcast_operations[])(PyArrayObject *, PyArrayObject *, int, int) = {broadcast_add_, broadcast_sub_, broadcast_mul_, broadcast_div_,
-                                                                                         broadcast_mod_, broadcast_pow_, broadcast_lshift_, broadcast_rshift_};
+PyArrayObject *(**broadcast_operations[])(PyArrayObject *, PyArrayObject *,
+                                          int) = {
+    broadcast_add_, broadcast_sub_, broadcast_mul_,    broadcast_div_,
+    broadcast_mod_, broadcast_pow_, broadcast_lshift_, broadcast_rshift_};

@@ -94,6 +94,8 @@ int gloabal_float_type = NPY_FLOAT;
 
 PyObject *set_global_float_type(PyObject *self, PyObject *const *args,
                                 size_t nargsf) {
+                                  (void) self;
+                                  (void) nargsf;
   int type = (int)PyLong_AsLong(args[0]);
   if (type == NPY_FLOAT || type == NPY_DOUBLE || type == NPY_LONGDOUBLE ||
       type == NPY_HALF)
@@ -705,6 +707,8 @@ int elementwise_result_type(int op, int a_dtype) {
 
 PyObject *binary_result_type_(PyObject *self, PyObject *const *args,
                               size_t nargsf) {
+                                (void) self;
+                                (void) nargsf;
   long op = PyLong_AsLong(args[0]);
   long a_dtype = PyLong_AsLong(args[1]);
   long a_size = PyLong_AsLong(args[2]);

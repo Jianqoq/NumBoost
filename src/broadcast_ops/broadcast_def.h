@@ -1,7 +1,7 @@
 #ifndef BROADCAST_FUNC_DEF_H
 #define BROADCAST_FUNC_DEF_H
-#include "numpy/arrayobject.h"
 #include "broadcast_impl.h"
+#include "numpy/arrayobject.h"
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -19,28 +19,45 @@
 
 #define Register_Broadcast_Operation_Err(type, suffix)                         \
   static PyArrayObject *Broadcast_Standard_##type##_##suffix(                  \
-      PyArrayObject *a, PyArrayObject *b, int op_enum, int result_type) {      \
-    const char *string[] = {"Operation not supported for", #type, "type"};     \
-    size_t length =                                                            \
-        strlen(string[0]) + strlen(string[1]) + strlen(string[2]) + 1;         \
-    char *string_cat = (char *)malloc(length);                                 \
-    strcpy(string_cat, string[0]);                                             \
-    strcat(string_cat, string[1]);                                             \
-    strcat(string_cat, string[2]);                                             \
-    PyErr_SetString(PyExc_TypeError, string_cat);                              \
-    free(string_cat);                                                          \
+      PyArrayObject *a, PyArrayObject *b, int result_type) {                   \
+      (void)result_type;\
+    PyErr_SetString(PyExc_TypeError, Str(Operation not supported for type));   \
+    fprintf(stderr, "a: ");                                                     \
+    PyObject_Print((PyObject*)a, stderr, 0);                                               \
+    fprintf(stderr, "\nb: ");                                                   \
+    PyObject_Print((PyObject*)b, stderr, 0);                                               \
     return NULL;                                                               \
   }
-  
-#define Register_Broadcast_Operation_Array(sufix)                                                                                                         \
-    PyArrayObject *(*broadcast_##sufix[])(PyArrayObject *, PyArrayObject *, int, int) = {                                                                 \
-        Broadcast_Standard_bool_##sufix, Broadcast_Standard_byte_##sufix, Broadcast_Standard_ubyte_##sufix, Broadcast_Standard_short_##sufix,             \
-        Broadcast_Standard_ushort_##sufix, Broadcast_Standard_int_##sufix, Broadcast_Standard_uint_##sufix, Broadcast_Standard_long_##sufix,              \
-        Broadcast_Standard_ulong_##sufix, Broadcast_Standard_longlong_##sufix, Broadcast_Standard_ulonglong_##sufix, Broadcast_Standard_float_##sufix,    \
-        Broadcast_Standard_double_##sufix, Broadcast_Standard_longdouble_##sufix, Broadcast_Standard_cfloat_##sufix, Broadcast_Standard_cdouble_##sufix,  \
-        Broadcast_Standard_clongdouble_##sufix, Broadcast_Standard_object_##sufix, Broadcast_Standard_string_##sufix, Broadcast_Standard_unicode_##sufix, \
-        Broadcast_Standard_void_##sufix, Broadcast_Standard_datetime_##sufix, Broadcast_Standard_timedelta_##sufix, Broadcast_Standard_half_##sufix};
 
-extern PyArrayObject *(**broadcast_operations[])(PyArrayObject *, PyArrayObject *, int, int);
+#define Register_Broadcast_Operation_Array(sufix)                              \
+  PyArrayObject *(*broadcast_##sufix[])(PyArrayObject *, PyArrayObject *,      \
+                                        int) = {                               \
+      Broadcast_Standard_bool_##sufix,                                         \
+      Broadcast_Standard_byte_##sufix,                                         \
+      Broadcast_Standard_ubyte_##sufix,                                        \
+      Broadcast_Standard_short_##sufix,                                        \
+      Broadcast_Standard_ushort_##sufix,                                       \
+      Broadcast_Standard_int_##sufix,                                          \
+      Broadcast_Standard_uint_##sufix,                                         \
+      Broadcast_Standard_long_##sufix,                                         \
+      Broadcast_Standard_ulong_##sufix,                                        \
+      Broadcast_Standard_longlong_##sufix,                                     \
+      Broadcast_Standard_ulonglong_##sufix,                                    \
+      Broadcast_Standard_float_##sufix,                                        \
+      Broadcast_Standard_double_##sufix,                                       \
+      Broadcast_Standard_longdouble_##sufix,                                   \
+      Broadcast_Standard_cfloat_##sufix,                                       \
+      Broadcast_Standard_cdouble_##sufix,                                      \
+      Broadcast_Standard_clongdouble_##sufix,                                  \
+      Broadcast_Standard_object_##sufix,                                       \
+      Broadcast_Standard_string_##sufix,                                       \
+      Broadcast_Standard_unicode_##sufix,                                      \
+      Broadcast_Standard_void_##sufix,                                         \
+      Broadcast_Standard_datetime_##sufix,                                     \
+      Broadcast_Standard_timedelta_##sufix,                                    \
+      Broadcast_Standard_half_##sufix};
+
+extern PyArrayObject *(**broadcast_operations[])(PyArrayObject *,
+                                                 PyArrayObject *, int);
 
 #endif

@@ -138,7 +138,7 @@ PyArrayObject *numboost_broadcast(PyArrayObject *, PyArrayObject *, int);
 
 #define Register_Broadcast_Operation(type, suffix, op, inner_loop_body)        \
   static PyArrayObject *Broadcast_Standard_##type##_##suffix(                  \
-      PyArrayObject *a_, PyArrayObject *b_, int op_enum, int result_type) {    \
+      PyArrayObject *a_, PyArrayObject *b_, int result_type) {                 \
     int a_ndim = PyArray_NDIM(a_);                                             \
     int b_ndim = PyArray_NDIM(b_);                                             \
     npy_intp *a_shape = NULL;                                                  \

@@ -93,7 +93,7 @@ inline npy_half float_cast_half(npy_float value)
     if (e <= 0x38000000u)
     {
         if (e < 0x33000000u)
-            return float32_sign;
+            return (uint16_t)float32_sign;
         e >>= 23;
         float32_m += 0x00800000u;
         float32_m >>= (113 - e);

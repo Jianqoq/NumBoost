@@ -52,9 +52,9 @@
   x##_ If(Has_Args(__VA_ARGS__))(, )                                           \
       If(Has_Args(__VA_ARGS__))(DEFER2(_MAP4)()(__VA_ARGS__))
 
-#define MAP5(m, x, y, z, w, ...)                                               \
-  m(w, x, y, z)                                                                \
-      If(Has_Args(__VA_ARGS__))(DEFER2(_MAP5)()(m, x, y, z + 1, __VA_ARGS__))
+#define MAP5(m, type, new_shapes, result, index, w, ...)                                            \
+  m(w, type, new_shapes, result, index) If(Has_Args(__VA_ARGS__))(                                  \
+      DEFER2(_MAP5)()(m, type, new_shapes, result, index + 1, __VA_ARGS__))
 
 #define MAP6(seq, index, x, ...)                                               \
   Should_Use_Stride(If_Seq(seq), index, x) If(Has_Args(__VA_ARGS__))(, )       \
@@ -102,7 +102,7 @@
 #define Stries_Last(x) stride_##x##_last
 #define Parameter_type(x) PyObject *x
 #define Parameter_type_(x) PyObject *
-#define Alloc_Copy_Strides_And_Indices(x, type, new_shapes, index)             \
+#define Alloc_Copy_Strides_And_Indices(x, type, new_shapes, result, index)     \
   npy_intp *__strides_##x = PyArray_STRIDES(x##_);                             \
   npy_intp *strides_##x = NULL;                                                \
   npy_intp *indice_##x##_cache = (npy_intp *)malloc(sizeof(npy_intp) * ndim);  \
@@ -208,7 +208,8 @@
 
 #define Replicate4(...) Expand(MAP4(__VA_ARGS__))
 
-#define Replicate5(method, x, y, ...) Expand(MAP5(method, x, y, 0, __VA_ARGS__))
+#define Replicate5(method, type, new_shapes, result, ...)                                       \
+  Expand(MAP5(method, type, new_shapes, result, 0, __VA_ARGS__))
 
 #define INDIRECT_REPLICATE0(func, ...) Replicate0(func, __VA_ARGS__)
 

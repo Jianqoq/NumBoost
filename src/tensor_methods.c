@@ -14,6 +14,7 @@ extern Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT;
 extern PyTypeObject TensorIterator_type;
 
 PyObject *astype(Tensor *self, PyObject *const *args, size_t nargsf) {
+  (void)nargsf;
   int tp = (int)PyLong_AsLong(args[0]);
   PyArrayObject *arr = NULL;
   PyArrayObject *self_data = (PyArrayObject *)self->data;
@@ -268,11 +269,11 @@ PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 }
 
 PyObject *__tensor(PyObject *self, PyObject *args, PyObject *kwds) {
+  (void) self;
   return __new__(Tensor_type, args, kwds);
 }
 
-Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf,
-                       PyObject *kwnames) {
+Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf) {
   Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
   PyArrayObject *array = (PyArrayObject *)self->data;
   npy_intp *dims = malloc(sizeof(npy_intp) * nargs);
@@ -292,8 +293,7 @@ Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf,
   return self;
 }
 
-Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf,
-                     PyObject *kwnames) {
+Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf) {
   size_t nargs = PyVectorcall_NARGS(nargsf);
   PyArrayObject *array;
   int order = 0;
@@ -331,24 +331,24 @@ Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf,
 
 PyObject *collect_gradients_and_cleanup() {
   Tensor_need_grad_Dict *gradient_entry, *gradient_tmp;
-  PyObject *dict = PyDict_New();
+  PyObject *map = PyDict_New();
   if (HASH_COUNT(TENSOR_NEED_GRAD_DICT) == 1) {
     HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, gradient_entry, gradient_tmp) {
-      PyDict_SetItem(dict, (PyObject *)gradient_entry->tensor,
+      PyDict_SetItem(map, (PyObject *)gradient_entry->tensor,
                      gradient_entry->tensor->grad);
       gradient_entry->tensor->grad = PyLong_FromLong(0);
       HASH_DEL(TENSOR_NEED_GRAD_DICT, gradient_entry);
     }
   } else {
     HASH_ITER(hh, TENSOR_NEED_GRAD_DICT, gradient_entry, gradient_tmp) {
-      PyDict_SetItem(dict, (PyObject *)gradient_entry->tensor,
+      PyDict_SetItem(map, (PyObject *)gradient_entry->tensor,
                      gradient_entry->tensor->grad);
       HASH_DEL(TENSOR_NEED_GRAD_DICT, gradient_entry);
       gradient_entry->tensor->grad = PyLong_FromLong(0);
     }
   }
   // Cleanup: decrease reference count of list and also all tensor in POWER_DICT
-  return dict;
+  return map;
 }
 
 static void store_tensor_need_grad(long long index, Tensor *tensor) {

@@ -393,6 +393,10 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b,
   static PyArrayObject *Binary_##name##data_type##sufix(a_type *a,                     \
                                                         b_type *b) {                   \
     PyErr_SetString(PyExc_TypeError, Str(Operation not supported for data_type type)); \
+    fprintf(stderr, "a: \n");                                                          \
+    PyObject_Print((PyObject *)a, stdout, 0);                                          \
+    fprintf(stderr, "\nb: \n");                                                        \
+    PyObject_Print((PyObject *)b, stdout, 0);                                          \
     return NULL;                                                                       \
   }
 

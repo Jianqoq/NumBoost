@@ -32,6 +32,7 @@
 #define Register_ElementWise_Operation_Err(name, type)                         \
   PyObject *elementwise_##name##_##type(PyObject *a) {                         \
     PyErr_SetString(PyExc_TypeError, Str(name not supported for type));        \
+    PyObject_Print(a, stderr, 0);                                               \
     return NULL;                                                               \
   }
 
