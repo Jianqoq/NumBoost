@@ -1010,15 +1010,31 @@ PyArrayObject *numboost_binary_scalar_right(PyArrayObject *a, PyObject *b,
   generic_type result = Map_Method(generic_type, npy_pow, a_val, power_val);   \
   result_ptr[i] = Demote(type, result);
 
+#define Add_LoopBody(generic_type, type, i, result_ptr, a_last_stride,         \
+                     b_last_stride, a_ptr, b_ptr)                              \
+  generic_type a_val = Promote(type, a_ptr[i * a_last_stride]);                \
+  generic_type b_val = Promote(type, b_ptr[i * b_last_stride]);                \
+  generic_type result = a_val + b_val;                                         \
+  result_ptr[i] = Demote(type, result);
+
 #define Register_Binary_Operation_New(name, type, result_type,                 \
                                       inner_loop_body_universal)               \
-  PyObject *binary_##name##_##type(PyObject *a, PyObject *b) {                 \
-    Perform_Universal_Operation(npy_##type, result_type,                       \
-                                inner_loop_body_universal, a, b);              \
+  PyObject *binary_##name##_##type(PyObject *a, PyObject *b) {                \
+    PyArrayObject **return_arr =                                               \
+        (PyArrayObject **)malloc(sizeof(PyArrayObject *) * 1);                 \
+    Perform_Universal_Operation(npy_##type, return_arr, result_type,           \
+                                inner_loop_body_universal, (result), a, b);    \
+    if (return_arr == NULL) {                                                  \
+      return NULL;                                                             \
+    } else {                                                                   \
+      PyObject *ret = (PyObject *)return_arr[0];                               \
+      free(return_arr);                                                        \
+      return ret;                                                             \
+    }                                                                          \
   }
 
 #define Register_Binary_Operation_New_Err(name, type)                          \
-  PyObject *binary_##name##_##type(PyObject *a, PyObject *b) {                 \
+  PyObject *binary_##name##_##type(PyObject *a, PyObject *b) {                \
     PyErr_SetString(PyExc_TypeError, Str(name not supported for type));        \
     return NULL;                                                               \
   }

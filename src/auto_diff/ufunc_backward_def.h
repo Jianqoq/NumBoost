@@ -43,11 +43,21 @@
 @param  ...                the tensors that need to be fused
  */
 #define Register_FuseBackward_Operation(name, type, result_type,               \
-                                        inner_loop_body_universal, ...)          \
+                                        inner_loop_body_universal, ...)        \
   PyObject *name##_backward_fuse_##type(                                       \
       Replicate0_With_Comma(Parameter_type, __VA_ARGS__)) {                    \
-    Perform_Universal_Operation(npy_##type, result_type,                       \
-                                inner_loop_body_universal, __VA_ARGS__);       \
+    PyArrayObject **result =                                                   \
+        (PyArrayObject **)malloc(sizeof(PyArrayObject *));                     \
+    Perform_Universal_Operation(npy_##type, result, result_type,               \
+                                inner_loop_body_universal, (result),           \
+                                __VA_ARGS__);                                  \
+    if (result == NULL) {                                                      \
+      return NULL;                                                             \
+    } else {                                                                   \
+      PyArrayObject *result_array = *result;                                   \
+      free(result);                                                            \
+      return (PyObject *)result_array;                                         \
+    }                                                                          \
   }
 
 #define Register_FuseBackward_Operation_Err(name, type, ...)                   \

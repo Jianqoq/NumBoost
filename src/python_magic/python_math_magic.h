@@ -7,14 +7,8 @@
 
 PyObject *__new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y, const char *grad_fn);
 
-PyObject *
-new_Tensor(Tensor *tensor, Tensor *tensor2, PyObject *data, const char *grad_fn);
-
-PyObject *
-new_Tensor_scalar(Tensor *self, PyObject *data, PyObject *y, const char *grad_fn);
-
-PyObject *
-new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn);
+PyObject *create_Tensor(Tensor *tensor, PyObject *other, PyObject *data,
+                        const char *grad_fn);
 
 PyObject *
 Tensor__new__(PyTypeObject *type, PyObject *data);
@@ -81,7 +75,7 @@ PyObject *tensor_ifloordiv(PyObject *self, PyObject *other);
         }                                                                                                 \
         if (numpy_result == NULL)                                                                         \
             return NULL;                                                                                  \
-        PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, backward_name);                       \
+        PyObject *new_tensor = create_Tensor(_self, other, numpy_result, backward_name);                       \
         return new_tensor;                                                                                \
     }                                                                                                     \
     else if (Py_IS_TYPE(other, Tensor_type) && PyArray_IsPythonNumber(self))                              \
@@ -91,7 +85,7 @@ PyObject *tensor_ifloordiv(PyObject *self, PyObject *other);
         numpy_result = (PyObject *)numboost_binary_scalar_left(self, b, op_enum);                         \
         if (numpy_result == NULL)                                                                         \
             return NULL;                                                                                  \
-        PyObject *new_tensor = new_Tensor_scalar((Tensor *)other, numpy_result, other, backward_name);    \
+        PyObject *new_tensor = create_Tensor((Tensor *)other, other, numpy_result, backward_name);    \
         Py_DECREF(numpy_result);                                                                          \
         return new_tensor;                                                                                \
     }                                                                                                     \
@@ -102,7 +96,7 @@ PyObject *tensor_ifloordiv(PyObject *self, PyObject *other);
         numpy_result = (PyObject *)numboost_binary_scalar_right(a, other, op_enum);                       \
         if (numpy_result == NULL)                                                                         \
             return NULL;                                                                                  \
-        PyObject *new_tensor = new_Tensor_scalar(tmp, numpy_result, other, backward_name);                \
+        PyObject *new_tensor = create_Tensor(tmp, other, numpy_result, backward_name);                \
         Py_DECREF(numpy_result);                                                                          \
         return new_tensor;                                                                                \
     }                                                                                                     \

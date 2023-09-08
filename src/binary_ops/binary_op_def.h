@@ -43,7 +43,7 @@
       Binary_##op##_timedelta##sufix,   Binary_##op##_half##sufix};
 
 #define Register_Binary_Operation_Array_New(name, sufix)                       \
-  PyObject *(*name##_operations##sufix##_new[])(PyObject *, PyObject *) = {    \
+  PyObject *(*name##_operations##sufix##_new[])(PyObject *, PyObject *) = {   \
       binary_##name##_bool##sufix,        binary_##name##_byte##sufix,         \
       binary_##name##_ubyte##sufix,       binary_##name##_short##sufix,        \
       binary_##name##_ushort##sufix,      binary_##name##_int##sufix,          \
@@ -102,7 +102,7 @@
   Register_Binary_Operation_New_Err(name, timedelta);
 
 #define Register_Binary_Operation_Method(name, op_enum)                        \
-  PyObject *numboost_##name(PyObject *a, PyObject *b) {                        \
+  PyObject *numboost_##name(PyObject *a, PyObject *b) {                       \
     int a_type = any_to_type_enum(a);                                          \
     int b_type = any_to_type_enum(b);                                          \
     int result_type = binary_result_type(op_enum, a_type, type_2_size[a_type], \
@@ -113,7 +113,10 @@
       return NULL;                                                             \
     }                                                                          \
     assert(result_type <= NPY_HALF);                                           \
-    PyObject *result = name##_operations_new[result_type](a, b);               \
+    PyObject *result = name##_operations_new[result_type](a, b);              \
+    if (result == NULL) {                                                      \
+      return NULL;                                                             \
+    }                                                                          \
     return result;                                                             \
   }
 
@@ -126,5 +129,6 @@ extern PyArrayObject *(**operations_b_scalar[])(PyArrayObject *,
                                                 Python_Number *);
 
 PyObject *numboost_pow(PyObject *a, PyObject *b);
+PyObject *numboost_add(PyObject *a, PyObject *b);
 
 #endif

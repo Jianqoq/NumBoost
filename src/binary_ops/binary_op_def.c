@@ -12,6 +12,12 @@ Register_Binary_Operation(add_, longdouble, Binary_Operation, nb_add, NPY_LONGDO
 NotImplement_Err(add_, , PyArrayObject, PyArrayObject);
 Register_Binary_Operation(add_, half, Binary_Operation, nb_add_half, NPY_HALF, Binary_Loop);
 
+Register_Binary_Operations_Floating_Types(add, Add_LoopBody);
+Register_Binary_Operation_Err_Interger_Types(add);
+Register_Binary_Operation_Err_Not_Support_Types(add);
+Register_Binary_Operation_Array_New(add, );
+Register_Binary_Operation_Method(add, ADD);
+
 Register_Int_Binary_Operations(add_, _A_Scalar, Binary_Operation_A_Scalar, nb_add, , Binary_Loop_a_Scalar);
 Register_Binary_Operation_A_Scalar(add_, float, Binary_Operation_A_Scalar, nb_add, NPY_FLOAT, Binary_Loop_a_Scalar);
 Register_Binary_Operation_A_Scalar(add_, double, Binary_Operation_A_Scalar, nb_add, NPY_DOUBLE, Binary_Loop_a_Scalar);
@@ -245,18 +251,18 @@ Register_Binary_Operation_Array(floor_div, , PyArrayObject, PyArrayObject);
 Register_Binary_Operation_Array(floor_div, _a_scalar, Python_Number, PyArrayObject);
 Register_Binary_Operation_Array(floor_div, _b_scalar, PyArrayObject, Python_Number);
 
-PyArrayObject *(**operations[])(PyArrayObject *, PyArrayObject *) = {add_operations, sub_operations, mul_operations, div_operations,
+PyArrayObject* (**operations[])(PyArrayObject*, PyArrayObject*) = { add_operations, sub_operations, mul_operations, div_operations,
                                                                      mod_operations, pow_operations, left_shift_operations,
-                                                                     right_shift_operations, floor_div_operations};
+                                                                     right_shift_operations, floor_div_operations };
 
-PyArrayObject *(**operations_a_scalar[])(Python_Number *, PyArrayObject *) = {add_operations_a_scalar, sub_operations_a_scalar,
+PyArrayObject* (**operations_a_scalar[])(Python_Number*, PyArrayObject*) = { add_operations_a_scalar, sub_operations_a_scalar,
                                                                               mul_operations_a_scalar, div_operations_a_scalar,
                                                                               mod_operations_a_scalar, pow_operations_a_scalar,
                                                                               left_shift_operations_a_scalar, right_shift_operations_a_scalar,
-                                                                              floor_div_operations_a_scalar};
+                                                                              floor_div_operations_a_scalar };
 
-PyArrayObject *(**operations_b_scalar[])(PyArrayObject *, Python_Number *) = {add_operations_b_scalar, sub_operations_b_scalar,
+PyArrayObject* (**operations_b_scalar[])(PyArrayObject*, Python_Number*) = { add_operations_b_scalar, sub_operations_b_scalar,
                                                                               mul_operations_b_scalar, div_operations_b_scalar,
                                                                               mod_operations_b_scalar, pow_operations_b_scalar,
                                                                               left_shift_operations_b_scalar, right_shift_operations_b_scalar,
-                                                                              floor_div_operations_b_scalar};
+                                                                              floor_div_operations_b_scalar };

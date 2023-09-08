@@ -184,8 +184,8 @@ inline static Tensor *Generic_function_new_double(
   }
 }
 
-inline static Tensor *Generic_function(PyObject *func, const char *grad_fn, PyObject *const *args,
-                                       size_t nargsf) {
+inline static Tensor *Generic_function(PyObject *func, const char *grad_fn,
+                                       PyObject *const *args, size_t nargsf) {
   PyObject *result;
   Tensor *tensor = NULL;
   if (nargsf == 1) {
@@ -291,7 +291,7 @@ inline static PyObject *Generic_function_new_double_internal(
 
 Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf,
                 PyObject *kwnames) {
-                  (void)self;
+  (void)self;
   size_t nargs = PyVectorcall_NARGS(nargsf);
   PyArrayObject *array;
   npy_intp *pre_shape = NULL;
@@ -445,7 +445,7 @@ static inline void *handle_axes(long **axes_, PyObject *axes_tuple,
 
 Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf,
                   PyObject *kwnames) {
-                    (void)self;
+  (void)self;
   if (nargsf != 3) {
     PyErr_SetString(PyExc_TypeError, "Expected 3 positional arguments");
     return NULL;
@@ -577,7 +577,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf,
   PyArray_Dims olds_merge_dims = {olds_merge_shape, total_len};
   PyObject *result =
       PyArray_Newshape((PyArrayObject *)res, &olds_merge_dims, 0);
-  Tensor *to_return = (Tensor *)new_Tensor((Tensor *)args[0], (Tensor *)args[1],
+  Tensor *to_return = (Tensor *)create_Tensor((Tensor *)args[0], (Tensor *)args[1],
                                            result, "TensordotBackward");
   Py_DECREF(a);
   Py_DECREF(b);
@@ -627,7 +627,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf,
 
 PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf,
                     PyObject *kwnames) {
-                      (void)self;
+  (void)self;
   int nargs = (int)PyVectorcall_NARGS(nargsf);
   DEBUG_PRINT("nargs: %d\n", nargs);
   if (nargs < 2) {
@@ -654,7 +654,7 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf,
   if (result == NULL) {
     return NULL;
   }
-  PyObject *to_return = new_Tensor_x(tensor, result, "TransposeBackward");
+  PyObject *to_return = create_Tensor(tensor, Py_None, result, "TransposeBackward");
   if (tensor->require_grad)
     store_array_shape((Tensor *)to_return, dims, length);
   else
@@ -664,7 +664,7 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf,
 
 Tensor *_sum(PyObject *self, PyObject *const *args, size_t nargsf) {
   (void)self;
-  (void) nargsf;
+  (void)nargsf;
   Tensor *tensor = (Tensor *)args[0];
   PyArrayObject *tmp = (PyArrayObject *)tensor->data;
   int axis = NPY_MAXDIMS;
@@ -721,7 +721,7 @@ Tensor *_sum(PyObject *self, PyObject *const *args, size_t nargsf) {
 }
 
 Tensor *_max(PyObject *self, PyObject *const *args, size_t nargsf) {
-  (void) nargsf;
+  (void)nargsf;
   (void)self;
   Tensor *tensor = (Tensor *)args[0];
   PyArrayObject *tmp = (PyArrayObject *)tensor->data;
@@ -779,7 +779,7 @@ Tensor *_max(PyObject *self, PyObject *const *args, size_t nargsf) {
 }
 
 Tensor *_min(PyObject *self, PyObject *const *args, size_t nargsf) {
-  (void) nargsf;
+  (void)nargsf;
   (void)self;
   Tensor *tensor = (Tensor *)args[0];
   PyArrayObject *tmp = (PyArrayObject *)tensor->data;
@@ -884,7 +884,7 @@ Tensor *_mean(PyObject *self, PyObject *const *args, size_t nargsf) {
 }
 
 Tensor *_argmax_wrapper(PyObject *self, PyObject *const *args, size_t nargsf) {
-  (void) nargsf;
+  (void)nargsf;
   (void)self;
   Tensor *tensor = (Tensor *)args[0];
   PyArrayObject *tmp = (PyArrayObject *)tensor->data;
@@ -932,7 +932,7 @@ Tensor *_argmax_wrapper(PyObject *self, PyObject *const *args, size_t nargsf) {
 }
 
 Tensor *_argmin_wrapper(PyObject *self, PyObject *const *args, size_t nargsf) {
-  (void) nargsf;
+  (void)nargsf;
   (void)self;
   Tensor *tensor = (Tensor *)args[0];
   PyArrayObject *tmp = (PyArrayObject *)tensor->data;
@@ -988,48 +988,50 @@ Tensor *_sin(PyObject *self, PyObject *tensor) {
 Tensor *_cos(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_cos(((Tensor *)tensor)->data);
+  free(result);
   return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "CosBackward");
 }
 
 Tensor *_tan(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_tan(((Tensor *)tensor)->data);
+  free(result);
   return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "TanBackward");
 }
 
 Tensor *_asin(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_asin(((Tensor *)tensor)->data);
-  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL,
-                                "ArcSinBackward");
+  free(result);
+  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "ArcSinBackward");
 }
 
 Tensor *_acos(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_acos(((Tensor *)tensor)->data);
-  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL,
-                                "ArcCosBackward");
+  free(result);
+  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "ArcCosBackward");
 }
 
 Tensor *_atan(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_atan(((Tensor *)tensor)->data);
-  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL,
-                                "ArcTanBackward");
+  free(result);
+  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "ArcTanBackward");
 }
 
 Tensor *_sinh(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_sinh(((Tensor *)tensor)->data);
-  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL,
-                                "SinhBackward");
+  free(result);
+  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "SinhBackward");
 }
 
 Tensor *_cosh(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_cosh(((Tensor *)tensor)->data);
-  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL,
-                                "CoshBackward");
+  free(result);
+  return (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "CoshBackward");
 }
 
 Tensor *_exp(PyObject *self, PyObject *const *args, size_t nargsf) {
@@ -1092,6 +1094,7 @@ Tensor *_log(PyObject *self, PyObject *const *args, size_t nargsf) {
 Tensor *_tanh(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_tanh(((Tensor *)tensor)->data);
+  free(result);
   Tensor *to_return =
       (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "TanhBackward");
   return to_return;
@@ -1100,24 +1103,27 @@ Tensor *_tanh(PyObject *self, PyObject *tensor) {
 Tensor *_asinh(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_asinh(((Tensor *)tensor)->data);
-  Tensor *to_return = (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL,
-                                             "ArcSinhBackward");
+  free(result);
+  Tensor *to_return =
+      (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "ArcSinhBackward");
   return to_return;
 }
 
 Tensor *_acosh(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_acosh(((Tensor *)tensor)->data);
-  Tensor *to_return = (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL,
-                                             "ArcCoshBackward");
+  free(result);
+  Tensor *to_return =
+      (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "ArcCoshBackward");
   return to_return;
 }
 
 Tensor *_atanh(PyObject *self, PyObject *tensor) {
   (void)self;
   PyObject *result = numboost_atanh(((Tensor *)tensor)->data);
-  Tensor *to_return = (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL,
-                                             "ArcTanhBackward");
+  free(result);
+  Tensor *to_return =
+      (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "ArcTanhBackward");
   return to_return;
 }
 
@@ -1141,8 +1147,8 @@ Tensor *_sqrt(PyObject *self, PyObject *const *args, size_t nargsf) {
 }
 
 Tensor *_abs(PyObject *self, PyObject *const *args, size_t nargsf) {
-  (void) nargsf;
-(void)self;
+  (void)nargsf;
+  (void)self;
   PyObject *result = numboost_abs(((Tensor *)args[0])->data);
   Tensor *to_return =
       (Tensor *)__new_Tensor((Tensor *)args[0], result, NULL, "AbsBackward");
@@ -1150,7 +1156,7 @@ Tensor *_abs(PyObject *self, PyObject *const *args, size_t nargsf) {
 }
 
 Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf) {
-  (void) nargsf;
+  (void)nargsf;
   (void)self;
   PyObject *result = NULL;
   Tensor *tensor = NULL;
@@ -1162,8 +1168,7 @@ Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf) {
     power = tmp->data;
   }
   result = numboost_pow(tensor->data, power);
-  Tensor *to_return =
-      (Tensor *)__new_Tensor(tensor, result, NULL, "PowBackward");
+  Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "PowBackward");
   if (tensor->require_grad)
     store_power(to_return, power);
   return to_return;

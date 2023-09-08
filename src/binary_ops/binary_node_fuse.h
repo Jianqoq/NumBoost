@@ -22,6 +22,9 @@
 #define escape(...) __VA_ARGS__
 #define If2(x) Concat_(If2_, x)
 #define COMMA() ,
+#define Remove_Parentheses(x) Remove_Parentheses_Helper x
+#define Remove_Parentheses_Helper(...) __VA_ARGS__
+#define Extract(x) x
 
 #define MAP0_No_Comma(m, x, ...)                                               \
   m(x) If(Has_Args(__VA_ARGS__))(DEFER2(_MAP0_No_Comma)()(m, __VA_ARGS__))
@@ -45,15 +48,33 @@
   m(z, x, y) If(Has_Args(__VA_ARGS__))(DEFER2(_MAP2)()(m, x, y, __VA_ARGS__))
 
 #define MAP3(m, x, y, z, w, ...)                                               \
-  m(y, z, w, x)                                                                \
-      If(Has_Args(__VA_ARGS__))(DEFER2(_MAP3)()(m, y, z, w, __VA_ARGS__))
+  m(w, x, y, z)                                                                \
+      If(Has_Args(__VA_ARGS__))(DEFER2(_MAP3)()(m, x, y, z, __VA_ARGS__))
+
+#define Correct_Type_MAP(m, result_type, type, x, ...)                         \
+  m(x, result_type, type) If(Has_Args(__VA_ARGS__))(                           \
+      DEFER2(_Correct_Type_MAP)()(m, result_type, type, __VA_ARGS__))
+
+#define Alloc_Results_MAP(m, biggest_array, shape, result_type, x, ...)        \
+  m(x, biggest_array, shape, result_type)                                      \
+      If(Has_Args(__VA_ARGS__))(DEFER2(_Alloc_Results_MAP)()(                  \
+          m, biggest_array, shape, result_type, __VA_ARGS__))
+
+#define Adjust_Result_Ptrs_MAP(m, start_index, end_index, inner_loop_size, x,  \
+                               ...)                                            \
+  m(start_index, end_index, inner_loop_size, x)                                \
+      If(Has_Args(__VA_ARGS__))(DEFER2(_Adjust_Result_Ptrs_MAP)()(             \
+          m, start_index, end_index, inner_loop_size, __VA_ARGS__))
+
+#define Results_MAP(m, x, ...)                                                 \
+  m(x) If(Has_Args(__VA_ARGS__))(DEFER2(_Results_MAP)()(m, __VA_ARGS__))
 
 #define MAP4(x, ...)                                                           \
   x##_ If(Has_Args(__VA_ARGS__))(, )                                           \
       If(Has_Args(__VA_ARGS__))(DEFER2(_MAP4)()(__VA_ARGS__))
 
-#define MAP5(m, type, new_shapes, result, index, w, ...)                                            \
-  m(w, type, new_shapes, result, index) If(Has_Args(__VA_ARGS__))(                                  \
+#define MAP5(m, type, new_shapes, result, index, w, ...)                       \
+  m(w, type, new_shapes, result, index) If(Has_Args(__VA_ARGS__))(             \
       DEFER2(_MAP5)()(m, type, new_shapes, result, index + 1, __VA_ARGS__))
 
 #define MAP6(seq, index, x, ...)                                               \
@@ -68,6 +89,10 @@
   m If(Has_Args(__VA_ARGS__))(, )                                              \
       If(Has_Args(__VA_ARGS__))(DEFER2(_ACCUMULATE)()(m + 1, __VA_ARGS__))
 
+#define _Adjust_Result_Ptrs_MAP() Adjust_Result_Ptrs_MAP
+#define _Results_MAP() Results_MAP
+#define _Alloc_Results_MAP() Alloc_Results_MAP
+#define _Correct_Type_MAP() Correct_Type_MAP
 #define _NEXT() NEXT
 #define _ACCUMULATE() ACCUMULATE
 #define _MAP0_No_Comma() MAP0_No_Comma
@@ -102,6 +127,33 @@
 #define Stries_Last(x) stride_##x##_last
 #define Parameter_type(x) PyObject *x
 #define Parameter_type_(x) PyObject *
+
+#define Init_Prd(x) Init_Prd_Helper(x)
+#define Init_Prd_Helper(x)                                                     \
+  npy_intp prd_##x = result_##x##_ptr_arr[id] - result_##x##_ptr_saved;
+#define Adjust_Prd(x) Adjust_Prd_Helper(x)
+#define Adjust_Prd_Helper(x)                                                   \
+  current_shape_process[j] = prd_##x % __shape[j];                             \
+  prd_##x /= __shape[j];
+
+#define Retrieve_Result_Ptrs(x)                                                \
+  result_##x##_ptr = result_##x##_ptr_arr[thread_id];
+
+#define Alloc_Results(x, biggest_array, shape, result_type)                    \
+  PyArrayObject *__result_##x = (PyArrayObject *)PyArray_EMPTY(                \
+      PyArray_NDIM(biggest_array), shape, result_type, 0);                     \
+  if (__result_##x == NULL) {                                                  \
+    return NULL;                                                               \
+  }
+
+#define Get_Results(x) __result_##x
+#define Results_Ptr(x) result_##x##_ptr_saved
+#define Get_Result_Ptr(x) result_##x##_ptr
+#define Init_Result_Ptrs(x, type)                                              \
+  type *result_##x##_ptr = (type *)PyArray_DATA(x);                            \
+  type *result_##x##_ptr_saved = (type *)PyArray_DATA(x);                      \
+  type *result_##x##_ptr_cpy = (type *)PyArray_DATA(x);
+
 #define Alloc_Copy_Strides_And_Indices(x, type, new_shapes, result, index)     \
   npy_intp *__strides_##x = PyArray_STRIDES(x##_);                             \
   npy_intp *strides_##x = NULL;                                                \
@@ -112,10 +164,33 @@
   } else {                                                                     \
     preprocess_strides(new_shapes[index], stride_last, ndim, &strides_##x);    \
   }
+#define Result_Ptr_Jump(x) result_##x##_ptr += inner_loop_size;
+#define Get_Strides_Sequential(x, type)                                        \
+  npy_intp *__strides_##x = PyArray_STRIDES(x##_);                             \
+  npy_intp stride_##x##_last = 0;                                              \
+  if (__strides_##x == NULL) {                                                 \
+    stride_##x##_last = 0;                                                     \
+  } else {                                                                     \
+    stride_##x##_last =                                                        \
+        PyArray_STRIDES(                                                       \
+            (PyArrayObject *)x)[PyArray_NDIM((PyArrayObject *)x) - 1] /        \
+        sizeof(type);                                                          \
+  }
 
 #define Correct_Type(x, result_type, type)                                     \
   PyArrayObject *x##_ = NULL;                                                  \
-  if (PyArray_IsAnyScalar(x)) {                                                \
+  if (Py_IS_TYPE(x, Tensor_type)) {                                            \
+    x = ((Tensor *)x)->data;                                                   \
+  }                                                                            \
+  if (Py_IS_TYPE(x, &PyArray_Type)) {                                          \
+    PyArrayObject *tmp = (PyArrayObject *)x;                                   \
+    if (PyArray_TYPE(tmp) != result_type) {                                    \
+      as_type(&tmp, &x##_, result_type);                                       \
+      handler_##x = x##_;                                                      \
+    } else {                                                                   \
+      x##_ = (PyArrayObject *)x;                                               \
+    }                                                                          \
+  } else if (PyArray_IsAnyScalar(x)) {                                         \
     if (PyArray_IsPythonNumber(x)) {                                           \
       npy_intp const dims[] = {1};                                             \
       x##_ = (PyArrayObject *)PyArray_EMPTY(0, dims, result_type, 0);          \
@@ -135,21 +210,15 @@
       as_type(&tmp, &x##_, result_type);                                       \
       handler_##x = x##_;                                                      \
     } else {                                                                   \
-      PyErr_SetString(PyExc_TypeError, "type not supported");                  \
+      PyErr_SetString(PyExc_TypeError, Str(type is not supported));            \
       return NULL;                                                             \
     }                                                                          \
     assert(PyArray_STRIDES(x##_) == NULL); /*should be NULL*/                  \
-  } else if (Py_IS_TYPE(x, &PyArray_Type)) {                                   \
-    PyArrayObject *tmp = (PyArrayObject *)x;                                   \
-    if (PyArray_TYPE(tmp) != result_type) {                                    \
-      as_type(&tmp, &x##_, result_type);                                       \
-      handler_##x = x##_;                                                      \
-    } else {                                                                   \
-      x##_ = (PyArrayObject *)x;                                               \
-    }                                                                          \
   }
 
 #define Ptrs(x, type) type *x##_data_ptr_saved = (type *)PyArray_DATA(x##_);
+#define Result_Ptrs(x, type)                                                   \
+  type *result_##x##_ptr_saved = (type *)PyArray_DATA(x);
 
 #define Handlers(x) PyArrayObject *handler_##x = NULL;
 
@@ -172,6 +241,13 @@
 
 #define Adjust_Ptr3(x, i) x##_data_ptr_saved -= indice_##x##_cache[i];
 
+#define Adjust_Result_Ptrs(start_index, end_index, inner_loop_size, x)         \
+  result_##x##_ptr_arr[id] = result_##x##_ptr_cpy;                             \
+  result_##x##_ptr_cpy += (end_index - start_index) * inner_loop_size;
+
+#define Init_Result_Ptrs_Arr(x, num_threads, type)                             \
+  type **result_##x##_ptr_arr = (type **)malloc(sizeof(type) * num_threads);
+
 #define Contiguous_OrNot(x) !PyArray_ISCONTIGUOUS((PyArrayObject *)x##_)
 
 #define Shapes(x) PyArray_SHAPE(x##_)
@@ -183,6 +259,8 @@
 #define Free(x)                                                                \
   free(indice_##x##_cache);                                                    \
   free(strides_##x);
+
+#define Free_Result_Ptr_Arr(x) free(result_##x##_ptr_arr);
 
 #define Args_Num(...) If2(Has_Args(__VA_ARGS__))(1) Expand(NEXT(__VA_ARGS__))
 
@@ -204,11 +282,25 @@
 
 #define Replicate2(method, x, y, ...) Expand(MAP2(method, x, y, __VA_ARGS__))
 
-#define Replicate3(method, x, y, ...) Expand(MAP(method, x, y, __VA_ARGS__))
+#define Replicate_Correct_Type(method, result_type, type, ...)                 \
+  Expand(Correct_Type_MAP(method, result_type, type, __VA_ARGS__))
+
+#define Replicate_Alloc_Results(method, biggest_array, shape, result_type,     \
+                                ...)                                           \
+  Expand(Alloc_Results_MAP(method, biggest_array, shape, result_type,          \
+                           __VA_ARGS__))
+
+#define Replicate_Adjust_Result_Ptrs(method, start_index, end_index,           \
+                                     inner_loop_size, ...)                     \
+  Expand(Adjust_Result_Ptrs_MAP(method, start_index, end_index,                \
+                                inner_loop_size, __VA_ARGS__))
+
+#define Replicate3(method, x, y, z, ...)                                       \
+  Expand(MAP3(method, x, y, z, __VA_ARGS__))
 
 #define Replicate4(...) Expand(MAP4(__VA_ARGS__))
 
-#define Replicate5(method, type, new_shapes, result, ...)                                       \
+#define Replicate5(method, type, new_shapes, result, ...)                      \
   Expand(MAP5(method, type, new_shapes, result, 0, __VA_ARGS__))
 
 #define INDIRECT_REPLICATE0(func, ...) Replicate0(func, __VA_ARGS__)

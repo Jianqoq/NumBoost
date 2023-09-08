@@ -51,9 +51,8 @@ void power_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            result_type, type_2_size[result_type]);
     result_type = binary_result_type(MUL, power_type, type_2_size[power_type],
                                      result_type, type_2_size[result_type]);
-    assert(result_type != -1);
-    *out =
-        (PyObject *)power_backward_fusefn[result_type](tmp1->data, power, grad);
+    PyObject *result = power_backward_fusefn[result_type](tmp1->data, power, grad);
+        *out = result;
   }
 }
 
@@ -74,7 +73,8 @@ void sin_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)sin_backward_fusefn[result_type](tmp1->data, grad);
+    PyObject *result = sin_backward_fusefn[result_type](tmp1->data, grad);
+        *out = result;
   }
 };
 
@@ -97,7 +97,8 @@ void cos_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)cos_backward_fusefn[result_type](tmp1->data, grad);
+    PyObject *result = cos_backward_fusefn[result_type](tmp1->data, grad);
+        *out = result;
   }
 };
 
@@ -126,7 +127,8 @@ void tan_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)tan_backward_fusefn[result_type](tmp1->data, grad);
+    PyObject *result = tan_backward_fusefn[result_type](tmp1->data, grad);
+        *out = result;
   }
 };
 
@@ -163,7 +165,8 @@ void arcsin_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)arcsin_backward_fusefn[result_type](tmp1->data, grad);
+    PyObject *result = arcsin_backward_fusefn[result_type](tmp1->data, grad);
+    *out = result;
   }
 };
 
@@ -202,8 +205,8 @@ void arccos_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)arccos_backward_fusefn[result_type](tmp1->data, grad);
-    *null = NULL;
+    PyObject *result = arccos_backward_fusefn[result_type](tmp1->data, grad);
+    *out = result;
   }
 };
 
@@ -234,8 +237,8 @@ void arctan_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)arctan_backward_fusefn[result_type](tmp1->data, grad);
-    *null = NULL;
+    PyObject *result = arctan_backward_fusefn[result_type](tmp1->data, grad);
+    *out = result;
   }
 };
 
@@ -257,8 +260,8 @@ void sinh_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)sinh_backward_fusefn[result_type](tmp1->data, grad);
-    *null = NULL;
+    PyObject *result = sinh_backward_fusefn[result_type](tmp1->data, grad);
+    *out = result;
   }
 };
 
@@ -279,8 +282,8 @@ void cosh_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)cosh_backward_fusefn[result_type](tmp1->data, grad);
-    *null = NULL;
+    PyObject *result = cosh_backward_fusefn[result_type](tmp1->data, grad);
+    *out = result;
   }
 }
 
@@ -306,7 +309,8 @@ void tanh_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)tanh_backward_fusefn[result_type](self->data, grad);
+    PyObject *result = tanh_backward_fusefn[result_type](self->data, grad);
+    *out = result;
   }
 };
 
@@ -339,7 +343,8 @@ void arcsinh_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)arcsinh_backward_fusefn[result_type](tmp1->data, grad);
+    PyObject *result = arcsinh_backward_fusefn[result_type](tmp1->data, grad);
+    *out = result;
   }
 };
 
@@ -372,7 +377,8 @@ void arccosh_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)arccosh_backward_fusefn[result_type](tmp1->data, grad);
+    PyObject *result = arccosh_backward_fusefn[result_type](tmp1->data, grad);
+    *out = result;
   }
 };
 
@@ -399,7 +405,8 @@ void arctanh_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)arctanh_backward_fusefn[result_type](tmp1->data, grad);
+    PyObject *result = arctanh_backward_fusefn[result_type](tmp1->data, grad);
+    *out = result;
   }
 };
 
@@ -420,7 +427,8 @@ void exp_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)exp_backward_fusefn[result_type](tmp1->data, grad);
+    PyObject *result = exp_backward_fusefn[result_type](tmp1->data, grad);
+    *out = result;
   }
 };
 
@@ -439,8 +447,8 @@ void log_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_TYPE((PyArrayObject *)tmp1->data),
                            PyArray_DESCR((PyArrayObject *)tmp1->data)->elsize);
     assert(result_type != -1);
-    *out = (PyObject *)log_backward_fusefn[result_type](grad, tmp1->data);
-    *null = NULL;
+    PyObject *result = log_backward_fusefn[result_type](grad, tmp1->data);
+    *out = result;
   };
 }
 
@@ -470,7 +478,8 @@ void log10_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)log10_backward_fusefn[result_type](grad, tmp1->data);
+    PyObject *result = log10_backward_fusefn[result_type](grad, tmp1->data);
+    *out = result;
   }
 };
 
@@ -500,7 +509,8 @@ void sqrt_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
                            PyArray_DESCR((PyArrayObject *)grad)->elsize,
                            result_type, type_2_size[result_type]);
     assert(result_type != -1);
-    *out = (PyObject *)sqrt_backward_fusefn[result_type](self->data, grad);
+    PyObject *result = sqrt_backward_fusefn[result_type](self->data, grad);
+    *out = result;
   }
 };
 
@@ -532,9 +542,10 @@ void abs_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
     Py_DECREF(one);
     Py_DECREF(negative_one);
   } else {
-    *out = (PyObject *)
+    PyObject *result =
         abs_backward_fusefn[PyArray_TYPE((PyArrayObject *)tmp1->data)](
             tmp1->data, grad);
+    *out = result;
   }
 };
 

@@ -32,15 +32,24 @@
 #define Register_ElementWise_Operation_Err(name, type)                         \
   PyObject *elementwise_##name##_##type(PyObject *a) {                         \
     PyErr_SetString(PyExc_TypeError, Str(name not supported for type));        \
-    PyObject_Print(a, stderr, 0);                                               \
+    PyObject_Print(a, stderr, 0);                                              \
     return NULL;                                                               \
   }
 
 #define Register_ElementWise_Operation(name, type, result_type,                \
                                        inner_loop_body_universal)              \
   PyObject *elementwise_##name##_##type(PyObject *a) {                         \
-    Perform_Universal_Operation(npy_##type, result_type,                       \
-                                inner_loop_body_universal, a);                 \
+    PyArrayObject **result =                                                   \
+        (PyArrayObject **)malloc(sizeof(PyArrayObject *));                     \
+    Perform_Universal_Operation(npy_##type, result, result_type,               \
+                                inner_loop_body_universal, (result), a);       \
+    if (result == NULL) {                                                      \
+      return NULL;                                                             \
+    } else {                                                                   \
+      PyArrayObject *result_array = *result;                                   \
+      free(result);                                                            \
+      return (PyObject *)result_array;                                         \
+    }                                                                          \
   }
 
 #define Register_ElementWise_Operations_Floating_Types(name,                   \

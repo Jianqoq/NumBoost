@@ -184,7 +184,8 @@ PyObject *get_item(Tensor *self, PyObject *item) {
     return NULL;
   if (TRACK)
     return subarray;
-  Tensor *to_return = (Tensor *)new_Tensor_x(self, subarray, "SliceBackward");
+  Tensor *to_return =
+      (Tensor *)create_Tensor(self, Py_None, subarray, "SliceBackward");
   if (self->require_grad) {
     DEBUG_PRINT("refcount of item: %d\n", (int)Py_REFCNT(item));
     PyArrayObject *arr = (PyArrayObject *)self->data;
@@ -216,7 +217,7 @@ Tensor *T(Tensor *self) {
   if (transposed == NULL)
     return NULL;
   Tensor *to_return =
-      (Tensor *)new_Tensor_x(self, transposed, "TransposeBackward");
+      (Tensor *)create_Tensor(self, Py_None, transposed, "TransposeBackward");
   if (self->require_grad)
     store_array_shape(to_return, new_axes, ndim);
   else
@@ -269,7 +270,7 @@ PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 }
 
 PyObject *__tensor(PyObject *self, PyObject *args, PyObject *kwds) {
-  (void) self;
+  (void)self;
   return __new__(Tensor_type, args, kwds);
 }
 
@@ -370,7 +371,7 @@ Tensor *copy(Tensor *self) {
   PyArrayObject *ret = nb_copy((PyArrayObject *)self->data);
   if (ret == NULL)
     return NULL;
-  return (Tensor *)new_Tensor_x(self, (PyObject *)ret, "");
+  return (Tensor *)create_Tensor(self, Py_None, (PyObject *)ret, "");
 }
 
 PyObject *backward(PyObject *self, PyObject *args) {
