@@ -2,7 +2,6 @@
 #define NO_IMPORT_ARRAY
 #include "python_math_magic.h"
 #include "../binary_ops/binary_op_def.h"
-#include "../binary_ops/binary_op_impl.h"
 #include "../numboost_api.h"
 #include "../op.h"
 #include "../set_tensor_properties.h"
@@ -49,6 +48,69 @@ PyObject *__new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y,
   }
 }
 
+PyObject *new_Tensor(Tensor *tensor, Tensor *tensor2, PyObject *data,
+                     const char *grad_fn) {
+  Tensor *self = (Tensor *)Tensor_type->tp_alloc(Tensor_type, 0);
+  if (self != NULL) {
+    if (tensor->require_grad || tensor2->require_grad) {
+      Tensor_SetX_without_init_value(self, (PyObject *)tensor);
+      Tensor_SetY_without_init_value(self, (PyObject *)tensor2);
+      Tensor_SetGradFn(self, grad_fn);
+      Tensor_SetRequireGrad(self, true);
+      Tensor_SetVars(self, tensor->vars + tensor2->vars + 1);
+    } else {
+      Tensor_SetX_without_init_value(self, Py_None);
+      Tensor_SetY_without_init_value(self, Py_None);
+      Tensor_SetGradFn(self, "");
+      Tensor_SetRequireGrad(self, false);
+      Tensor_SetVars(self, 0);
+    }
+    PyObject *zero = PyLong_FromLong(0);
+    self->data = data;
+    Tensor_SetHasConv(self, tensor->has_conv);
+    Tensor_SetGraph_without_init_value(self, tensor->graph);
+    Tensor_SetDim(self, tensor->dim);
+    Tensor_SetAxis_without_init_value(self, tensor->axis);
+    Tensor_SetGrad_without_init_value(self, zero);
+    Py_DECREF(zero);
+    return (PyObject *)self;
+  } else {
+    return NULL;
+  }
+}
+
+PyObject *new_Tensor_scalar(Tensor *self, PyObject *data, PyObject *y,
+                            const char *grad_fn) {
+  Tensor *tensor;
+  tensor = (Tensor *)Tensor_type->tp_alloc(Tensor_type, 0);
+  if (tensor != NULL) {
+    Tensor_SetData_startwone_without_init(tensor, data);
+    if (self->require_grad) {
+      Tensor_SetX_without_init_value(tensor, (PyObject *)self);
+      Tensor_SetY_without_init_value(tensor, y);
+      Tensor_SetRequireGrad(tensor, true);
+      Tensor_SetGradFn(tensor, grad_fn);
+      Tensor_SetVars(tensor, self->vars + 2);
+    } else {
+      Tensor_SetX_without_init_value(tensor, Py_None);
+      Tensor_SetY_without_init_value(tensor, Py_None);
+      Tensor_SetRequireGrad(tensor, false);
+      Tensor_SetGradFn(tensor, grad_fn);
+      Tensor_SetVars(tensor, 0);
+    }
+    PyObject *zero = PyLong_FromLong(0);
+    Tensor_SetHasConv(tensor, self->has_conv);
+    Tensor_SetGraph_without_init_value(tensor, self->graph);
+    Tensor_SetDim(tensor, self->dim);
+    Tensor_SetAxis_without_init_value(tensor, self->axis);
+    Tensor_SetGrad_without_init_value(tensor, zero);
+    Py_DECREF(zero);
+    return (PyObject *)tensor;
+  } else {
+    return NULL;
+  }
+}
+
 PyObject *create_Tensor(Tensor *tensor, PyObject *other, PyObject *data,
                         const char *grad_fn) {
   Tensor *self = (Tensor *)Tensor_type->tp_alloc(Tensor_type, 0);
@@ -69,22 +131,22 @@ PyObject *create_Tensor(Tensor *tensor, PyObject *other, PyObject *data,
         Tensor_SetVars(self, 0);
       }
     } else {
-      if (self->require_grad) {
-        Tensor_SetX_without_init_value(tensor, (PyObject *)self);
-        Tensor_SetY_without_init_value(tensor, other);
-        Tensor_SetRequireGrad(tensor, true);
-        Tensor_SetGradFn(tensor, grad_fn);
+      if (tensor->require_grad) {
+        Tensor_SetX_without_init_value(self, (PyObject *)tensor);
+        Tensor_SetY_without_init_value(self, other);
+        Tensor_SetRequireGrad(self, true);
+        Tensor_SetGradFn(self, grad_fn);
         if (Py_IsNone(other)) {
-          Tensor_SetVars(tensor, self->vars + 1);
+          Tensor_SetVars(self, tensor->vars + 1);
         } else {
-          Tensor_SetVars(tensor, self->vars + 2);
+          Tensor_SetVars(self, tensor->vars + 2);
         }
       } else {
-        Tensor_SetX_without_init_value(tensor, Py_None);
-        Tensor_SetY_without_init_value(tensor, Py_None);
-        Tensor_SetRequireGrad(tensor, false);
-        Tensor_SetGradFn(tensor, grad_fn);
-        Tensor_SetVars(tensor, 0);
+        Tensor_SetX_without_init_value(self, Py_None);
+        Tensor_SetY_without_init_value(self, Py_None);
+        Tensor_SetRequireGrad(self, false);
+        Tensor_SetGradFn(self, grad_fn);
+        Tensor_SetVars(self, 0);
       }
     }
     PyObject *zero = PyLong_FromLong(0);
@@ -95,6 +157,37 @@ PyObject *create_Tensor(Tensor *tensor, PyObject *other, PyObject *data,
     Tensor_SetAxis_without_init_value(self, tensor->axis);
     Tensor_SetGrad_without_init_value(self, zero);
     return (PyObject *)self;
+  } else {
+    return NULL;
+  }
+}
+
+PyObject *new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn) {
+  Tensor *tensor;
+  tensor = (Tensor *)Tensor_type->tp_alloc(Tensor_type, 0);
+  if (tensor != NULL) {
+    tensor->data = data;
+    if (self->require_grad) {
+      Tensor_SetX_without_init_value(tensor, (PyObject *)self);
+      Tensor_SetY_without_init_value(tensor, Py_None);
+      Tensor_SetRequireGrad(tensor, true);
+      Tensor_SetGradFn(tensor, grad_fn);
+      Tensor_SetVars(tensor, self->vars + 1);
+    } else {
+      Tensor_SetX_without_init_value(tensor, Py_None);
+      Tensor_SetY_without_init_value(tensor, Py_None);
+      Tensor_SetRequireGrad(tensor, false);
+      Tensor_SetGradFn(tensor, "");
+      Tensor_SetVars(tensor, 0);
+    }
+    PyObject *zero = PyLong_FromLong(0);
+    Tensor_SetHasConv(tensor, self->has_conv);
+    Tensor_SetGraph_without_init_value(tensor, self->graph);
+    Tensor_SetDim(tensor, self->dim);
+    Tensor_SetAxis_without_init_value(tensor, self->axis);
+    Tensor_SetGrad_without_init_value(tensor, zero);
+    Py_DECREF(zero);
+    return (PyObject *)tensor;
   } else {
     return NULL;
   }
@@ -143,10 +236,12 @@ PyObject *Tensor_Empty(PyObject *data) {
     return NULL;
 }
 
-PyObject *
-tensor_add(PyObject *self, PyObject *other)
-{
-    Generic_Binary_Operation(self, other, PyNumber_Add(self, other), ADD, "AddBackward");
+PyObject *tensor_add(PyObject *self, PyObject *other) {
+  PyObject *result = numboost_add(((Tensor *)self)->data, other);
+  Numboost_AssertNULL(result);
+  PyObject *to_return =
+      create_Tensor((Tensor *)self, other, result, "AddBackward");
+  return to_return;
 }
 
 PyObject *tensor_iadd(PyObject *self, PyObject *other) {
@@ -186,8 +281,11 @@ PyObject *tensor_iadd(PyObject *self, PyObject *other) {
 }
 
 PyObject *tensor_mul(PyObject *self, PyObject *other) {
-  Generic_Binary_Operation(self, other, PyNumber_Multiply(self, other), MUL,
-                           "MulBackward");
+  PyObject *result = numboost_mul(((Tensor *)self)->data, other);
+  Numboost_AssertNULL(result);
+  PyObject *to_return =
+      create_Tensor((Tensor *)self, other, result, "MulBackward");
+  return to_return;
 }
 
 PyObject *tensor_imul(PyObject *self, PyObject *other) {
@@ -227,8 +325,11 @@ PyObject *tensor_imul(PyObject *self, PyObject *other) {
 }
 
 PyObject *tensor_div(PyObject *self, PyObject *other) {
-  Generic_Binary_Operation(self, other, PyNumber_TrueDivide(self, other), DIV,
-                           "DivBackward");
+  PyObject *result = numboost_div(((Tensor *)self)->data, other);
+  Numboost_AssertNULL(result);
+  PyObject *to_return =
+      create_Tensor((Tensor *)self, other, result, "DivBackward");
+  return to_return;
 }
 
 PyObject *tensor_idiv(PyObject *self, PyObject *other) {
@@ -293,36 +394,26 @@ PyObject *tensor_inegative(PyObject *self) {
 PyObject *tensor_negative(PyObject *self) // need to check
 {
   if (TRACK) {
-    PyObject *jaxarray = PyNumber_Negative(self);
+    PyObject *jaxarray = PyNumber_Negative(((Tensor *)self)->data);
     return jaxarray;
   }
   Tensor *_self = (Tensor *)self;
   PyObject *negative_1 = PyLong_FromLong(-1);
-  PyObject *numpy_result;
-  if (!_self->require_grad) {
-    numpy_result = PyNumber_Negative(_self->data);
-    Tensor_SetData(_self, numpy_result);
-    Py_DECREF(negative_1);
-    Py_DECREF(numpy_result);
-    Py_INCREF(self);
-    return (PyObject *)_self;
-  } else {
-    numpy_result = PyNumber_Negative(_self->data);
-
-    if (numpy_result == NULL) {
-      return NULL;
-    }
-    PyObject *new_tensor =
-        create_Tensor(_self, negative_1, numpy_result, "NegativeBackward");
-    Py_DECREF(negative_1);
-    Py_DECREF(numpy_result);
-    return new_tensor;
+  PyObject *numpy_result = PyNumber_Negative(_self->data);
+  if (numpy_result == NULL) {
+    return NULL;
   }
+  PyObject *new_tensor =
+      create_Tensor(_self, negative_1, numpy_result, "NegativeBackward");
+  return new_tensor;
 }
 
 PyObject *tensor_sub(PyObject *self, PyObject *other) {
-  Generic_Binary_Operation(self, other, PyNumber_Subtract(self, other), SUB,
-                           "SubBackward");
+  PyObject *result = numboost_sub(((Tensor *)self)->data, other);
+  Numboost_AssertNULL(result);
+  PyObject *to_return =
+      create_Tensor((Tensor *)self, other, result, "SubBackward");
+  return to_return;
 }
 
 PyObject *tensor_isub(PyObject *self, PyObject *other) {
@@ -362,8 +453,11 @@ PyObject *tensor_isub(PyObject *self, PyObject *other) {
 }
 
 PyObject *tensor_pow(PyObject *self, PyObject *other) {
-  Generic_Binary_Operation(self, other, PyNumber_Power(self, other, NULL), POW,
-                           "PowBackward");
+  PyObject *result = numboost_pow(((Tensor *)self)->data, other);
+  Numboost_AssertNULL(result);
+  PyObject *to_return =
+      create_Tensor((Tensor *)self, other, result, "PowBackward");
+  return to_return;
 }
 
 PyObject *tensor_ipow(PyObject *self, PyObject *other) {
@@ -414,7 +508,7 @@ PyObject *tensor_matmul(PyObject *self, PyObject *other) {
     return NULL;
   }
   PyObject *new_tensor =
-      create_Tensor(_self, _other, numpy_result, "MatMulBackward");
+      new_Tensor(_self, _other, numpy_result, "MatMulBackward");
   return new_tensor;
 }
 
@@ -462,7 +556,7 @@ PyObject *tensor_absolute(PyObject *self) {
   if (numpy_result == NULL) {
     return NULL;
   }
-  PyObject *new_tensor = create_Tensor(_self, Py_None, numpy_result, "");
+  PyObject *new_tensor = new_Tensor_x(_self, numpy_result, "");
   return new_tensor;
 }
 
@@ -481,13 +575,15 @@ PyObject *tensor_invert(PyObject *self) {
   if (numpy_result == NULL) {
     return NULL;
   }
-  PyObject *new_tensor = create_Tensor(_self, Py_None, numpy_result, "");
+  PyObject *new_tensor = new_Tensor_x(_self, numpy_result, "");
   return new_tensor;
 }
 
 PyObject *tensor_lshift(PyObject *self, PyObject *other) {
-  Generic_Binary_Operation(self, other, PyNumber_Lshift(self, other), LSHIFT,
-                           "");
+  PyObject *result = numboost_lshift(((Tensor *)self)->data, other);
+  Numboost_AssertNULL(result);
+  PyObject *to_return = create_Tensor((Tensor *)self, other, result, "");
+  return to_return;
 }
 
 PyObject *tensor_ilshift(PyObject *self, PyObject *other) {
@@ -522,8 +618,10 @@ PyObject *tensor_ilshift(PyObject *self, PyObject *other) {
 }
 
 PyObject *tensor_rshift(PyObject *self, PyObject *other) {
-  Generic_Binary_Operation(self, other, PyNumber_Rshift(self, other), RSHIFT,
-                           "");
+  PyObject *result = numboost_rshift(((Tensor *)self)->data, other);
+  Numboost_AssertNULL(result);
+  PyObject *to_return = create_Tensor((Tensor *)self, other, result, "");
+  return to_return;
 }
 
 PyObject *tensor_irshift(PyObject *self, PyObject *other) {
@@ -575,7 +673,7 @@ PyObject *tensor_and(PyObject *self, PyObject *other) {
     if (numpy_result == NULL) {
       return NULL;
     }
-    PyObject *new_tensor = create_Tensor(_self, tmp, numpy_result, "");
+    PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
     return new_tensor;
   } else {
     PyObject *numpy_result = PyNumber_Rshift(_self->data, other);
@@ -607,7 +705,7 @@ PyObject *tensor_xor(PyObject *self, PyObject *other) {
     if (numpy_result == NULL) {
       return NULL;
     }
-    PyObject *new_tensor = create_Tensor(_self, other, numpy_result, "");
+    PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
     return new_tensor;
   } else {
     PyObject *numpy_result = PyNumber_Xor(_self->data, other);
@@ -639,7 +737,7 @@ PyObject *tensor_or(PyObject *self, PyObject *other) {
     if (numpy_result == NULL) {
       return NULL;
     }
-    PyObject *new_tensor = create_Tensor(_self, tmp, numpy_result, "");
+    PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
     return new_tensor;
   } else {
     PyObject *numpy_result = PyNumber_Or(_self->data, other);
@@ -683,18 +781,21 @@ PyObject *tensor_float(PyObject *self) {
                     "only size-1 arrays can be converted to Python scalars");
     return NULL;
   }
-  PyObject *numpy_result =
-      PyArray_Cast((PyArrayObject *)_self->data, NPY_FLOAT64);
-  double *data = (double *)PyArray_DATA((PyArrayObject *)numpy_result);
-  if (numpy_result == NULL || data == NULL) {
-    return NULL;
-  }
-  return PyFloat_FromDouble(data[0]);
+  PyArrayObject *numpy_result = NULL;
+  PyArrayObject *a = (PyArrayObject *)_self->data;
+  as_type(&a, &numpy_result, NPY_FLOAT64);
+  Numboost_AssertNULL(numpy_result);
+  double *data = (double *)PyArray_DATA(numpy_result);
+  PyObject *to_return = PyFloat_FromDouble(data[0]);
+  Py_DECREF(numpy_result);
+  return to_return;
 }
 
 PyObject *tensor_remainder(PyObject *self, PyObject *other) {
-  Generic_Binary_Operation(self, other, PyNumber_Remainder(self, other), MOD,
-                           "");
+  PyObject *result = numboost_mod(((Tensor *)self)->data, other);
+  Numboost_AssertNULL(result);
+  PyObject *to_return = create_Tensor((Tensor *)self, other, result, "");
+  return to_return;
 }
 
 PyObject *tensor_iand(PyObject *self, PyObject *other) {
@@ -811,7 +912,7 @@ PyObject *tensor_divmod(PyObject *self, PyObject *other) {
     if (numpy_result == NULL) {
       return NULL;
     }
-    PyObject *new_tensor = create_Tensor(_self, tmp, numpy_result, "");
+    PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
     return new_tensor;
   } else {
     PyObject *numpy_result = PyNumber_Divmod(_self->data, other);
@@ -820,7 +921,6 @@ PyObject *tensor_divmod(PyObject *self, PyObject *other) {
       return NULL;
     }
     PyObject *new_tensor = create_Tensor(_self, other, numpy_result, "");
-    Py_DECREF(numpy_result);
     return new_tensor;
   }
 }
@@ -859,8 +959,10 @@ PyObject *tensor_iremainder(PyObject *self, PyObject *other) {
 }
 
 PyObject *tensor_floordiv(PyObject *self, PyObject *other) {
-  Generic_Binary_Operation(self, other, PyNumber_FloorDivide(self, other),
-                           FLOOR_DIV, "");
+  PyObject *result = numboost_fdiv(((Tensor *)self)->data, other);
+  Numboost_AssertNULL(result);
+  PyObject *to_return = create_Tensor((Tensor *)self, other, result, "");
+  return to_return;
 }
 
 PyObject *tensor_ifloordiv(PyObject *self, PyObject *other) {

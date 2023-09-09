@@ -5,7 +5,6 @@
 #include <numpy/arrayobject.h>
 #include <string.h>
 
-
 cache *cache_pool = NULL;
 Mem_Chain *mem_chain = NULL;
 uint64_t available_memory = 0;
@@ -113,7 +112,6 @@ static void *default_malloc(void *ctx, size_t size) {
   cache *s = NULL;
   void *ptr = NULL;
   cache *cache_struct = NULL;
-  DEBUG_PRINT("Allocating %zu bytes\n", size);
   HASH_FIND(hh, cache_pool, &size, sizeof(size_t), s);
   if (!s) {
     ptr = malloc(sizeof(char) * size);
@@ -131,16 +129,13 @@ static void *default_malloc(void *ctx, size_t size) {
     mem_chain->tail->next = cache_struct;
     mem_chain->head = cache_struct;
     HASH_ADD(hh, cache_pool, tensor_size, sizeof(size_t), cache_struct);
-    DEBUG_PRINT("Allocated %zu bytes\n", size);
     return ptr;
   } else {
     mem_chain->move_node_to_head(mem_chain, s);
     if (s->mem_allocated >= 0) {
       mem_chain->max_possible_cache_size -= size;
-      DEBUG_PRINT("Allocated %zu bytes from mem pool\n", size);
       return s->mem_pool[s->mem_allocated--];
     } else {
-      DEBUG_PRINT("Allocated %zu bytes from malloc\n", size);
       return malloc(sizeof(char) * size);
     }
   }
@@ -230,7 +225,6 @@ static void default_free(void *ctx, void *ptr, size_t size) {
   uint64_t predict_possible_cache_size =
       mem_chain->max_possible_cache_size + size * s->max_mem * 2;
 
-  DEBUG_PRINT("Freeing %zu bytes\n", size);
   if (s->mem_allocated >= 0 /*has availabel mem*/
         && predict_possible_cache_size > mem * Thread_Hold_Value /*Lru thread hold value, default 90% available mem*/)
     {
@@ -246,7 +240,6 @@ static void default_free(void *ctx, void *ptr, size_t size) {
                 no memory we can free from the mem_chain*/
       {
         free(ptr);
-        DEBUG_PRINT("Freed %zu bytes\n", size);
         return;
       }
     }
@@ -313,7 +306,6 @@ static void default_free(void *ctx, void *ptr, size_t size) {
       s->max_mem *= 2;
     }
   }
-  DEBUG_PRINT("Freed %zu bytes\n", size);
 }
 
 PyDataMem_Handler my_handler = {"mem_handler", 1,

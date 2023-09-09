@@ -3,35 +3,6 @@
 #include "ufunc_backward_def.h"
 #include "omp.h"
 
-#define Div(val1, val2, result, input_type, output_type)                       \
-  do {                                                                         \
-    if (!(val2)) {                                                             \
-      if (val1 > 0)                                                            \
-        result = Use_Inf(output_type);                                         \
-      else if (val1 < 0)                                                       \
-        result = -Use_Inf(output_type);                                        \
-      else                                                                     \
-        result = Use_Nan(output_type);                                         \
-      continue;                                                                \
-    } else                                                                     \
-      result = Demote(output_type,                                             \
-                      Demote(input_type, val1) / Demote(input_type, val2));    \
-  } while (0)
-
-#define Div2(val1, val2, result, input_type, output_type)                      \
-  do {                                                                         \
-    if (!(val2)) {                                                             \
-      if (val1 > 0)                                                            \
-        result = Use_Inf(output_type);                                         \
-      else if (val1 < 0)                                                       \
-        result = -Use_Inf(output_type);                                        \
-      else                                                                     \
-        result = Use_Nan(output_type);                                         \
-    } else                                                                     \
-      result = Demote(output_type,                                             \
-                      Demote(input_type, val1) / Demote(input_type, val2));    \
-  } while (0)
-
 /*==========================================================================================================================================================*/
 /*sin backward fusion*/
 #define SinBackward_LoopBody(generic_type, type, i, result_ptr, stride_a_last, \

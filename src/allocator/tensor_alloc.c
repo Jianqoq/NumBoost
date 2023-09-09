@@ -146,17 +146,17 @@ void Tensor_dealloc(Tensor *self)
     DEBUG_PRINT("free_slice_objs\n");
     free_slice_objs(self);
     DEBUG_PRINT("free_slice_objs done\n");
-    // if (tensor_pool_maintainer.index < Tensor_Pool_Size - 1)
-    // {
-    //     Py_INCREF(self);
-    //     DEBUG_PRINT("Adding to tensor pool\n");
-    //     tensor_pool_maintainer.tensor_pool[++tensor_pool_maintainer.index] = self;
-    //     DEBUG_PRINT("Added to tensor pool\n");
-    // }
-    // else
-    // {
-    //     PyObject_GC_Del(self);
-    // }
+    if (tensor_pool_maintainer.index < Tensor_Pool_Size - 1)
+    {
+        Py_INCREF(self);
+        DEBUG_PRINT("Adding to tensor pool\n");
+        tensor_pool_maintainer.tensor_pool[++tensor_pool_maintainer.index] = self;
+        DEBUG_PRINT("Added to tensor pool\n");
+    }
+    else
+    {
+        PyObject_GC_Del(self);
+    }
 }
 
 int Tensor_clear(Tensor *self)

@@ -94,8 +94,8 @@ int gloabal_float_type = NPY_FLOAT;
 
 PyObject *set_global_float_type(PyObject *self, PyObject *const *args,
                                 size_t nargsf) {
-                                  (void) self;
-                                  (void) nargsf;
+  (void)self;
+  (void)nargsf;
   int type = (int)PyLong_AsLong(args[0]);
   if (type == NPY_FLOAT || type == NPY_DOUBLE || type == NPY_LONGDOUBLE ||
       type == NPY_HALF)
@@ -677,8 +677,6 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
 int elementwise_result_type(int op, int a_dtype) {
   int a_size = type_2_size[a_dtype];
   int gloabal_float_size = type_2_size[gloabal_float_type];
-  printf("a_dtype: %d, a_size: %d, gloabal_float_size: %d\n", a_dtype, a_size,
-         gloabal_float_size);
   switch (op) {
   case SIN:
   case COS:
@@ -695,8 +693,6 @@ int elementwise_result_type(int op, int a_dtype) {
   case SQRT:
   case EXP:
   case LOG:
-  printf("max: %d\n", max(a_size, gloabal_float_size));
-  printf("float_type_based_on_size: %d\n", float_type_based_on_size(max(a_size, gloabal_float_size)));
     return float_type_based_on_size(max(a_size, gloabal_float_size));
   case ABS:
     return a_dtype;
@@ -707,8 +703,8 @@ int elementwise_result_type(int op, int a_dtype) {
 
 PyObject *binary_result_type_(PyObject *self, PyObject *const *args,
                               size_t nargsf) {
-                                (void) self;
-                                (void) nargsf;
+  (void)self;
+  (void)nargsf;
   long op = PyLong_AsLong(args[0]);
   long a_dtype = PyLong_AsLong(args[1]);
   long a_size = PyLong_AsLong(args[2]);
@@ -724,7 +720,10 @@ PyObject *binary_result_type_(PyObject *self, PyObject *const *args,
 }
 
 int any_to_type_enum(PyObject *a) {
-  if (PyArray_Check(a))
+  if (Py_IS_TYPE(a, Tensor_type)) {
+    return ((PyArrayObject_fields *)((Tensor *)a)->data)->descr->type_num;
+  }
+  else if (PyArray_Check(a))
     return ((PyArrayObject_fields *)a)->descr->type_num;
   else if (PyBool_Check(a))
     return NPY_BOOL;

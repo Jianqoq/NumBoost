@@ -46,7 +46,7 @@
     if (result == NULL) {                                                      \
       return NULL;                                                             \
     } else {                                                                   \
-      PyArrayObject *result_array = *result;                                   \
+      PyArrayObject *result_array = result[0];                                 \
       free(result);                                                            \
       return (PyObject *)result_array;                                         \
     }                                                                          \
@@ -111,7 +111,7 @@
                       Str(name not supported for type));                       \
       return NULL;                                                             \
     }                                                                          \
-    assert(result_type <= NPY_HALF);                                           \
+    assert(result_type <= NPY_HALF);                                      \
     PyObject *result = name##_operations[result_type](a);                      \
     return result;                                                             \
   }

@@ -172,8 +172,7 @@
     stride_##x##_last = 0;                                                     \
   } else {                                                                     \
     stride_##x##_last =                                                        \
-        PyArray_STRIDES(                                                       \
-            (PyArrayObject *)x)[PyArray_NDIM((PyArrayObject *)x) - 1] /        \
+        PyArray_STRIDES(x##_)[PyArray_NDIM((PyArrayObject *)x##_) - 1] /       \
         sizeof(type);                                                          \
   }
 
@@ -195,11 +194,14 @@
       npy_intp const dims[] = {1};                                             \
       x##_ = (PyArrayObject *)PyArray_EMPTY(0, dims, result_type, 0);          \
       if (PyFloat_Check(x)) {                                                  \
-        *((type *)PyArray_DATA(x##_)) = (type)PyFloat_AsDouble((PyObject *)x); \
+        *((type *)PyArray_DATA(x##_)) =                                        \
+            (type)PyDouble_AsHalf(type, PyFloat_AsDouble((PyObject *)x));      \
       } else if (PyLong_Check(x)) {                                            \
-        *((type *)PyArray_DATA(x##_)) = (type)PyLong_AsLong((PyObject *)x);    \
+        *((type *)PyArray_DATA(x##_)) =                                        \
+            (type)PyLong_AsHalf(type, PyLong_AsLong((PyObject *)x));           \
       } else if (PyBool_Check(x)) {                                            \
-        *((type *)PyArray_DATA(x##_)) = (type)Py_IsTrue((PyObject *)x);        \
+        *((type *)PyArray_DATA(x##_)) =                                        \
+            (type)PyBool_AsHalf(type, Py_IsTrue((PyObject *)x));               \
       } else {                                                                 \
         PyErr_SetString(PyExc_TypeError, "Scalar type not supported");         \
         return NULL;                                                           \
@@ -246,7 +248,7 @@
   result_##x##_ptr_cpy += (end_index - start_index) * inner_loop_size;
 
 #define Init_Result_Ptrs_Arr(x, num_threads, type)                             \
-  type **result_##x##_ptr_arr = (type **)malloc(sizeof(type) * num_threads);
+  type **result_##x##_ptr_arr = (type **)malloc(sizeof(type *) * num_threads);
 
 #define Contiguous_OrNot(x) !PyArray_ISCONTIGUOUS((PyArrayObject *)x##_)
 

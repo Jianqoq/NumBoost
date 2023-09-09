@@ -17,6 +17,11 @@
 // #define calloc(count, size) je_calloc(count, size)
 // #endif
 // #endif
+/*================= Assertion =================*/
+#define Numboost_AssertNULL(x)                                                 \
+  if (x == NULL) {                                                             \
+    return NULL;                                                               \
+  }
 
 /*================================== check half ===================*/
 /*if is half, it will apply float_cast_half method*/
@@ -26,16 +31,33 @@
 #define Cast_Half_If_Is_Half(x) Concat_(Half_, x)
 #define Cast_Float_If_Is_Half(x) Concat_(Float_, x)
 #define To_Float_If_Is_Half(x) Concat_(To_Float_, x)
+#define Cast_Half_If_Is_Double(x) Concat_(Double_, x)
+#define Cast_Half_If_Is_Long(x) Concat_(Long_, x)
+#define Cast_Half_If_Is_Bool(x) Concat_(Bool_, x)
 #define Should_Change_Type_To_Float(x) Second(Is_Half(x), 0)
 #define Half_1 float_cast_half
 #define Half_0
 #define Float_1 half_cast_float
 #define Float_0
+#define Double_1 double_cast_half
+#define Double_0
+#define Long_1 long_cast_half
+#define Long_0
+#define Bool_1 bool_cast_half
+#define Bool_0
 #define To_Float_1(x) npy_float
 #define To_Float_0(x) x
+#define To_Double_1(x) npy_double
+#define To_Double_0(x) x
 #define Demote(x, args) Cast_Half_If_Is_Half(Should_Cast_To(x))(args)
 #define Promote(x, args) Cast_Float_If_Is_Half(Should_Cast_To(x))(args)
 #define Generic(x) To_Float_If_Is_Half(Should_Change_Type_To_Float(x))(x)
+#define PyDouble_AsHalf(x, args)                                               \
+  Cast_Half_If_Is_Double(Should_Change_Type_To_Float(x))(args)
+#define PyLong_AsHalf(x, args)                                                 \
+  Cast_Half_If_Is_Long(Should_Change_Type_To_Float(x))(args)
+#define PyBool_AsHalf(x, args)                                                 \
+  Cast_Half_If_Is_Bool(Should_Change_Type_To_Float(x))(args)
 /*================================== check half end ===================*/
 
 /*================================== check specific method ===================*/
@@ -49,12 +71,12 @@
 #define Method_npy_float(method) method##f
 #define Method_npy_double(method) method
 #define Method_npy_longdouble(method) method##l
+#define Method_int(method) method##i
 #define Should_Use_1(x) Method_##x
-#define Should_Use_0(x) Empty
+#define Should_Use_0(x) Method_int
 #define Should_Cast_To_Float(x) Concat_(Should_Cast_To_Float_, x)
 #define Should_Cast_To_Float_1(x) half_cast_float(x)
 #define Should_Cast_To_Float_0(x) x
-#define Empty(x)
 #define Is_Type(x) Concat_(Is_Type_, x)
 #define Should_Use_Specific_Method(x) Second(Is_Type(x), 0)
 
@@ -65,10 +87,12 @@
     ...: the parameters of the method
 */
 #define Map_Method(type, method_name, ...)                                     \
-  Should_Use(Should_Use_Specific_Method(type))(type)(                          \
-      method_name)(Replicate_With_Comma(Cast_Float_If_Is_Half, Should_Cast_To, \
-                                        type, __VA_ARGS__))
+  Map_Method_Helper(type, method_name,                                         \
+                    Replicate_With_Comma(Cast_Float_If_Is_Half,                \
+                                         Should_Cast_To, type, __VA_ARGS__))
 
+#define Map_Method_Helper(type, method_name, ...)                              \
+  Should_Use(Should_Use_Specific_Method(type))(type)(method_name)(__VA_ARGS__)
 /*================= check specific method end ===================*/
 
 /*================ use sepcific inf/nan ===================*/
@@ -126,20 +150,6 @@
 #define nb_power_float(x, y) (npy_powf((x), (y)))
 #define nb_power_double(x, y) (npy_pow((x), (y)))
 #define nb_power_long_double(x, y) (npy_powl((x), (y)))
-#define nb_floor_divide_int(x, y)                                              \
-  ((y) == 0 ? 0 : ((x) / (y))) // floor division for integer types, e.g. int,
-                               // long, ..., ulonglong, etc.
-#define nb_floor_divide_float(x, y)                                            \
-  ((y) == 0 ? NAN : npy_floorf(((x) / (y)))) // floor division for float
-#define nb_floor_divide_double(x, y)                                           \
-  ((y) == 0 ? NAN : npy_floor((x) / (y))) // floor division for double
-#define nb_floor_divide_long_double(x, y)                                      \
-  ((y) == NAN ? 0 : npy_floorl(((x) / (y)))) // floor division for long double
-#define nb_floor_divide_half(x, y)                                             \
-  ((y) == 0 ? 0x7FFF                                                           \
-            : float_cast_half(npy_floorf(                                      \
-                  half_cast_float((x)) /                                       \
-                  half_cast_float((y))))) // floor division for half
 #define nb_remainder(x, y) ((y) == 0 ? 0 : (x) % (y))
 #define nb_mod_int(x, y) ((y) == 0 ? 0 : (x) % (y))
 #define nb_mod_half(x, y)                                                      \
@@ -149,6 +159,35 @@
 #define nb_mod_float(x, y) ((y) == 0 ? 0 : npy_fmodf((x), (y)))
 #define nb_mod_double(x, y) ((y) == 0 ? 0 : npy_fmod((x), (y)))
 #define nb_mod_long_double(x, y) ((y) == 0 ? 0 : npy_fmodl((x), (y)))
+
+#define Div(val1, val2, result, input_type, output_type)                       \
+  do {                                                                         \
+    if (!(val2)) {                                                             \
+      if (val1 > 0)                                                            \
+        result = Use_Inf(output_type);                                         \
+      else if (val1 < 0)                                                       \
+        result = -Use_Inf(output_type);                                        \
+      else                                                                     \
+        result = Use_Nan(output_type);                                         \
+      continue;                                                                \
+    } else                                                                     \
+      result = Demote(output_type,                                             \
+                      Demote(input_type, val1) / Demote(input_type, val2));    \
+  } while (0)
+
+#define Div2(val1, val2, result, input_type, output_type)                      \
+  do {                                                                         \
+    if (!(val2)) {                                                             \
+      if (val1 > 0)                                                            \
+        result = Use_Inf(output_type);                                         \
+      else if (val1 < 0)                                                       \
+        result = -Use_Inf(output_type);                                        \
+      else                                                                     \
+        result = Use_Nan(output_type);                                         \
+    } else                                                                     \
+      result = Demote(output_type,                                             \
+                      Demote(input_type, val1) / Demote(input_type, val2));    \
+  } while (0)
 
 #ifdef _MSC_VER
 #define nb_lshift(x, y) (((x) << (y)) * ((y) < (sizeof(y) * 8)))
@@ -437,8 +476,11 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   do {                                                                         \
     bool shape_equal = true;                                                   \
     bool all_scalar = true;                                                    \
+    DEBUG_PRINT("%s: Entered\n", __func__);                                    \
     Replicate0_No_Comma(Handlers, __VA_ARGS__);                                \
+    DEBUG_PRINT("%s: Handlers done\n", __func__);                              \
     Replicate_Correct_Type(Correct_Type, result_type, type, __VA_ARGS__);      \
+    DEBUG_PRINT("%s: Correct_Type done\n", __func__);                          \
     npy_intp *shapes[] = {Replicate0(Shapes, __VA_ARGS__)};                    \
     int ndims[] = {Replicate0(NDims, __VA_ARGS__)};                            \
     npy_intp *shape_ref = shapes[0];                                           \
@@ -449,6 +491,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
         break;                                                                 \
       }                                                                        \
     }                                                                          \
+    DEBUG_PRINT("%s: shape_equal done\n", __func__);                           \
     PyArrayObject *arr[] = {Replicate0(Arrays, __VA_ARGS__)};                  \
     npy_intp sizes[Args_Num(__VA_ARGS__)] = {0};                               \
     int biggest_index = 0;                                                     \
@@ -466,14 +509,17 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
         biggest_index = i;                                                     \
       }                                                                        \
     }                                                                          \
+    DEBUG_PRINT("%s: biggest_size done\n", __func__);                          \
     for (int j = 0; j < (Args_Num(__VA_ARGS__)); j++) {                        \
       if (j != biggest_index && sizes[j] != 1) {                               \
         all_scalar = false;                                                    \
         break;                                                                 \
       }                                                                        \
     }                                                                          \
+    DEBUG_PRINT("%s: all_scalar done\n", __func__);                            \
     if ((!shape_equal && !all_scalar) ||                                       \
         (Replicate_Or(Contiguous_OrNot, __VA_ARGS__))) {                       \
+      DEBUG_PRINT("%s: broadcast start\n", __func__);                          \
       npy_intp *new_shapes[Args_Num(__VA_ARGS__)] = {NULL};                    \
       for (int i = 0; i < (Args_Num(__VA_ARGS__)); i++) {                      \
         if (!shape_isbroadcastable_to_ex(                                      \
@@ -506,19 +552,23 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       }                                                                        \
       Replicate_Alloc_Results(Alloc_Results, biggest_array, broadcast_shape,   \
                               result_type, Remove_Parentheses(results));       \
+      DEBUG_PRINT("%s: broacast looping start\n", __func__);                   \
       Universal_Operation(                                                     \
           type,                                                                \
           (Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))),   \
           _First(Replicate0_With_Comma(Get_Results,                            \
                                        Remove_Parentheses(results))),          \
           inner_loop_body, new_shapes, __VA_ARGS__);                           \
+      DEBUG_PRINT("%s: broacast looping end\n", __func__);                     \
       PyArrayObject *results_arr[] = {                                         \
           Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))};    \
       Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
       memcpy(return_arr, results_arr,                                          \
              sizeof(PyArrayObject *) *                                         \
                  (Args_Num(Remove_Parentheses(results))));                     \
+      DEBUG_PRINT("%s: Ended\n", __func__);                                    \
     } else {                                                                   \
+      DEBUG_PRINT("%s: sequential start\n", __func__);                         \
       Replicate(Get_Strides_Sequential, type, __VA_ARGS__);                    \
       Replicate_Alloc_Results(Alloc_Results, biggest_array,                    \
                               PyArray_DIMS(biggest_array), result_type,        \
@@ -532,7 +582,6 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
       PyArrayObject *results_arr[] = {                                         \
           Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))};    \
-      Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
       memcpy(return_arr, results_arr,                                          \
              sizeof(PyArrayObject *) *                                         \
                  (Args_Num(Remove_Parentheses(results))));                     \

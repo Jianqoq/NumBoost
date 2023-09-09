@@ -2,16 +2,20 @@ import numpy as np
 import sys
 import pytest
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import platform
+
 if platform.system() == 'Windows':
     os.add_dll_directory(
         r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
-    os.add_dll_directory(r'C:\Users\123\autograd-C\Autograd-C\src\libraries\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release')
+    os.add_dll_directory(
+        r'C:\Users\123\autograd-C\Autograd-C\src\libraries\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release')
 import num_boost as nb
 from src.Numboost import result_type
 from NumBoost_openum import Add, LShift, RShift
 from num_boost import Tensor
+
 sys.path.append(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
 
@@ -27,17 +31,16 @@ test_cases1 = [np.array([-1, 2, 3]).astype(np.int8),
                np.array([-1, 2, 3]).astype(np.float32),
                np.array([-1, 2, 3]).astype(np.float64)]
 
-
 test_cases2 = [(np.array([1, 2, 3])).astype(np.int8),
                (np.array([1, 2, 3])).astype(np.int16),
                (np.array([1, 2, 3])).astype(np.int32),
                (np.array([1, 2, 3])).astype(np.int64)]
 
-
 test_cases3 = [(np.array([1, 2, 3])).astype(np.uint8),
-(np.array([1, 2, 3])).astype(np.uint16),
-(np.array([1, 2, 3])).astype(np.uint32),
-(np.array([1, 2, 3])).astype(np.uint64)]
+               (np.array([1, 2, 3])).astype(np.uint16),
+               (np.array([1, 2, 3])).astype(np.uint32),
+               (np.array([1, 2, 3])).astype(np.uint64)]
+
 
 def test_C_Tensor_addition():
     ops = {"add": (lambda x, y: x + y, nb.Add),
@@ -153,7 +156,7 @@ def test_C_Tensor_rshift(array):
                                c.itemsize)
     o = array.astype(nb.nb_type_2_np[predict_type]) >> c.astype(nb.nb_type_2_np[predict_type])
     assert np.allclose(o, l.data, equal_nan=True), (f"predict type: {predict_type} actual: {o.dtype}\n"
-                                                 f"correct: {o}({o.dtype}) | got: {l}")
+                                                    f"correct: {o}({o.dtype}) | got: {l}")
 
 
 @pytest.mark.parametrize("array", [np.array([-1]), np.array([1])])  # test not perfect
