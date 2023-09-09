@@ -1,6 +1,5 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
-#include "../binary_ops/binary_op_impl.h"
 #include "../numboost_api.h"
 #include "../tensor.h"
 #include "ufunc_backward_def.h"
