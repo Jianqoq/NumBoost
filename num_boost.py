@@ -18,12 +18,12 @@ nb_type_2_np = {uint: _np.dtype(_np.uint), bool_: _np.dtype(_np.bool_), byte: _n
                 longdouble: _np.dtype(_np.longdouble), longlong: _np.dtype(_np.longlong),
                 ulonglong: _np.dtype(_np.ulonglong)}
 
-np_type_2_nb = {_np.dtype(_np.uint): uint, _np.dtype(_np.bool_): bool_, _np.dtype(_np.byte): byte,
-                _np.dtype(_np.ubyte): ubyte, _np.dtype(_np.short): short, _np.dtype(_np.ushort): ushort,
-                _np.dtype(_np.int_): int_, _np.dtype(_np.uint32): uint32, _np.dtype(_np.int32): int32,
-                _np.dtype(_np.uint64): uint64, _np.dtype(_np.int64): int64, _np.dtype(_np.float32): float32,
-                _np.dtype(_np.float64): float64, _np.dtype(_np.float16): float16, _np.dtype(_np.double): double,
-                _np.dtype(_np.longdouble): longdouble, _np.dtype(_np.longlong): longlong}
+np_type_2_nb = {_np.uint: uint, _np.bool_: bool_, _np.int8: byte,
+                _np.ubyte: ubyte, _np.short: short, _np.ushort: ushort,
+                _np.int_: int_, _np.uint32: uint32, _np.int32: int32,
+                _np.uint64: uint64, _np.int64: int64, _np.float32: float32,
+                _np.float64: float64, _np.float16: float16, _np.double: double,
+                _np.longdouble: longdouble, _np.longlong: longlong}
 
 pass
 def jit(fun: Callable,

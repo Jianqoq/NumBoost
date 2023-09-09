@@ -53,7 +53,7 @@ def test_C_Tensor_addition():
 
     for op in ops:
         for j in nb.nb_type_2_np:
-            if j not in (nb.float, nb.float16, nb.float32, nb.float64):
+            if j not in (nb.float_, nb.float16, nb.float32, nb.float64):
                 continue
             nb.global_float_type(j)
             type_ = [np.byte, np.ubyte, np.short, np.ushort,
@@ -65,8 +65,8 @@ def test_C_Tensor_addition():
                 for i in type_:
                     u = np.random.randn(10, 10)
                     b_ = nb.Tensor(u)
-                    predicted_type = nb.result_type(ops[op][1], nb.np_type_2_nb[a_.data.dtype],
-                                                    a_.data.itemsize, nb.np_type_2_nb[b_.data.dtype], b_.data.itemsize)
+                    predicted_type = nb.result_type(ops[op][1], a_.dtype,
+                                                    a_.data.itemsize, b_.dtype, b_.data.itemsize)
                     q = ops[op][0](a.astype(nb.nb_type_2_np[predicted_type]), u.astype(nb.nb_type_2_np[predicted_type]))
                     c = ops[op][0](a_, b_)
                     l = q.astype(c.data.dtype)
@@ -135,8 +135,8 @@ def test_C_Tensor_lshift(array):
     c = np.array([[1, 2, 3], [4, 5, 6]])
     result1 = p << Tensor(c)
     result2 = array << c
-    predict_type = result_type(LShift, nb.np_type_2_nb[p.data.dtype],
-                               p.data.itemsize, nb.np_type_2_nb[c.dtype],
+    predict_type = result_type(LShift, p.dtype,
+                               p.data.itemsize, c.dtype.num,
                                c.itemsize)
     assert np.allclose(
         result2, result1.data, equal_nan=True), (f"predict type: {predict_type} actual: {result2.dtype}\n"
@@ -151,8 +151,8 @@ def test_C_Tensor_rshift(array):
     assert np.allclose(o, l.data), f"correct: {o} | got: {l.data}"
     c = np.array([[1, 2, 3], [4, 5, 6]])
     l = p >> Tensor(c)
-    predict_type = result_type(RShift, nb.np_type_2_nb[p.data.dtype],
-                               p.data.itemsize, nb.np_type_2_nb[c.dtype],
+    predict_type = result_type(RShift, p.dtype,
+                               p.data.itemsize, c.dtype.num,
                                c.itemsize)
     o = array.astype(nb.nb_type_2_np[predict_type]) >> c.astype(nb.nb_type_2_np[predict_type])
     assert np.allclose(o, l.data, equal_nan=True), (f"predict type: {predict_type} actual: {o.dtype}\n"

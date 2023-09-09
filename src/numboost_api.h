@@ -588,4 +588,131 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     }                                                                          \
   } while (0)
 
+#define Perform_Universal_Operation_Inplace(type, return_arr, result_type,     \
+                                            inner_loop_body, outs_array,       \
+                                            outs_array_len, results, ...)      \
+  do {                                                                         \
+    if (outs_array_len > Args_Num(Remove_Parentheses(results))) {              \
+      PyErr_SetString(PyExc_ValueError, "Number of outputs must be equal or "  \
+                                        "less than the number of results");    \
+      return NULL;                                                             \
+    }                                                                          \
+    bool shape_equal = true;                                                   \
+    bool all_scalar = true;                                                    \
+    DEBUG_PRINT("%s: Entered\n", __func__);                                    \
+    Replicate0_No_Comma(Handlers, __VA_ARGS__);                                \
+    DEBUG_PRINT("%s: Handlers done\n", __func__);                              \
+    Replicate_Correct_Type(Correct_Type, result_type, type, __VA_ARGS__);      \
+    DEBUG_PRINT("%s: Correct_Type done\n", __func__);                          \
+    npy_intp *shapes[] = {Replicate0(Shapes, __VA_ARGS__)};                    \
+    int ndims[] = {Replicate0(NDims, __VA_ARGS__)};                            \
+    npy_intp *shape_ref = shapes[0];                                           \
+    int ndim_ref = ndims[0];                                                   \
+    for (int i = 0; i < Args_Num(__VA_ARGS__); i++) {                          \
+      if (!shape_isequal(shape_ref, shapes[i], ndim_ref, ndims[i])) {          \
+        shape_equal = false;                                                   \
+        break;                                                                 \
+      }                                                                        \
+    }                                                                          \
+    DEBUG_PRINT("%s: shape_equal done\n", __func__);                           \
+    PyArrayObject *arr[] = {Replicate0(Arrays, __VA_ARGS__)};                  \
+    npy_intp sizes[Args_Num(__VA_ARGS__)] = {0};                               \
+    int biggest_index = 0;                                                     \
+    PyArrayObject *biggest_array = NULL;                                       \
+    npy_intp biggest_size = 0;                                                 \
+    for (int i = 0; i < (Args_Num(__VA_ARGS__)); i++) {                        \
+      npy_intp size = 1;                                                       \
+      for (int j = 0; j < ndims[i]; j++) {                                     \
+        size *= shapes[i][j];                                                  \
+      }                                                                        \
+      sizes[i] = size;                                                         \
+      if (size > biggest_size) {                                               \
+        biggest_size = size;                                                   \
+        biggest_array = arr[i];                                                \
+        biggest_index = i;                                                     \
+      }                                                                        \
+    }                                                                          \
+    DEBUG_PRINT("%s: biggest_size done\n", __func__);                          \
+    for (int j = 0; j < (Args_Num(__VA_ARGS__)); j++) {                        \
+      if (j != biggest_index && sizes[j] != 1) {                               \
+        all_scalar = false;                                                    \
+        break;                                                                 \
+      }                                                                        \
+    }                                                                          \
+    PyObject *outs_arr[Args_Num(Remove_Parentheses(results))] = {NULL};        \
+    if (outs_array != NULL) {                                                  \
+      memcpy(outs_arr, outs_array, sizeof(PyArrayObject *) * outs_array_len);  \
+    }                                                                          \
+    DEBUG_PRINT("%s: all_scalar done\n", __func__);                            \
+    if ((!shape_equal && !all_scalar) ||                                       \
+        (Replicate_Or(Contiguous_OrNot, __VA_ARGS__))) {                       \
+      DEBUG_PRINT("%s: broadcast start\n", __func__);                          \
+      npy_intp *new_shapes[Args_Num(__VA_ARGS__)] = {NULL};                    \
+      for (int i = 0; i < (Args_Num(__VA_ARGS__)); i++) {                      \
+        if (!shape_isbroadcastable_to_ex(                                      \
+                shapes[i], PyArray_SHAPE(biggest_array), ndims[i],             \
+                PyArray_NDIM(biggest_array), &new_shapes[i])) {                \
+          PyErr_SetString(PyExc_ValueError, "Cannot broadcast shapes");        \
+          return NULL;                                                         \
+        }                                                                      \
+      }                                                                        \
+      npy_intp stride_last =                                                   \
+          PyArray_STRIDE((const PyArrayObject *)biggest_array,                 \
+                         PyArray_NDIM(biggest_array) - 1);                     \
+      npy_intp *broadcast_shape = NULL;                                        \
+      npy_intp broadcast_size = 1;                                             \
+      for (int j = 0; j < (Args_Num(__VA_ARGS__)); j++) {                      \
+        npy_intp *broadcast_shape_tmp = NULL;                                  \
+        predict_broadcast_shape(PyArray_SHAPE(biggest_array), new_shapes[j],   \
+                                PyArray_NDIM(biggest_array),                   \
+                                &broadcast_shape_tmp);                         \
+        npy_intp tmp = 1;                                                      \
+        for (int k = 0; k < PyArray_NDIM(biggest_array); k++) {                \
+          tmp *= broadcast_shape_tmp[k];                                       \
+        }                                                                      \
+        if (tmp < broadcast_size) {                                            \
+          free(broadcast_shape_tmp);                                           \
+        } else {                                                               \
+          broadcast_shape = broadcast_shape_tmp;                               \
+          broadcast_size = tmp;                                                \
+        }                                                                      \
+      }                                                                        \
+      Replicate_Alloc_Results_Inplace(Alloc_Results_Inplace, biggest_array,    \
+                                      broadcast_shape, result_type,            \
+                                      Remove_Parentheses(results));            \
+      DEBUG_PRINT("%s: broacast looping start\n", __func__);                   \
+      Universal_Operation(                                                     \
+          type,                                                                \
+          (Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))),   \
+          _First(Replicate0_With_Comma(Get_Results,                            \
+                                       Remove_Parentheses(results))),          \
+          inner_loop_body, new_shapes, __VA_ARGS__);                           \
+      DEBUG_PRINT("%s: broacast looping end\n", __func__);                     \
+      PyArrayObject *results_arr[] = {                                         \
+          Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))};    \
+      Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
+      memcpy(return_arr, results_arr,                                          \
+             sizeof(PyArrayObject *) *                                         \
+                 (Args_Num(Remove_Parentheses(results))));                     \
+      DEBUG_PRINT("%s: Ended\n", __func__);                                    \
+    } else {                                                                   \
+      Replicate(Get_Strides_Sequential, type, __VA_ARGS__);                    \
+      Replicate_Alloc_Results_Inplace(                                         \
+          Alloc_Results_Inplace, biggest_array, PyArray_SHAPE(biggest_array),  \
+          result_type, Remove_Parentheses(results));                           \
+      Universal_Operation_Sequential(                                          \
+          type,                                                                \
+          (Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))),   \
+          _First(Replicate0_With_Comma(Get_Results,                            \
+                                       Remove_Parentheses(results))),          \
+          inner_loop_body, __VA_ARGS__);                                       \
+      Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
+      PyArrayObject *results_arr[] = {                                         \
+          Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))};    \
+      memcpy(return_arr, results_arr,                                          \
+             sizeof(PyArrayObject *) *                                         \
+                 (Args_Num(Remove_Parentheses(results))));                     \
+    }                                                                          \
+  } while (0)
+
 #endif // NUMBOOST_API_H

@@ -60,11 +60,21 @@
       If(Has_Args(__VA_ARGS__))(DEFER2(_Alloc_Results_MAP)()(                  \
           m, biggest_array, shape, result_type, __VA_ARGS__))
 
+#define Alloc_Results_Inplace_MAP(m, biggest_array, shape, result_type, index, \
+                                  x, ...)                                      \
+  m(x, biggest_array, shape, result_type, index)                               \
+      If(Has_Args(__VA_ARGS__))(DEFER2(_Alloc_Results_MAP)()(                  \
+          m, biggest_array, shape, result_type, index + 1, __VA_ARGS__))
+
 #define Adjust_Result_Ptrs_MAP(m, start_index, end_index, inner_loop_size, x,  \
                                ...)                                            \
   m(start_index, end_index, inner_loop_size, x)                                \
       If(Has_Args(__VA_ARGS__))(DEFER2(_Adjust_Result_Ptrs_MAP)()(             \
           m, start_index, end_index, inner_loop_size, __VA_ARGS__))
+
+#define Init_OutsArr_MAP(m, index, x, ...)                                     \
+  m(index, x) If(Has_Args(__VA_ARGS__))(                                       \
+      DEFER2(_Init_OutsArr_MAP)()(m, index + 1, __VA_ARGS__))
 
 #define Results_MAP(m, x, ...)                                                 \
   m(x) If(Has_Args(__VA_ARGS__))(DEFER2(_Results_MAP)()(m, __VA_ARGS__))
@@ -89,6 +99,8 @@
   m If(Has_Args(__VA_ARGS__))(, )                                              \
       If(Has_Args(__VA_ARGS__))(DEFER2(_ACCUMULATE)()(m + 1, __VA_ARGS__))
 
+#define _Alloc_Results_Inplace_MAP() Alloc_Results_Inplace_MAP
+#define _Init_OutsArr_MAP() Init_OutsArr_MAP
 #define _Adjust_Result_Ptrs_MAP() Adjust_Result_Ptrs_MAP
 #define _Results_MAP() Results_MAP
 #define _Alloc_Results_MAP() Alloc_Results_MAP
@@ -144,6 +156,37 @@
       PyArray_NDIM(biggest_array), shape, result_type, 0);                     \
   if (__result_##x == NULL) {                                                  \
     return NULL;                                                               \
+  }
+
+#define Alloc_Results_Inplace(x, biggest_array, shape, result_type, index)     \
+  PyArrayObject *__result_##x = NULL;                                          \
+  if (outs_arr[index] == NULL) {                                               \
+    __result_##x = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(biggest_array), \
+                                                  shape, result_type, 0);      \
+    if (__result_##x == NULL) {                                                \
+      return NULL;                                                             \
+    }                                                                          \
+  } else {                                                                     \
+    if (PyArray_NDIM((PyArrayObject *)outs_arr[index]) !=                      \
+        PyArray_NDIM(biggest_array)) {                                         \
+      PyErr_SetString(PyExc_RuntimeError, "out ndim not correct");             \
+      return NULL;                                                             \
+    } else {                                                                   \
+      for (int i = 0; i < PyArray_NDIM((PyArrayObject *)outs_arr[index]);      \
+           i++) {                                                              \
+        if (PyArray_SHAPE((PyArrayObject *)outs_arr[index])[i] != shape[i]) {  \
+          PyErr_SetString(PyExc_RuntimeError, "out ndim not correct");         \
+          return NULL;                                                         \
+        }                                                                      \
+      }                                                                        \
+      if (PyArray_TYPE((PyArrayObject *)outs_arr[index]) != result_type) {     \
+        PyArrayObject *tmp = (PyArrayObject *)outs_arr[index];                 \
+        as_type(&tmp, &__result_##x, result_type);                             \
+      } else {                                                                 \
+        __result_##x = (PyArrayObject *)outs_arr[index];                       \
+        Py_INCREF(outs_arr[index]);                                            \
+      }                                                                        \
+    }                                                                          \
   }
 
 #define Get_Results(x) __result_##x
@@ -216,6 +259,9 @@
       return NULL;                                                             \
     }                                                                          \
     assert(PyArray_STRIDES(x##_) == NULL); /*should be NULL*/                  \
+  } else {                                                                     \
+    PyErr_SetString(PyExc_TypeError, "type not supported");                    \
+    return NULL;                                                               \
   }
 
 #define Ptrs(x, type) type *x##_data_ptr_saved = (type *)PyArray_DATA(x##_);
@@ -292,10 +338,18 @@
   Expand(Alloc_Results_MAP(method, biggest_array, shape, result_type,          \
                            __VA_ARGS__))
 
+#define Replicate_Alloc_Results_Inplace(m, biggest_array, shape, result_type,  \
+                                        ...)                                   \
+  Expand(Alloc_Results_Inplace_MAP(m, biggest_array, shape, result_type, 0,    \
+                                   __VA_ARGS__))
+
 #define Replicate_Adjust_Result_Ptrs(method, start_index, end_index,           \
                                      inner_loop_size, ...)                     \
   Expand(Adjust_Result_Ptrs_MAP(method, start_index, end_index,                \
                                 inner_loop_size, __VA_ARGS__))
+
+#define Replicate_Init_OutsArr(method, ...)                                    \
+  Expand(Init_OutsArr_MAP(method, 0, __VA_ARGS__))
 
 #define Replicate3(method, x, y, z, ...)                                       \
   Expand(MAP3(method, x, y, z, __VA_ARGS__))

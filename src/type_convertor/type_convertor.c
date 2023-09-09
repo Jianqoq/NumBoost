@@ -162,6 +162,35 @@ void Any_to_Double(PyArrayObject **array, PyArrayObject **result, int type) {
   }
 }
 
+void Any_to_LongDouble(PyArrayObject **array, PyArrayObject **result,
+                       int type) {
+  npy_intp ndims = PyArray_NDIM(*array);
+  npy_intp *shape = PyArray_SHAPE(*array);
+  npy_intp size = PyArray_SIZE(*array);
+  npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+  npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+  npy_intp i;
+  switch (type) {
+    CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_BYTE, npy_byte, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_UBYTE, npy_ubyte, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_SHORT, npy_short, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_USHORT, npy_ushort, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_INT, npy_int, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_UINT, npy_uint, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_LONG, npy_long, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_ULONG, npy_ulong, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_LONGLONG, npy_longlong, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_ULONGLONG, npy_ulonglong, npy_longdouble,
+                    NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_FLOAT, npy_float, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_DOUBLE, npy_double, npy_longdouble, NPY_LONGDOUBLE)
+    NO_CONVERT_CASE(NPY_LONGDOUBLE)
+    F_CAST_ARRAY_CASE(NPY_HALF, npy_half, npy_longdouble, NPY_LONGDOUBLE,
+                      half_cast_double)
+  }
+}
+
 void Any_to_Half(PyArrayObject **array, PyArrayObject **result, int type) {
   npy_intp ndims = PyArray_NDIM(*array);
   npy_intp *shape = PyArray_SHAPE(*array);
@@ -499,6 +528,7 @@ inline void As_Type(PyArrayObject **a, PyArrayObject **result, int self_type,
     As_Type_Cases(ULongLong, NPY_ULONGLONG);
     As_Type_Cases(Float, NPY_FLOAT);
     As_Type_Cases(Double, NPY_DOUBLE);
+    As_Type_Cases(LongDouble, NPY_LONGDOUBLE);
     As_Type_Cases(Half, NPY_HALF);
   default:
     *a = NULL;
@@ -508,7 +538,11 @@ inline void As_Type(PyArrayObject **a, PyArrayObject **result, int self_type,
 
 void as_type(PyArrayObject **a, PyArrayObject **result, int target_type) {
   int a_dtype = PyArray_TYPE(*a);
-  As_Type(a, result, a_dtype, target_type);
+  if (target_type == a_dtype) {
+    *result = *a;
+  } else {
+    As_Type(a, result, a_dtype, target_type);
+  }
 }
 
 int div_result_type_pick(int npy_enum) {
@@ -722,10 +756,9 @@ PyObject *binary_result_type_(PyObject *self, PyObject *const *args,
 int any_to_type_enum(PyObject *a) {
   if (Py_IS_TYPE(a, Tensor_type)) {
     return ((PyArrayObject_fields *)((Tensor *)a)->data)->descr->type_num;
-  }
-  else if (PyArray_Check(a))
+  } else if (PyArray_Check(a)) {
     return ((PyArrayObject_fields *)a)->descr->type_num;
-  else if (PyBool_Check(a))
+  } else if (PyBool_Check(a))
     return NPY_BOOL;
   else if (PyLong_Check(a))
     return NPY_LONG;

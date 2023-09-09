@@ -225,6 +225,12 @@ Tensor *T(Tensor *self) {
   return to_return;
 }
 
+PyObject *dtype(Tensor *self) {
+  PyArrayObject *data = (PyArrayObject *)(self->data);
+  long type_num = PyArray_TYPE(data);
+  return PyLong_FromLong(type_num);
+}
+
 PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds) {
   static char *kwlist[] = {"data", "requires_grad", NULL};
   PyObject *data = NULL, *cache = NULL;
@@ -269,7 +275,7 @@ PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 }
 
 PyObject *__tensor(PyObject *self, PyObject *args, PyObject *kwds) {
-  (void) self;
+  (void)self;
   return __new__(Tensor_type, args, kwds);
 }
 

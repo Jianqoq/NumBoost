@@ -58,3 +58,57 @@ Register_Binary_Operations_Err_Interger_Types(pow);
 Register_Binary_Operation_Err_Not_Support_Types(pow);
 Register_Binary_Operation_Array(pow, );
 Register_Binary_Operation_Method(pow, POW);
+
+Register_Binary_Operations_Floating_Types_New(add, Add_LoopBody);
+Register_Binary_Operations_Interger_Types_New(add, Add_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types_New(add);
+Register_Binary_Operation_Array_New(add, );
+Register_Binary_Operation_Method_New(add, ADD);
+
+Register_Binary_Operations_Floating_Types_New(sub, Sub_LoopBody);
+Register_Binary_Operations_Interger_Types_New(sub, Sub_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types_New(sub);
+Register_Binary_Operation_Array_New(sub, );
+Register_Binary_Operation_Method_New(sub, SUB);
+
+Register_Binary_Operations_Floating_Types_New(mul, Mul_LoopBody);
+Register_Binary_Operations_Interger_Types_New(mul, Mul_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types_New(mul);
+Register_Binary_Operation_Array_New(mul, );
+Register_Binary_Operation_Method_New(mul, MUL);
+
+Register_Binary_Operations_Floating_Types_New(div, Div_LoopBody);
+Register_Binary_Operations_Err_Interger_Types_New(div);
+Register_Binary_Operation_Err_Not_Support_Types_New(div);
+Register_Binary_Operation_Array_New(div, );
+Register_Binary_Operation_Method_New(div, DIV);
+
+Register_Binary_Operations_Err_Floating_Types_New(lshift);
+Register_Binary_Operations_Interger_Types_New(lshift, LShift_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types_New(lshift);
+Register_Binary_Operation_Array_New(lshift, );
+Register_Binary_Operation_Method_New(lshift, LSHIFT);
+
+Register_Binary_Operations_Err_Floating_Types_New(rshift);
+Register_Binary_Operations_Interger_Types_New(rshift, RShift_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types_New(rshift);
+Register_Binary_Operation_Array_New(rshift, );
+Register_Binary_Operation_Method_New(rshift, RSHIFT);
+
+Register_Binary_Operations_Floating_Types_New(mod, Mod_LoopBody);
+Register_Binary_Operations_Interger_Types_New(mod, Mod_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types_New(mod);
+Register_Binary_Operation_Array_New(mod, );
+Register_Binary_Operation_Method_New(mod, MOD);
+
+Register_Binary_Operations_Floating_Types_New(fdiv, FloorDiv_LoopBody);
+Register_Binary_Operations_Interger_Types_New(fdiv, FloorDiv_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types_New(fdiv);
+Register_Binary_Operation_Array_New(fdiv, );
+Register_Binary_Operation_Method_New(fdiv, FLOOR_DIV);
+
+Register_Binary_Operations_Floating_Types_New(pow, Pow_LoopBody);
+Register_Binary_Operations_Err_Interger_Types_New(pow);
+Register_Binary_Operation_Err_Not_Support_Types_New(pow);
+Register_Binary_Operation_Array_New(pow, );
+Register_Binary_Operation_Method_New(pow, POW);

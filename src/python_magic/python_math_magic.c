@@ -237,7 +237,12 @@ PyObject *Tensor_Empty(PyObject *data) {
 }
 
 PyObject *tensor_add(PyObject *self, PyObject *other) {
-  PyObject *result = numboost_add(((Tensor *)self)->data, other);
+  // PyObject *result = numboost_add(((Tensor *)self)->data, other);
+  // Numboost_AssertNULL(result);
+  // PyObject *to_return =
+  //     create_Tensor((Tensor *)self, other, result, "AddBackward");
+  // return to_return;
+  PyObject *result = numboost_add_new(((Tensor *)self)->data, other, NULL);
   Numboost_AssertNULL(result);
   PyObject *to_return =
       create_Tensor((Tensor *)self, other, result, "AddBackward");

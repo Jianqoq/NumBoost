@@ -20,6 +20,8 @@ PyObject *get_item(Tensor *self, PyObject *item);
 
 Tensor *T(Tensor *self);
 
+PyObject *dtype(Tensor *self);
+
 PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 PyObject *__tensor(PyObject *self, PyObject *args, PyObject *kwds);
