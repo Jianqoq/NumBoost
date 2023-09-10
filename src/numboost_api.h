@@ -1,6 +1,6 @@
 #ifndef NUMBOOST_API_H
 #define NUMBOOST_API_H
-#include "binary_ops/binary_node_fuse.h"
+#include "macro_utils.h"
 #include "omp.h"
 #include "shape.h"
 #include "type_convertor/type_convertor.h"
