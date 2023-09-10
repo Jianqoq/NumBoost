@@ -23,7 +23,7 @@ np_type_2_nb = {_np.uint: uint, _np.bool_: bool_, _np.int8: byte,
                 _np.int_: int_, _np.uint32: uint32, _np.int32: int32,
                 _np.uint64: uint64, _np.int64: int64, _np.float32: float32,
                 _np.float64: float64, _np.float16: float16, _np.double: double,
-                _np.longdouble: longdouble, _np.longlong: longlong}
+                _np.longdouble: longdouble, _np.longlong: longlong, _np.ulonglong: ulonglong}
 
 pass
 def jit(fun: Callable,
