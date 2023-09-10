@@ -13,31 +13,32 @@ Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, h
 1. np.longdouble cast to float16 will cause error even though longdouble is 64bit. np.float64 type directly cast to np.float16 has no issue
 
 # To do
-1. ~~add tensordot(forward, backward)~~
-2. ~~add slice(forward, backward)~~
-3. ~~use parallel in broadcast~~
-4. ~~implement add, sub, mul, div operation directly instead of using np built in method(better performance)(include broadcast)~~
-5. ~~add debug macro for debug in C. Use python setup.py build_ext -DEBUG to enable~~
-6. ~~Add T static method~~
-7. ~~add __len__, __min__, __max__, iterator for Tensor~~
-8. improve speed when both uncontiguous arrays in same shape
-9. develop convenient api for fusion
-10. ~~mem pool~~
-11. vectorization
-12. ~~bool calculation support~~
-13. complex calculation support
-14. backward node fusion
-15. Runtime dynamic computation graph analysis and optimization
-16. add __setitem__ for Tensor
-17. add concat(forward, backward)
-18. add stack(forward, backward)
-19. add split(forward, backward)
-20. add mean(forward, backward)
-21. add trace(forward, backward)
-22. remove redundant calculation in backward(add require grad check)
-23. ~~implement shape prediction instead of doing real calculation in jax tracing~~
-24. ~~implement broadcast detection based on shape~~
-25. let cache can handle more scenario at the same function need to be jit
-26. ~~Proof of concept(POC) Object Pool for Tensor~~
-27. Better Tensor dealloc(directly use switch to free dict)
-28. To be determined(TBD)
+1. implement methods supports dynamic output
+2. ~~add tensordot(forward, backward)~~
+3. ~~add slice(forward, backward)~~
+4. ~~use parallel in broadcast~~
+5. ~~implement add, sub, mul, div operation directly instead of using np built in method(better performance)(include broadcast)~~
+6. ~~add debug macro for debug in C. Use python setup.py build_ext -DEBUG to enable~~
+7. ~~Add T static method~~
+8. ~~add __len__, __min__, __max__, iterator for Tensor~~
+9. improve speed when both uncontiguous arrays in same shape
+10. develop convenient api for fusion
+11. ~~mem pool~~
+12. vectorization
+13. ~~bool calculation support~~
+14. complex calculation support
+15. ~~backward node fusion~~
+16. Runtime dynamic computation graph analysis and optimization
+17. add __setitem__ for Tensor
+18. add concat(forward, backward)
+19. add stack(forward, backward)
+20. add split(forward, backward)
+21. add mean(forward, backward)
+22. add trace(forward, backward)
+23. remove redundant calculation in backward(add require grad check)
+24. ~~implement shape prediction instead of doing real calculation in jax tracing~~
+25. ~~implement broadcast detection based on shape~~
+26. let cache can handle more scenario at the same function need to be jit
+27. ~~Proof of concept(POC) Object Pool for Tensor~~
+28. Better Tensor dealloc(directly use switch to free dict)
+29. To be determined(TBD)
