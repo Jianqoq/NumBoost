@@ -83,4 +83,17 @@
                     b_last_stride, a_ptr, b_ptr)                               \
   result_ptr[i] = a_ptr[i * a_last_stride] | b_ptr[i * b_last_stride];
 
+#define Divmod_LoopBody(generic_type, type, i, quotient_ptr, remainder_ptr,    \
+                        a_last_stride, b_last_stride, a_ptr, b_ptr)            \
+  generic_type b_val = Promote(type, b_ptr[i * b_last_stride]);                \
+  generic_type a_val = Promote(type, a_ptr[i * a_last_stride]);                \
+  generic_type remainder = b_val == 0 ? 0 : a_val % b_val;                     \
+  generic_type quotient = b_val == 0 ? 0 : a_val / b_val;                      \
+  if (remainder < 0) {                                                         \
+    remainder += b_val;                                                        \
+    quotient -= 1;                                                             \
+  }                                                                            \
+  remainder_ptr[i] = Demote(type, remainder);                                  \
+  quotient_ptr[i] = Demote(type, quotient);
+
 #endif

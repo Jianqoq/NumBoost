@@ -407,10 +407,6 @@ PyObject *tensor_ipow(PyObject *self, PyObject *other) {
 }
 
 PyObject *tensor_matmul(PyObject *self, PyObject *other) {
-  if (TRACK) {
-    PyObject *jaxarray = PyNumber_MatrixMultiply(self, other);
-    return jaxarray;
-  }
   Tensor *_self = (Tensor *)self;
   Tensor *_other = (Tensor *)other;
   PyObject *numpy_result = PyNumber_MatrixMultiply(_self->data, _other->data);
@@ -418,7 +414,7 @@ PyObject *tensor_matmul(PyObject *self, PyObject *other) {
     return NULL;
   }
   PyObject *new_tensor =
-      new_Tensor(_self, _other, numpy_result, "MatMulBackward");
+      create_Tensor(_self, other, numpy_result, "MatMulBackward");
   return new_tensor;
 }
 
