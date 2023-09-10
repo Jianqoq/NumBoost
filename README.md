@@ -9,8 +9,8 @@ Compiler: GCC, MSVC
 # Feature:
 Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, highly compatible with numpy
 
-# Bug:
-1. np.longdouble cast to float16 will cause error even though longdouble is 64bit. np.float64 type directly cast to np.float16 has no issue
+# Doing:
+1. Removing numpy dependency
 
 # To do
 1. implement methods supports dynamic output
