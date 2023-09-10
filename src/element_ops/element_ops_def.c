@@ -58,7 +58,6 @@ Register_ElementWise_Operation_Err_Not_Support_Types(cosh);
 Register_ElementWise_Operation_Array(cosh, );
 Register_ElementWise_Operation_Method(cosh, COSH);
 
-
 Register_ElementWise_Operations_Floating_Types(tanh, Tanh_LoopBody);
 Register_ElementWise_Operation_Err_Interger_Types(tanh);
 Register_ElementWise_Operation_Err_Not_Support_Types(tanh);
@@ -83,3 +82,26 @@ Register_ElementWise_Operation_Err_Not_Support_Types(atanh);
 Register_ElementWise_Operation_Array(atanh, );
 Register_ElementWise_Operation_Method(atanh, ARCTANH);
 
+Register_ElementWise_Operations_Floating_Types(sqrt, Sqrt_LoopBody);
+Register_ElementWise_Operation_Err_Interger_Types(sqrt);
+Register_ElementWise_Operation_Err_Not_Support_Types(sqrt);
+Register_ElementWise_Operation_Array(sqrt, );
+Register_ElementWise_Operation_Method(sqrt, SQRT);
+
+Register_ElementWise_Operations_Floating_Types(log, Log_LoopBody);
+Register_ElementWise_Operation_Err_Interger_Types(log);
+Register_ElementWise_Operation_Err_Not_Support_Types(log);
+Register_ElementWise_Operation_Array(log, );
+Register_ElementWise_Operation_Method(log, LOG);
+
+Register_ElementWise_Operations_Floating_Types(log10, Log10_LoopBody);
+Register_ElementWise_Operation_Err_Interger_Types(log10);
+Register_ElementWise_Operation_Err_Not_Support_Types(log10);
+Register_ElementWise_Operation_Array(log10, );
+Register_ElementWise_Operation_Method(log10, LOG10);
+
+Register_ElementWise_Operations_Floating_Types(exp, Exp_LoopBody);
+Register_ElementWise_Operation_Err_Interger_Types(exp);
+Register_ElementWise_Operation_Err_Not_Support_Types(exp);
+Register_ElementWise_Operation_Array(exp, );
+Register_ElementWise_Operation_Method(exp, EXP);

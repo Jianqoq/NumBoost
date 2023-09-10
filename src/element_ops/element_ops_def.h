@@ -180,5 +180,8 @@ PyObject *numboost_tanh(PyObject *a, PyObject **out_arr);
 PyObject *numboost_asinh(PyObject *a, PyObject **out_arr);
 PyObject *numboost_acosh(PyObject *a, PyObject **out_arr);
 PyObject *numboost_atanh(PyObject *a, PyObject **out_arr);
-
+PyObject *numboost_sqrt(PyObject *a, PyObject **out_arr);
+PyObject *numboost_log(PyObject *a, PyObject **out_arr);
+PyObject *numboost_log10(PyObject *a, PyObject **out_arr);
+PyObject *numboost_exp(PyObject *a, PyObject **out_arr);
 #endif

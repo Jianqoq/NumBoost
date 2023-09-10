@@ -34,6 +34,7 @@ typedef enum
     SQRT,
     EXP,
     LOG,
+    LOG10,
     ABS
 } op_type;
 

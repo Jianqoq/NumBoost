@@ -4,6 +4,7 @@
 #include "../tensor.h"
 #include "ufunc_backward_def.h"
 #include <numpy/arrayobject.h>
+#include "../element_ops/element_ops_def.h"
 
 extern Array_Shape *ARRAY_SHAPE;
 extern jnp_method *JNP_METHOD;
@@ -65,7 +66,7 @@ void sin_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
   *null = NULL;
   if (TRACK) {
     Tensor *tmp1 = (Tensor *)self->x;
-    PyObject *cos = _cos_internal(tmp1->data, NULL);
+    PyObject *cos = numboost_cos(tmp1->data, NULL);
     *out = PyNumber_Multiply(grad, cos);
     Py_DECREF(cos);
   } else {
@@ -91,7 +92,7 @@ void cos_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
   *null = NULL;
   if (TRACK) {
     Tensor *tmp1 = (Tensor *)self->x;
-    PyObject *sin = _sin_internal(tmp1->data, NULL);
+    PyObject *sin = numboost_sin(tmp1->data, NULL);
     PyObject *neg = PyNumber_Negative(grad);
     *out = PyNumber_Multiply(neg, sin);
     Py_DECREF(sin);
@@ -118,7 +119,7 @@ void tan_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
   Tensor *tmp1 = (Tensor *)self->x;
   *null = NULL;
   if (TRACK) {
-    PyObject *cos = _cos_internal(tmp1->data, NULL);
+    PyObject *cos = numboost_cos(tmp1->data, NULL);
     PyObject *one = PyLong_FromLong(1);
     PyObject *sec = PyNumber_TrueDivide(one, cos);
     PyObject *mul = PyNumber_Multiply(sec, sec);
@@ -274,7 +275,7 @@ void sinh_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
   Tensor *tmp1 = (Tensor *)self->x;
   *null = NULL;
   if (TRACK) {
-    PyObject *cosh = _cosh_internal(tmp1->data, NULL);
+    PyObject *cosh = numboost_cosh(tmp1->data, NULL);
     PyObject *result = PyNumber_Multiply(grad, cosh);
     *out = result;
     Py_DECREF(cosh);
@@ -301,7 +302,7 @@ void cosh_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
   Tensor *tmp1 = (Tensor *)self->x;
   *null = NULL;
   if (TRACK) {
-    PyObject *sinh = _sinh_internal(tmp1->data, NULL);
+    PyObject *sinh = numboost_sinh(tmp1->data, NULL);
     PyObject *result = PyNumber_Multiply(grad, sinh);
     *out = result;
     Py_DECREF(sinh);
@@ -466,7 +467,7 @@ void exp_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
   Tensor *tmp1 = (Tensor *)self->x;
   *null = NULL;
   if (TRACK) {
-    PyObject *exp = _exp_internal(tmp1->data, NULL);
+    PyObject *exp = numboost_exp(tmp1->data, NULL);
     PyObject *result = PyNumber_Multiply(grad, exp);
     Py_DECREF(exp);
     *out = result;
@@ -519,7 +520,7 @@ void log10_backward_fn(Tensor *self, PyObject *grad, PyObject **out,
     npy_intp dims[1] = {1};
     double data[1] = {10.0};
     PyObject *ten = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, data);
-    PyObject *ln = _log_internal(ten, NULL);
+    PyObject *ln = numboost_log(ten, NULL);
     PyObject *mul = PyNumber_Multiply(tmp1->data, ln);
     PyObject *grad2 = PyNumber_TrueDivide(grad, mul);
     *out = grad2;

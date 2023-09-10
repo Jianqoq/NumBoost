@@ -66,3 +66,23 @@
   generic_type a_val = Promote(type, a_ptr[i * stride_a_last]);                \
   generic_type result = Map_Method(generic_type, npy_atanh, a_val);            \
   result_ptr[i] = Demote(type, result);
+
+#define Sqrt_LoopBody(generic_type, type, i, result_ptr, stride_a_last, a_ptr) \
+  generic_type a_val = Promote(type, a_ptr[i * stride_a_last]);                \
+  generic_type result = Map_Method(generic_type, npy_sqrt, a_val);            \
+  result_ptr[i] = Demote(type, result);
+
+#define Log_LoopBody(generic_type, type, i, result_ptr, stride_a_last, a_ptr) \
+  generic_type a_val = Promote(type, a_ptr[i * stride_a_last]);                \
+  generic_type result = Map_Method(generic_type, npy_log, a_val);            \
+  result_ptr[i] = Demote(type, result);
+
+#define Log10_LoopBody(generic_type, type, i, result_ptr, stride_a_last, a_ptr) \
+  generic_type a_val = Promote(type, a_ptr[i * stride_a_last]);                \
+  generic_type result = Map_Method(generic_type, npy_log10, a_val);            \
+  result_ptr[i] = Demote(type, result);
+
+#define Exp_LoopBody(generic_type, type, i, result_ptr, stride_a_last, a_ptr) \
+  generic_type a_val = Promote(type, a_ptr[i * stride_a_last]);                \
+  generic_type result = Map_Method(generic_type, npy_exp, a_val);            \
+  result_ptr[i] = Demote(type, result);

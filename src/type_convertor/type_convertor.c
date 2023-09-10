@@ -733,6 +733,7 @@ int elementwise_result_type(int op, int a_dtype) {
   case SQRT:
   case EXP:
   case LOG:
+  case LOG10:
     return float_type_based_on_size(max(a_size, gloabal_float_size));
   case ABS:
     return a_dtype;
