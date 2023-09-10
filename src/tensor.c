@@ -4,7 +4,7 @@
 #include "tensor.h"
 #include "allocator/allocator.h"
 #include "allocator/tensor_alloc.h"
-#include "binary_ops/binary_python_methods.h"
+#include "binary_ops/binary_module_methods.h"
 #include "clinic/tensor_methods.c.h"
 #include "numboost_api.h"
 #include "numpy/arrayobject.h"

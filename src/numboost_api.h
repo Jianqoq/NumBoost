@@ -18,11 +18,17 @@
 // #endif
 // #endif
 /*================= Assertion =================*/
-#define Numboost_AssertNULL(x)                                                 \
-  if (x == NULL) {                                                             \
+#define Numboost_AssertNULL(obj)                                               \
+  if ((obj) == NULL) {                                                         \
     return NULL;                                                               \
   }
 
+#define Numboost_AssertRequireGrad(/*Tensor */ tensor,                         \
+                                   /*const char* */ error_message)             \
+  if ((tensor)->require_grad) {                                                \
+    PyErr_SetString(PyExc_RuntimeError, error_message);                        \
+    return NULL;                                                               \
+  }
 /*================================== check half ===================*/
 /*if is half, it will apply float_cast_half method*/
 #define Is_Half(x) Concat_(Is_, x)

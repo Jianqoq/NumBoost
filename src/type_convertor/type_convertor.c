@@ -35,7 +35,10 @@ int gloabal_float_type = NPY_FLOAT;
   case BITWISE_AND:                                                            \
   case BITWISE_OR:                                                             \
   case BITWISE_XOR:                                                            \
-    return NPY_BOOL;                                                           \
+    if (is_float_number(b_dtype))                                              \
+      return float_type_based_on_size(max(a_size, b_size));                    \
+    else                                                                       \
+      return max(a_dtype, b_dtype);                                            \
   case LSHIFT:                                                                 \
   case RSHIFT:                                                                 \
     if (is_float_number(b_dtype))                                              \
@@ -75,7 +78,10 @@ int gloabal_float_type = NPY_FLOAT;
   case BITWISE_AND:                                                            \
   case BITWISE_OR:                                                             \
   case BITWISE_XOR:                                                            \
-    return NPY_BOOL;                                                           \
+    if (is_float_number(b_dtype))                                              \
+      return float_type_based_on_size(max(a_size, b_size));                    \
+    else                                                                       \
+      return max(a_dtype, b_dtype);                                            \
   case LSHIFT:                                                                 \
   case RSHIFT:                                                                 \
     if (is_float_number(b_dtype))                                              \
@@ -647,7 +653,7 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
     case BITWISE_AND:
     case BITWISE_OR:
     case BITWISE_XOR:
-      return NPY_BOOL;
+      return float_type_based_on_size(max(a_size, b_size));
     case LSHIFT:
     case RSHIFT:
       PyErr_SetString(
@@ -689,7 +695,7 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
     case BITWISE_AND:
     case BITWISE_OR:
     case BITWISE_XOR:
-      return NPY_BOOL;
+      return float_type_based_on_size(max(a_size, b_size));
     case LSHIFT:
     case RSHIFT:
       PyErr_SetString(

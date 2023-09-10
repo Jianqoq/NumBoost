@@ -1,6 +1,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
-#include "binary_python_methods.h"
+#include "binary_module_methods.h"
 #include "../python_magic/python_math_magic.h"
 #include "../tensor.h"
 #include "binary_op_def.h"
@@ -38,7 +38,7 @@ PyObject *nb_module_pow(PyObject *numboost_module, PyObject *args,
     PyErr_SetString(PyExc_TypeError, "out must be None or Tensor");
     return NULL;
   }
-  PyObject *result = numboost_pow_new(a, power, &outs);
+  PyObject *result = numboost_pow(a, power, &outs);
   Numboost_AssertNULL(result);
   if (outs) {
     Tensor *to_ret = (Tensor *)outs;

@@ -42,17 +42,15 @@
 
 #define LShift_LoopBody(generic_type, type, i, result_ptr, a_last_stride,      \
                         b_last_stride, a_ptr, b_ptr)                           \
-  generic_type a_val = Promote(type, a_ptr[i * a_last_stride]);                \
-  generic_type b_val = Promote(type, b_ptr[i * b_last_stride]);                \
-  generic_type result = (a_val << b_val) * (b_val < (int)(sizeof(b_val) * 8)); \
-  result_ptr[i] = Demote(type, result);
+  generic_type a_val = a_ptr[i * a_last_stride];                               \
+  generic_type b_val = b_ptr[i * b_last_stride];                               \
+  result_ptr[i] = (a_val << b_val) * (b_val < (int)(sizeof(b_val) * 8));
 
 #define RShift_LoopBody(generic_type, type, i, result_ptr, a_last_stride,      \
                         b_last_stride, a_ptr, b_ptr)                           \
-  generic_type a_val = Promote(type, a_ptr[i * a_last_stride]);                \
-  generic_type b_val = Promote(type, b_ptr[i * b_last_stride]);                \
-  generic_type result = (a_val >> b_val) * (b_val < (int)(sizeof(b_val) * 8)); \
-  result_ptr[i] = Demote(type, result);
+  generic_type a_val = a_ptr[i * a_last_stride];                               \
+  generic_type b_val = b_ptr[i * b_last_stride];                               \
+  result_ptr[i] = (a_val >> b_val) * (b_val < (int)(sizeof(b_val) * 8));
 
 #define Mod_LoopBody(generic_type, type, i, result_ptr, a_last_stride,         \
                      b_last_stride, a_ptr, b_ptr)                              \
@@ -72,5 +70,17 @@
   generic_type b_val = Promote(type, b_ptr[i * b_last_stride]);                \
   generic_type result = Map_Method(generic_type, nb_fdiv, a_val, b_val);       \
   result_ptr[i] = Demote(type, result);
+
+#define And_LoopBody(generic_type, type, i, result_ptr, a_last_stride,         \
+                     b_last_stride, a_ptr, b_ptr)                              \
+  result_ptr[i] = a_ptr[i * a_last_stride] & b_ptr[i * b_last_stride];
+
+#define Xor_LoopBody(generic_type, type, i, result_ptr, a_last_stride,         \
+                     b_last_stride, a_ptr, b_ptr)                              \
+  result_ptr[i] = a_ptr[i * a_last_stride] ^ b_ptr[i * b_last_stride];
+
+#define Or_LoopBody(generic_type, type, i, result_ptr, a_last_stride,          \
+                    b_last_stride, a_ptr, b_ptr)                               \
+  result_ptr[i] = a_ptr[i * a_last_stride] | b_ptr[i * b_last_stride];
 
 #endif

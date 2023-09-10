@@ -26,7 +26,7 @@
       PyErr_SetString(PyExc_TypeError, "out must be None or Tensor");          \
       return NULL;                                                             \
     }                                                                          \
-    PyObject *result = numboost_##name##_new(a, b, &outs);                     \
+    PyObject *result = numboost_##name(a, b, &outs);                           \
     Numboost_AssertNULL(result);                                               \
     if (outs) {                                                                \
       Tensor *to_ret = (Tensor *)outs;                                         \

@@ -456,7 +456,6 @@ PyObject *backward(PyObject *self, PyObject *args) {
             continue;
           } else {
             store_tensor_need_grad(index, tensor);
-            printf("store_tensor_need_grad\n");
             index++;
           }
         }

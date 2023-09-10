@@ -1153,25 +1153,6 @@ Tensor *_abs(PyObject *self, PyObject *const *args, size_t nargsf) {
   return to_return;
 }
 
-Tensor *_pow(PyObject *self, PyObject *const *args, size_t nargsf) {
-  (void)nargsf;
-  (void)self;
-  PyObject *result = NULL;
-  Tensor *tensor = NULL;
-  PyObject *power = NULL;
-  tensor = (Tensor *)args[0];
-  power = args[1]; /*power could be python number or PyArrayObject*/
-  if (Py_IS_TYPE(args[1], Tensor_type)) {
-    Tensor *tmp = (Tensor *)args[1];
-    power = tmp->data;
-  }
-  result = numboost_pow(tensor->data, power);
-  Tensor *to_return = (Tensor *)create_Tensor(tensor, Py_None, result, "PowBackward");
-  if (tensor->require_grad)
-    store_power(to_return, power);
-  return to_return;
-}
-
 static inline PyObject *internal_npy_cal_oneArgs(
     void (*vect_func1)(const int, const double *, double *),
     void (*vect_func2)(const int, const float *, float *),
