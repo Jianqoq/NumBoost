@@ -3,7 +3,7 @@
 #include "binary_op_def.h"
 #include "../numboost_api.h"
 #include "../numboost_math.h"
-#include "../op.h"
+#include "../numboost_utils.h"
 
 Register_Binary_Operations_Floating_Types(add, Add_LoopBody);
 Register_Binary_Operations_Interger_Types(add, Add_LoopBody);

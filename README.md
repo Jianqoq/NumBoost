@@ -9,9 +9,6 @@ Compiler: GCC, MSVC
 # Feature:
 Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, highly compatible with numpy
 
-# Doing:
-1. Removing numpy dependency
-
 # To do
 1. implement methods supports dynamic output
 2. ~~add tensordot(forward, backward)~~

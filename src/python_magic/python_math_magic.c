@@ -3,7 +3,7 @@
 #include "python_math_magic.h"
 #include "../binary_ops/binary_op_def.h"
 #include "../numboost_api.h"
-#include "../op.h"
+#include "../numboost_utils.h"
 #include "../set_tensor_properties.h"
 #include "mkl.h"
 #include "structmember.h"

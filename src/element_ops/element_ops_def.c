@@ -1,7 +1,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #include "element_ops_def.h"
-#include "../op.h"
+#include "../numboost_utils.h"
 #include "omp.h"
 
 Register_ElementWise_Operations_Floating_Types(abs, Abs_LoopBody);

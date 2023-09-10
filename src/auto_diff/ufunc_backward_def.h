@@ -2,7 +2,7 @@
 #ifndef _NUMBOOST_AUTO_DIFF_UFUNC_BACKWARD_DEF_H_
 #define _NUMBOOST_AUTO_DIFF_UFUNC_BACKWARD_DEF_H_
 #include "../numboost_api.h"
-#include "../op.h"
+#include "../numboost_utils.h"
 
 #define Register_FuseBackward_Operation_Set(name, inner_loop_body, ...)        \
   Register_FuseBackward_Operation(name, bool, NPY_BOOL, inner_loop_body,       \

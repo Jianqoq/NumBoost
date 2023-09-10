@@ -87,6 +87,25 @@
     return result;                                                             \
   }
 
+#define Register_Binary_Operation_Method_MultiOut(name, op_enum)               \
+  PyObject *numboost_##name(PyObject *a, PyObject *b, PyObject **outs_arr) {   \
+    int a_type = any_to_type_enum(a);                                          \
+    int b_type = any_to_type_enum(b);                                          \
+    int result_type = binary_result_type(op_enum, a_type, type_2_size[a_type], \
+                                         b_type, type_2_size[b_type]);         \
+    if (result_type == -1) {                                                   \
+      PyErr_SetString(PyExc_TypeError,                                         \
+                      Str(name not supported for type));                       \
+      return NULL;                                                             \
+    }                                                                          \
+    assert(result_type <= NPY_HALF);                                           \
+    PyObject *result = name##_operations[result_type](a, b, outs_arr, 1);      \
+    if (result == NULL) {                                                      \
+      return NULL;                                                             \
+    }                                                                          \
+    return result;                                                             \
+  }
+
 #define Register_Binary_Operation(name, type, result_type,                     \
                                   inner_loop_body_universal)                   \
   PyObject *binary_##name##_##type(PyObject *a, PyObject *b,                   \
@@ -101,6 +120,37 @@
     } else {                                                                   \
       PyObject *ret = (PyObject *)return_arr[0];                               \
       free(return_arr);                                                        \
+      return ret;                                                              \
+    }                                                                          \
+  }
+
+#define Register_Binary_Operation_MultiOut(name, type, result_type,            \
+                                           inner_loop_body_universal, ...)     \
+  PyObject *binary_##name##_##type(PyObject *a, PyObject *b,                   \
+                                   PyObject **out_arr, int out_arr_len) {      \
+    PyArrayObject **return_arr = (PyArrayObject **)malloc(                     \
+        sizeof(PyArrayObject *) * (Args_Num(__VA_ARGS__)));                    \
+    Perform_Universal_Operation(npy_##type, return_arr, result_type,           \
+                                inner_loop_body_universal, out_arr,            \
+                                out_arr_len, (__VA_ARGS__), a, b);             \
+    if (return_arr == NULL) {                                                  \
+      return NULL;                                                             \
+    } else {                                                                   \
+      PyObject *ret = (PyObject *)PyTuple_New((Args_Num(__VA_ARGS__)));        \
+      for (int i = 0; i < (Args_Num(__VA_ARGS__)); i++) {                      \
+        if (return_arr[i] == NULL) {                                           \
+          for (int j = 0; j < (Args_Num(__VA_ARGS__)); j++) {                  \
+            if (return_arr[j] != NULL) {                                       \
+              Py_DECREF(return_arr[j]);                                        \
+            }                                                                  \
+          }                                                                    \
+          free(return_arr);                                                    \
+          Py_DECREF(ret);                                                      \
+          return NULL;                                                         \
+        } else {                                                               \
+          PyTuple_SET_ITEM(ret, i, return_arr[i])                              \
+        }                                                                      \
+      }                                                                        \
       return ret;                                                              \
     }                                                                          \
   }

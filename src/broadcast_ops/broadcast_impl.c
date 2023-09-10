@@ -2,7 +2,7 @@
 #define NO_IMPORT_ARRAY
 #define PY_SSIZE_T_CLEAN
 #include "broadcast_impl.h"
-#include "../op.h"
+#include "../numboost_utils.h"
 #include "broadcast_def.h"
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))

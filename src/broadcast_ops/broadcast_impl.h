@@ -1,7 +1,7 @@
 #ifndef _BROADCAST_H
 #define _BROADCAST_H
 #include "../numboost_api.h"
-#include "../op.h"
+#include "../numboost_utils.h"
 #include "../shape.h"
 #include "../type_convertor/type_convertor.h"
 #include "numpy/npy_math.h"
