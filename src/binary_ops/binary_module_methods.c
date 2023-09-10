@@ -5,7 +5,7 @@
 #include "../tensor.h"
 #include "binary_op_def.h"
 
-char *keyword_list[] = {"a", "b", "out", NULL};
+static char *keyword_list[] = {"a", "b", "out", NULL};
 
 Register_mudule_methods(add, "AddBackward");
 Register_mudule_methods(sub, "SubBackward");

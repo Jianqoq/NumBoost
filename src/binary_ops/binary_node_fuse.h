@@ -151,14 +151,7 @@
 #define Retrieve_Result_Ptrs(x)                                                \
   result_##x##_ptr = result_##x##_ptr_arr[thread_id];
 
-#define Alloc_Results(x, biggest_array, shape, result_type)                    \
-  PyArrayObject *__result_##x = (PyArrayObject *)PyArray_EMPTY(                \
-      PyArray_NDIM(biggest_array), shape, result_type, 0);                     \
-  if (__result_##x == NULL) {                                                  \
-    return NULL;                                                               \
-  }
-
-#define Alloc_Results_Inplace(x, biggest_array, shape, result_type, index)     \
+#define Alloc_Results(x, biggest_array, shape, result_type, index)             \
   PyArrayObject *__result_##x = NULL;                                          \
   if (outs_arr[index] == NULL) {                                               \
     __result_##x = (PyArrayObject *)PyArray_EMPTY(PyArray_NDIM(biggest_array), \
@@ -333,14 +326,8 @@
 #define Replicate_Correct_Type(method, result_type, type, ...)                 \
   Expand(Correct_Type_MAP(method, result_type, type, __VA_ARGS__))
 
-#define Replicate_Alloc_Results(method, biggest_array, shape, result_type,     \
-                                ...)                                           \
-  Expand(Alloc_Results_MAP(method, biggest_array, shape, result_type,          \
-                           __VA_ARGS__))
-
-#define Replicate_Alloc_Results_Inplace(m, biggest_array, shape, result_type,  \
-                                        ...)                                   \
-  Expand(Alloc_Results_Inplace_MAP(m, biggest_array, shape, result_type, 0,    \
+#define Replicate_Alloc_Results(biggest_array, shape, result_type, ...)     \
+  Expand(Alloc_Results_Inplace_MAP(Alloc_Results, biggest_array, shape, result_type, 0,    \
                                    __VA_ARGS__))
 
 #define Replicate_Adjust_Result_Ptrs(method, start_index, end_index,           \

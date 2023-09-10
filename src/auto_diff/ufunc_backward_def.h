@@ -44,25 +44,25 @@
  */
 #define Register_FuseBackward_Operation(name, type, result_type,               \
                                         inner_loop_body_universal, ...)        \
-  PyObject *name##_backward_fuse_##type(                                       \
-      Replicate0_With_Comma(Parameter_type, __VA_ARGS__)) {                    \
+  PyObject **name##_backward_##type(                                           \
+      Replicate0_With_Comma(Parameter_type, __VA_ARGS__), PyObject **out,      \
+      int out_arr_len) {                                                       \
     PyArrayObject **result =                                                   \
         (PyArrayObject **)malloc(sizeof(PyArrayObject *));                     \
     Perform_Universal_Operation(npy_##type, result, result_type,               \
-                                inner_loop_body_universal, (result),           \
-                                __VA_ARGS__);                                  \
+                                inner_loop_body_universal, out, out_arr_len,   \
+                                (result), __VA_ARGS__);                        \
     if (result == NULL) {                                                      \
       return NULL;                                                             \
     } else {                                                                   \
-      PyArrayObject *result_array = *result;                                   \
-      free(result);                                                            \
-      return (PyObject *)result_array;                                         \
+      return (PyObject **)result;                                              \
     }                                                                          \
   }
 
 #define Register_FuseBackward_Operation_Err(name, type, ...)                   \
-  PyObject *name##_backward_fuse_##type(                                       \
-      Replicate0_With_Comma(Parameter_type, __VA_ARGS__)) {                    \
+  PyObject **name##_backward_##type(                                           \
+      Replicate0_With_Comma(Parameter_type, __VA_ARGS__), PyObject **out,      \
+      int out_arr_len) {                                                       \
         PyErr_SetString(PyExc_TypeError, Str(Not support for type.));          \
     return NULL;                                                               \
   }
@@ -141,38 +141,65 @@
   Register_FuseBackward_Operation_Err(name, timedelta, __VA_ARGS__);
 
 #define Register_FuseBackward_Operation_Array(name, ...)                       \
-  PyObject *(*name##_backward_fusefn[])(                                       \
-      Replicate0_With_Comma(Parameter_type_, __VA_ARGS__)) = {                 \
-      name##_backward_fuse_bool,        name##_backward_fuse_byte,             \
-      name##_backward_fuse_ubyte,       name##_backward_fuse_short,            \
-      name##_backward_fuse_ushort,      name##_backward_fuse_int,              \
-      name##_backward_fuse_uint,        name##_backward_fuse_long,             \
-      name##_backward_fuse_ulong,       name##_backward_fuse_longlong,         \
-      name##_backward_fuse_ulonglong,   name##_backward_fuse_float,            \
-      name##_backward_fuse_double,      name##_backward_fuse_longdouble,       \
-      name##_backward_fuse_cfloat,      name##_backward_fuse_cdouble,          \
-      name##_backward_fuse_clongdouble, name##_backward_fuse_object,           \
-      name##_backward_fuse_string,      name##_backward_fuse_unicode,          \
-      name##_backward_fuse_void,        name##_backward_fuse_datetime,         \
-      name##_backward_fuse_timedelta,   name##_backward_fuse_half};
+  PyObject **(*name##_backward_fn_[])(                                         \
+      Replicate0_With_Comma(Parameter_type_, __VA_ARGS__), PyObject **,        \
+      int) = {name##_backward_bool,        name##_backward_byte,               \
+              name##_backward_ubyte,       name##_backward_short,              \
+              name##_backward_ushort,      name##_backward_int,                \
+              name##_backward_uint,        name##_backward_long,               \
+              name##_backward_ulong,       name##_backward_longlong,           \
+              name##_backward_ulonglong,   name##_backward_float,              \
+              name##_backward_double,      name##_backward_longdouble,         \
+              name##_backward_cfloat,      name##_backward_cdouble,            \
+              name##_backward_clongdouble, name##_backward_object,             \
+              name##_backward_string,      name##_backward_unicode,            \
+              name##_backward_void,        name##_backward_datetime,           \
+              name##_backward_timedelta,   name##_backward_half};
 
-extern PyObject *(*sin_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*cos_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*tan_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*arcsin_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*arccos_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*arctan_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*sinh_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*cosh_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*tanh_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*arcsinh_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*arccosh_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*arctanh_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*exp_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*log_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*log10_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*sqrt_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*abs_backward_fusefn[])(PyObject *a, PyObject *b);
-extern PyObject *(*power_backward_fusefn[])(PyObject *a, PyObject *b,
-                                            PyObject *c);
+#define Register_Backward_Operation_Method(name, ...)                          \
+  PyObject **numboost_##name##_backward(                                       \
+      Replicate0_With_Comma(Parameter_type, __VA_ARGS__), PyObject **out,      \
+      int out_arr_len, int result_type) {                                      \
+    assert(result_type <= NPY_HALF);                                           \
+    PyObject **result =                                                        \
+        name##_backward_fn_[result_type](__VA_ARGS__, out, out_arr_len);       \
+    return result;                                                             \
+  }
+
+PyObject **numboost_sin_backward(PyObject *a, PyObject *b, PyObject **out,
+                                 int out_arr_len, int result_type);
+PyObject **numboost_cos_backward(PyObject *a, PyObject *b, PyObject **out,
+                                 int out_arr_len, int result_type);
+PyObject **numboost_tan_backward(PyObject *a, PyObject *b, PyObject **out,
+                                 int out_arr_len, int result_type);
+PyObject **numboost_arcsin_backward(PyObject *a, PyObject *b, PyObject **out,
+                                    int out_arr_len, int result_type);
+PyObject **numboost_arccos_backward(PyObject *a, PyObject *b, PyObject **out,
+                                    int out_arr_len, int result_type);
+PyObject **numboost_arctan_backward(PyObject *a, PyObject *b, PyObject **out,
+                                    int out_arr_len, int result_type);
+PyObject **numboost_sinh_backward(PyObject *a, PyObject *b, PyObject **out,
+                                  int out_arr_len, int result_type);
+PyObject **numboost_cosh_backward(PyObject *a, PyObject *b, PyObject **out,
+                                  int out_arr_len, int result_type);
+PyObject **numboost_tanh_backward(PyObject *a, PyObject *b, PyObject **out,
+                                  int out_arr_len, int result_type);
+PyObject **numboost_arcsinh_backward(PyObject *a, PyObject *b, PyObject **out,
+                                     int out_arr_len, int result_type);
+PyObject **numboost_arccosh_backward(PyObject *a, PyObject *b, PyObject **out,
+                                     int out_arr_len, int result_type);
+PyObject **numboost_arctanh_backward(PyObject *a, PyObject *b, PyObject **out,
+                                     int out_arr_len, int result_type);
+PyObject **numboost_exp_backward(PyObject *a, PyObject *b, PyObject **out,
+                                 int out_arr_len, int result_type);
+PyObject **numboost_log_backward(PyObject *a, PyObject *b, PyObject **out,
+                                 int out_arr_len, int result_type);
+PyObject **numboost_log10_backward(PyObject *a, PyObject *b, PyObject **out,
+                                   int out_arr_len, int result_type);
+PyObject **numboost_sqrt_backward(PyObject *a, PyObject *b, PyObject **out,
+                                  int out_arr_len, int result_type);
+PyObject **numboost_abs_backward(PyObject *a, PyObject *b, PyObject **out,
+                                 int out_arr_len, int result_type);
+PyObject **numboost_power_backward(PyObject *a, PyObject *power, PyObject *grad, PyObject **out,
+                                   int out_arr_len, int result_type);
 #endif // _NUMBOOST_AUTO_DIFF_UFUNC_BACKWARD_DEF_H_

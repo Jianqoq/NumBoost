@@ -16,6 +16,8 @@
 #include <omp.h>
 #include <stdlib.h>
 
+static char *keyword_list[] = {"a", "b", "out", NULL};
+
 void store_base(Tensor *key, PyObject *base) {
   Log_Dict *s = NULL;
   if (LOG_DICT != NULL)
@@ -979,60 +981,6 @@ Tensor *_argmin_wrapper(PyObject *self, PyObject *const *args, size_t nargsf) {
   return to_return;
 }
 
-Tensor *_sin(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_sin(((Tensor *)tensor)->data);
-  return (Tensor *)create_Tensor((Tensor *)tensor, Py_None, result, "SinBackward");
-}
-
-Tensor *_cos(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_cos(((Tensor *)tensor)->data);
-  return (Tensor *)create_Tensor((Tensor *)tensor, Py_None, result, "CosBackward");
-}
-
-Tensor *_tan(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_tan(((Tensor *)tensor)->data);
-  
-  return (Tensor *)create_Tensor((Tensor *)tensor, Py_None, result, "TanBackward");
-}
-
-Tensor *_asin(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_asin(((Tensor *)tensor)->data);
-  
-  return (Tensor *)create_Tensor((Tensor *)tensor, Py_None, result, "ArcSinBackward");
-}
-
-Tensor *_acos(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_acos(((Tensor *)tensor)->data);
-  
-  return (Tensor *)create_Tensor((Tensor *)tensor, Py_None, result, "ArcCosBackward");
-}
-
-Tensor *_atan(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_atan(((Tensor *)tensor)->data);
-  
-  return (Tensor *)create_Tensor((Tensor *)tensor, Py_None, result, "ArcTanBackward");
-}
-
-Tensor *_sinh(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_sinh(((Tensor *)tensor)->data);
-  
-  return (Tensor *)create_Tensor((Tensor *)tensor, Py_None, result, "SinhBackward");
-}
-
-Tensor *_cosh(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_cosh(((Tensor *)tensor)->data);
-  
-  return (Tensor *)create_Tensor((Tensor *)tensor, Py_None, result, "CoshBackward");
-}
-
 Tensor *_exp(PyObject *self, PyObject *const *args, size_t nargsf) {
   (void)self;
   Tensor *tensor = (Tensor *)args[0];
@@ -1090,41 +1038,6 @@ Tensor *_log(PyObject *self, PyObject *const *args, size_t nargsf) {
   }
 }
 
-Tensor *_tanh(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_tanh(((Tensor *)tensor)->data);
-  Tensor *to_return =
-      (Tensor *)create_Tensor((Tensor *)tensor, Py_None, result, "TanhBackward");
-  return to_return;
-}
-
-Tensor *_asinh(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_asinh(((Tensor *)tensor)->data);
-  
-  Tensor *to_return =
-      (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "ArcSinhBackward");
-  return to_return;
-}
-
-Tensor *_acosh(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_acosh(((Tensor *)tensor)->data);
-  
-  Tensor *to_return =
-      (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "ArcCoshBackward");
-  return to_return;
-}
-
-Tensor *_atanh(PyObject *self, PyObject *tensor) {
-  (void)self;
-  PyObject *result = numboost_atanh(((Tensor *)tensor)->data);
-  
-  Tensor *to_return =
-      (Tensor *)__new_Tensor((Tensor *)tensor, result, NULL, "ArcTanhBackward");
-  return to_return;
-}
-
 Tensor *_sqrt(PyObject *self, PyObject *const *args, size_t nargsf) {
   (void)self;
   Tensor *tensor = (Tensor *)args[0];
@@ -1142,15 +1055,6 @@ Tensor *_sqrt(PyObject *self, PyObject *const *args, size_t nargsf) {
     return Generic_function_new_float(vsSqrt, sqrtf, tensor, array, out,
                                       "SqrtBackward");
   }
-}
-
-Tensor *_abs(PyObject *self, PyObject *const *args, size_t nargsf) {
-  (void)nargsf;
-  (void)self;
-  PyObject *result = numboost_abs(((Tensor *)args[0])->data);
-  Tensor *to_return =
-      (Tensor *)__new_Tensor((Tensor *)args[0], result, NULL, "AbsBackward");
-  return to_return;
 }
 
 static inline PyObject *internal_npy_cal_oneArgs(
@@ -1179,6 +1083,20 @@ static inline PyObject *internal_npy_cal_oneArgs(
     return ret;
   }
 }
+
+Register_mudule_elementwise_methods(sin, "SinBackward");
+Register_mudule_elementwise_methods(cos, "CosBackward");
+Register_mudule_elementwise_methods(tan, "TanBackward");
+Register_mudule_elementwise_methods(asin, "ArcSinBackward");
+Register_mudule_elementwise_methods(acos, "ArcCosBackward");
+Register_mudule_elementwise_methods(atan, "ArcTanBackward");
+Register_mudule_elementwise_methods(sinh, "SinhBackward");
+Register_mudule_elementwise_methods(cosh, "CoshBackward");
+Register_mudule_elementwise_methods(tanh, "TanhBackward");
+Register_mudule_elementwise_methods(asinh, "ArcSinhBackward");
+Register_mudule_elementwise_methods(acosh, "ArcCoshBackward");
+Register_mudule_elementwise_methods(atanh, "ArcTanhBackward");
+Register_mudule_elementwise_methods(abs, "AbsBackward");
 
 PyObject *_sin_internal(PyObject *args, PyObject *out) {
   return internal_npy_cal_oneArgs(vdSin, vsSin, sinf, sin, args, out);
