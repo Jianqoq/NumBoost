@@ -195,13 +195,9 @@ def test_C_Tensor_tanh_backward(array, grad):
     torch_grad = torch.tensor(grad)
     result1 = core.tanh(autograd_grad_operands1)
     result2 = torch.tanh(torch_operands1)
-    print("tanh", result1)
-    print("tanh", result2)
     with core.enable_track():
         res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
-    print("tanh", res[autograd_grad_operands1])
-    print("tanh", torch_operands1.grad.numpy())
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy()),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
 
@@ -214,13 +210,9 @@ def test_C_Tensor_arcsin_backward(array, grad):
     torch_grad = torch.tensor(grad)
     result1 = core.arcsin(autograd_grad_operands1)
     result2 = torch.arcsin(torch_operands1)
-    print("arcsin", result1)
-    print("arcsin", result2)
     with core.enable_track():
         res = jax.jit(result1.backward)(autograd_grad)
     result2.backward(torch_grad)
-    print("arcsin", res[autograd_grad_operands1])
-    print("arcsin", torch_operands1.grad.numpy())
     assert np.allclose(res[autograd_grad_operands1], torch_operands1.grad.numpy(), equal_nan=True),\
         f"correct: {torch_operands1.grad.numpy()} | got: {res[autograd_grad_operands1]}"
 
