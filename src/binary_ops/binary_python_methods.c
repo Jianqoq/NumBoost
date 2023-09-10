@@ -17,8 +17,8 @@ Register_mudule_methods(fdiv, "");
 PyObject *nb_module_pow(PyObject *numboost_module, PyObject *args,
                         PyObject *kwds) {
   (void)numboost_module;
-  PyObject *a = NULL, *b = NULL, *out = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|O", keyword_list, &a, &b,
+  PyObject *a = NULL, *power = NULL, *out = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|O", keyword_list, &a, &power,
                                    &out)) {
     return NULL;
   }
@@ -27,18 +27,34 @@ PyObject *nb_module_pow(PyObject *numboost_module, PyObject *args,
     return NULL;
   }
   PyObject *outs;
+  Tensor *to_replace;
+  Tensor *a_ = (Tensor *)a;
   if (out == Py_None || out == NULL) {
     outs = NULL;
   } else if (Py_IS_TYPE(out, Tensor_type)) {
+    to_replace = (Tensor *)out;
     outs = ((Tensor *)out)->data;
   } else {
     PyErr_SetString(PyExc_TypeError, "out must be None or Tensor");
     return NULL;
   }
-  PyObject *result = numboost_pow_new(a, b, &outs);
+  PyObject *result = numboost_pow_new(a, power, &outs);
   Numboost_AssertNULL(result);
-  PyObject *to_return = create_Tensor((Tensor *)a, b, result, "PowBackward");
-  if (((Tensor *)a)->require_grad)
-    store_power((Tensor*)to_return, b);
-  return to_return;
+  if (outs) {
+    Tensor *to_ret = (Tensor *)outs;
+    if (result != to_replace->data) {
+      Py_DECREF(to_replace->data);
+      to_replace->data = result;
+      Py_INCREF(to_replace);
+      return (PyObject *)to_replace;
+    } else {
+      Py_INCREF(to_replace);
+      return (PyObject *)to_replace;
+    }
+  } else {
+    PyObject *to_return = create_Tensor(a_, Py_None, result, "PowBackward");
+    if (a_->require_grad)
+      store_power((Tensor*)to_return, power);
+    return to_return;
+  }
 }

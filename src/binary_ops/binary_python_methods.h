@@ -16,19 +16,34 @@
       return NULL;                                                             \
     }                                                                          \
     PyObject *outs;                                                            \
+    Tensor *to_replace;                                                        \
     if (out == Py_None || out == NULL) {                                       \
       outs = NULL;                                                             \
     } else if (Py_IS_TYPE(out, Tensor_type)) {                                 \
-      outs = ((Tensor *)out)->data;                                            \
+      to_replace = (Tensor *)out;                                              \
+      outs = to_replace->data;                                                 \
     } else {                                                                   \
       PyErr_SetString(PyExc_TypeError, "out must be None or Tensor");          \
       return NULL;                                                             \
     }                                                                          \
     PyObject *result = numboost_##name##_new(a, b, &outs);                     \
     Numboost_AssertNULL(result);                                               \
-    PyObject *to_return =                                                      \
-        create_Tensor((Tensor *)a, b, result, backward_fn_name);               \
-    return to_return;                                                          \
+    if (outs) {                                                                \
+      Tensor *to_ret = (Tensor *)outs;                                         \
+      if (result != to_replace->data) {                                        \
+        Py_DECREF(to_replace->data);                                           \
+        to_replace->data = result;                                             \
+        Py_INCREF(to_replace);                                                 \
+        return (PyObject *)to_replace;                                         \
+      } else {                                                                 \
+        Py_INCREF(to_replace);                                                 \
+        return (PyObject *)to_replace;                                         \
+      }                                                                        \
+    } else {                                                                   \
+      PyObject *to_return =                                                    \
+          create_Tensor((Tensor *)a, b, result, backward_fn_name);             \
+      return to_return;                                                        \
+    }                                                                          \
   }
 
 PyObject *nb_module_add(PyObject *numboost_module, PyObject *args,

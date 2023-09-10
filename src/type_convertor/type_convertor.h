@@ -36,6 +36,7 @@ typedef struct
 
 void Any_to_Float(PyArrayObject **array, PyArrayObject **result, int type);
 
+//need a higher level function
 void as_type(PyArrayObject **a, PyArrayObject **result, int target_type);
 
 int div_result_type_pick(int npy_enum);

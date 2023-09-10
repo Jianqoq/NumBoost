@@ -74,6 +74,7 @@ def test_C_Tensor_addition():
                                                     a_.data.itemsize, b_.dtype, b_.data.itemsize)
                     q = ops2[op][0](a.astype(nb.nb_type_2_np[predicted_type]),
                                     u.astype(nb.nb_type_2_np[predicted_type]))
+                    a = q
                     c = ops[op][0](a_, b_, out=a_)
                     if c.dtype == a_.dtype:
                         assert np.allclose(c.data, a_.data, equal_nan=True)

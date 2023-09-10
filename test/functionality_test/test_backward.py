@@ -342,6 +342,19 @@ def test_C_Tensor_power_backward(array, grad):
 
 
 @pytest.mark.parametrize("array, grad", [(np.array([[1.], [2.], [3.]]), np.random.random((3, 1)))])
+def test_C_Tensor_power_magic_backward(array, grad):
+    autograd_grad_operands1 = Tensor(array, True)
+    autograd_grad = grad
+    torch_operands1 = torch.tensor(array, requires_grad=True)
+    torch_grad = torch.tensor(grad)
+    result1 = autograd_grad_operands1 ** 3
+    result2 = torch_operands1 ** 3
+    result1.backward(autograd_grad)
+    result2.backward(torch_grad)
+    assert np.allclose(autograd_grad_operands1.grad, torch_operands1.grad.numpy(), equal_nan=True), \
+        f"correct: {torch_operands1.grad.numpy()} | got: {autograd_grad_operands1.grad}"
+
+@pytest.mark.parametrize("array, grad", [(np.array([[1.], [2.], [3.]]), np.random.random((3, 1)))])
 def test_C_Tensor_sqrt_backward(array, grad):
     autograd_grad_operands1 = Tensor(array, True)
     autograd_grad = grad

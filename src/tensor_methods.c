@@ -433,7 +433,6 @@ PyObject *backward(PyObject *self, PyObject *args) {
         }
         PyObject *new_grad = NULL;
         if (TRACK) {
-          printf("adding to grad\n");
           new_grad = PyNumber_Add(tensor->grad, tuple.ndarray);
         } else {
           if (tensor->grad == PyLong_FromLong(0)) {
