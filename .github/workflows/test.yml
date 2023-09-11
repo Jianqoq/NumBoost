@@ -38,11 +38,3 @@ jobs:
           pythonLocation: /opt/hostedtoolcache/Python/3.11.4/x64
           LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.4/x64/lib:/mkl-C/mkl/2023.1.0/lib/intel64
 
-      - name: Run benchmarks
-        run: |
-          python test/benchmark/object_creation_benchmark.py
-          python test/benchmark/torch_comparision_benchmark.py
-        env:
-          pythonLocation: /opt/hostedtoolcache/Python/3.11.4/x64
-          LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.4/x64/lib:/mkl-C/mkl/2023.1.0/lib/intel64
-
