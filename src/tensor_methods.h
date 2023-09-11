@@ -76,6 +76,6 @@ Py_hash_t __hash__(Tensor *self);
     }                                                                          \
     PyArrayObject *result = PyArray_EMPTY(1, 1, npy_enum, 0);                  \
     *((type *)PyArray_DATA(result)) = g_max;                                   \
-    return Tensor_Empty((PyObject *)result);
+    return tensor_empty((PyObject *)result);
 
 #endif

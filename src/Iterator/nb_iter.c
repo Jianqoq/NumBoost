@@ -49,7 +49,7 @@ PyObject *iterator_next(TensorIteratorObject *self)
         PyErr_SetString(PyExc_StopIteration, "No more elements");
         return NULL;
     }
-    PyObject *tensor = Tensor_Empty(next_data);
+    PyObject *tensor = tensor_empty(next_data);
     return tensor;
 }
 

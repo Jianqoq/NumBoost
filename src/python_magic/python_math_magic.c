@@ -16,103 +16,6 @@ extern XLA_OPS *xla_ops;
 extern jnp_method *JNP_METHOD;
 extern bool TRACK;
 
-PyObject *__new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y,
-                       const char *grad_fn) {
-  Tensor *self = (Tensor *)Tensor_type->tp_alloc(Tensor_type, 0);
-  if (self != NULL) {
-    if (tensor->require_grad) {
-      Tensor_SetGradFn(self, grad_fn);
-      Tensor_SetRequireGrad(self, true);
-      Tensor_SetVars(self, tensor->vars);
-      Tensor_SetX_without_init_value(self, (PyObject *)tensor);
-      if (to_y != NULL)
-        Tensor_SetY_without_init_value(self, to_y);
-      else {
-        Py_INCREF(Py_None);
-        Tensor_SetY_without_init_value(self, Py_None);
-      }
-    } else {
-      Tensor_SetX_without_init_value(self, Py_None);
-      Tensor_SetY_without_init_value(self, Py_None);
-      Tensor_SetGradFn(self, "");
-      Tensor_SetRequireGrad(self, false);
-      Tensor_SetVars(self, 0);
-    }
-    self->data = array;
-    Tensor_SetHasConv(self, tensor->has_conv);
-    Tensor_SetGraph_without_init_value(self, tensor->graph);
-    Tensor_SetDim(self, tensor->dim);
-    Tensor_SetAxis_without_init_value(self, tensor->axis);
-    self->grad = PyLong_FromLong(0);
-    return (PyObject *)self;
-  } else {
-    return NULL;
-  }
-}
-
-PyObject *new_Tensor(Tensor *tensor, Tensor *tensor2, PyObject *data,
-                     const char *grad_fn) {
-  Tensor *self = (Tensor *)Tensor_type->tp_alloc(Tensor_type, 0);
-  if (self != NULL) {
-    if (tensor->require_grad || tensor2->require_grad) {
-      Tensor_SetX_without_init_value(self, (PyObject *)tensor);
-      Tensor_SetY_without_init_value(self, (PyObject *)tensor2);
-      Tensor_SetGradFn(self, grad_fn);
-      Tensor_SetRequireGrad(self, true);
-      Tensor_SetVars(self, tensor->vars + tensor2->vars + 1);
-    } else {
-      Tensor_SetX_without_init_value(self, Py_None);
-      Tensor_SetY_without_init_value(self, Py_None);
-      Tensor_SetGradFn(self, "");
-      Tensor_SetRequireGrad(self, false);
-      Tensor_SetVars(self, 0);
-    }
-    PyObject *zero = PyLong_FromLong(0);
-    self->data = data;
-    Tensor_SetHasConv(self, tensor->has_conv);
-    Tensor_SetGraph_without_init_value(self, tensor->graph);
-    Tensor_SetDim(self, tensor->dim);
-    Tensor_SetAxis_without_init_value(self, tensor->axis);
-    Tensor_SetGrad_without_init_value(self, zero);
-    Py_DECREF(zero);
-    return (PyObject *)self;
-  } else {
-    return NULL;
-  }
-}
-
-PyObject *new_Tensor_scalar(Tensor *self, PyObject *data, PyObject *y,
-                            const char *grad_fn) {
-  Tensor *tensor;
-  tensor = (Tensor *)Tensor_type->tp_alloc(Tensor_type, 0);
-  if (tensor != NULL) {
-    Tensor_SetData_startwone_without_init(tensor, data);
-    if (self->require_grad) {
-      Tensor_SetX_without_init_value(tensor, (PyObject *)self);
-      Tensor_SetY_without_init_value(tensor, y);
-      Tensor_SetRequireGrad(tensor, true);
-      Tensor_SetGradFn(tensor, grad_fn);
-      Tensor_SetVars(tensor, self->vars + 2);
-    } else {
-      Tensor_SetX_without_init_value(tensor, Py_None);
-      Tensor_SetY_without_init_value(tensor, Py_None);
-      Tensor_SetRequireGrad(tensor, false);
-      Tensor_SetGradFn(tensor, grad_fn);
-      Tensor_SetVars(tensor, 0);
-    }
-    PyObject *zero = PyLong_FromLong(0);
-    Tensor_SetHasConv(tensor, self->has_conv);
-    Tensor_SetGraph_without_init_value(tensor, self->graph);
-    Tensor_SetDim(tensor, self->dim);
-    Tensor_SetAxis_without_init_value(tensor, self->axis);
-    Tensor_SetGrad_without_init_value(tensor, zero);
-    Py_DECREF(zero);
-    return (PyObject *)tensor;
-  } else {
-    return NULL;
-  }
-}
-
 PyObject *create_tensor(Tensor *tensor, PyObject *other, PyObject *data,
                         const char *grad_fn) {
   Tensor *self = (Tensor *)Tensor_type->tp_alloc(Tensor_type, 0);
@@ -166,61 +69,7 @@ PyObject *create_tensor(Tensor *tensor, PyObject *other, PyObject *data,
   }
 }
 
-PyObject *new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn) {
-  Tensor *tensor;
-  tensor = (Tensor *)Tensor_type->tp_alloc(Tensor_type, 0);
-  if (tensor != NULL) {
-    tensor->data = data;
-    if (self->require_grad) {
-      Tensor_SetX_without_init_value(tensor, (PyObject *)self);
-      Tensor_SetY_without_init_value(tensor, Py_None);
-      Tensor_SetRequireGrad(tensor, true);
-      Tensor_SetGradFn(tensor, grad_fn);
-      Tensor_SetVars(tensor, self->vars + 1);
-    } else {
-      Tensor_SetX_without_init_value(tensor, Py_None);
-      Tensor_SetY_without_init_value(tensor, Py_None);
-      Tensor_SetRequireGrad(tensor, false);
-      Tensor_SetGradFn(tensor, "");
-      Tensor_SetVars(tensor, 0);
-    }
-    PyObject *zero = PyLong_FromLong(0);
-    Tensor_SetHasConv(tensor, self->has_conv);
-    Tensor_SetGraph_without_init_value(tensor, self->graph);
-    Tensor_SetDim(tensor, self->dim);
-    Tensor_SetAxis_without_init_value(tensor, self->axis);
-    Tensor_SetGrad_without_init_value(tensor, zero);
-    Py_DECREF(zero);
-    return (PyObject *)tensor;
-  } else {
-    return NULL;
-  }
-}
-
-PyObject *Tensor__new__(PyTypeObject *type, PyObject *data) {
-  Tensor *tensor;
-  tensor = (Tensor *)type->tp_alloc(type, 0);
-  if (tensor != NULL) {
-    PyObject *zero = PyLong_FromLong(0);
-    Tensor_SetData_startwone_without_init(tensor, data);
-    Tensor_SetX_without_init_value(tensor, Py_None);
-    Tensor_SetY_without_init_value(tensor, Py_None);
-    Tensor_SetRequireGrad(tensor, false);
-    Tensor_SetGradFn(tensor, "");
-    Tensor_SetVars(tensor, 0);
-    Tensor_SetHasConv(tensor, 0);
-    Tensor_SetGraph_without_init_value(tensor, Py_None);
-    Tensor_SetDim(tensor, 0);
-    Tensor_SetAxis_without_init_value(tensor, Py_None);
-    Tensor_SetGrad_without_init_value(tensor, zero);
-    Py_DECREF(zero);
-    return (PyObject *)tensor;
-  } else {
-    return NULL;
-  }
-}
-
-PyObject *Tensor_Empty(PyObject *data) {
+PyObject *tensor_empty(PyObject *data) {
   Tensor *tensor = (Tensor *)(Tensor_type)->tp_alloc(Tensor_type, 0);
   if (tensor != NULL) {
     PyObject *zero = PyLong_FromLong(0);
@@ -476,7 +325,7 @@ PyObject *tensor_invert(PyObject *self) {
   if (numpy_result == NULL) {
     return NULL;
   }
-  PyObject *new_tensor = new_Tensor_x(_self, numpy_result, "");
+  PyObject *new_tensor = create_tensor(_self, Py_None, numpy_result, "");
   return new_tensor;
 }
 

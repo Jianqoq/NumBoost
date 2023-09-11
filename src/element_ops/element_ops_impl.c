@@ -156,7 +156,7 @@ Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf,
     else
       pre_shape2[i] = 0;
   }
-  Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, grad_fn);
+  Tensor *to_return = (Tensor *)create_tensor(tensor, Py_None, result, grad_fn);
   if (pre_shape != NULL) {
     store_array_shape(to_return, pre_shape2, ndim);
   }
@@ -402,8 +402,8 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf,
   PyArray_Dims olds_merge_dims = {olds_merge_shape, total_len};
   PyObject *result =
       PyArray_Newshape((PyArrayObject *)res, &olds_merge_dims, 0);
-  Tensor *to_return = (Tensor *)new_Tensor((Tensor *)args[0], (Tensor *)args[1],
-                                           result, "TensordotBackward");
+  Tensor *to_return = (Tensor *)create_tensor((Tensor *)args[0], args[1],
+                                              result, "TensordotBackward");
   Py_DECREF(a);
   Py_DECREF(b);
   free(oldshape_a);
@@ -479,7 +479,7 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf,
   if (result == NULL) {
     return NULL;
   }
-  PyObject *to_return = new_Tensor_x(tensor, result, "TransposeBackward");
+  PyObject *to_return = create_tensor(tensor, Py_None, result, "TransposeBackward");
   if (tensor->require_grad)
     store_array_shape((Tensor *)to_return, dims, length);
   else
@@ -541,7 +541,7 @@ Tensor *_sum(PyObject *self, PyObject *const *args, size_t nargsf) {
   if (result == NULL) {
     return NULL;
   }
-  Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
+  Tensor *to_return = (Tensor *)create_tensor(tensor, Py_None, result, "");
   return to_return;
 }
 
@@ -599,7 +599,7 @@ Tensor *_max(PyObject *self, PyObject *const *args, size_t nargsf) {
   if (result == NULL) {
     return NULL;
   }
-  Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
+  Tensor *to_return = (Tensor *)create_tensor(tensor, Py_None, result, "");
   return to_return;
 }
 
@@ -647,7 +647,7 @@ Tensor *_min(PyObject *self, PyObject *const *args, size_t nargsf) {
   if (result == NULL) {
     return NULL;
   }
-  Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
+  Tensor *to_return = (Tensor *)create_tensor(tensor, Py_None, result, "");
   return to_return;
 }
 
@@ -704,7 +704,7 @@ Tensor *_mean(PyObject *self, PyObject *const *args, size_t nargsf) {
   if (result == NULL) {
     return NULL;
   }
-  Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
+  Tensor *to_return = (Tensor *)create_tensor(tensor, Py_None, result, "");
   return to_return;
 }
 
@@ -752,7 +752,7 @@ Tensor *_argmax_wrapper(PyObject *self, PyObject *const *args, size_t nargsf) {
   if (result == NULL) {
     return NULL;
   }
-  Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
+  Tensor *to_return = (Tensor *)create_tensor(tensor, Py_None, result, "");
   return to_return;
 }
 
@@ -800,7 +800,7 @@ Tensor *_argmin_wrapper(PyObject *self, PyObject *const *args, size_t nargsf) {
   if (result == NULL) {
     return NULL;
   }
-  Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
+  Tensor *to_return = (Tensor *)create_tensor(tensor, Py_None, result, "");
   return to_return;
 }
 

@@ -170,7 +170,7 @@ Tensor *random_(PyObject *self, PyObject *const *args, size_t nargsf)
             data[i] = pcg32_random_r(rng) / uint32_max;
         }
     }
-    Tensor *tensor = Tensor__new__(Tensor_type, (PyObject *)arr);
+    Tensor *tensor = tensor_empty((PyObject *)arr);
     Py_DECREF(arr);
     return tensor;
 }
@@ -204,7 +204,7 @@ Tensor *randn_(PyObject *self, PyObject *const *args, size_t nargsf)
             data[i] = RNOR;
         }
     }
-    Tensor *tensor = (Tensor *)Tensor__new__(Tensor_type, (PyObject *)arr);
+    Tensor *tensor = (Tensor *)tensor_empty((PyObject *)arr);
     Py_DECREF(arr);
     return tensor;
 }
