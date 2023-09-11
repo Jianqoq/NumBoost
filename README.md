@@ -1,5 +1,4 @@
 # NumBoost
-
 Linux, Windows
 
 Python: 3.11+
