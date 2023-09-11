@@ -9,6 +9,7 @@ PyObject *create_tensor(Tensor *tensor, PyObject *other, PyObject *data,
 
 PyObject *tensor_empty(PyObject *data);
 
+/*Tensor magic methods*/
 PyObject *tensor_add(PyObject *self, PyObject *other);
 PyObject *tensor_iadd(PyObject *self, PyObject *other);
 PyObject *tensor_mul(PyObject *self, PyObject *other);

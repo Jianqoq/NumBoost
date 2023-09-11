@@ -1,6 +1,6 @@
 #ifndef _ELEMENT_OPS_DEF_H
 #define _ELEMENT_OPS_DEF_H
-#include "element_ops_impl.h"
+#include "elementwise_kernels.h"
 
 #define Register_ElementWise_Operation_Array(name, sufix)                      \
   PyObject *(*name##_operations##sufix[])(PyObject *, PyObject **, int) = {    \
