@@ -12,8 +12,8 @@ from num_boost import *
 def assert_operation(a, b, array):
     assert np.allclose(a.data, b, equal_nan=True)
     a_ = Tensor(array)
-    predict_type = result_type(Add, np_type_2_nb[a.data.dtype],
-                               a.data.itemsize, np_type_2_nb[a_.data.dtype], a_.data.itemsize)
+    predict_type = result_type(Add, a.dtype,
+                               a.data.itemsize, a_.dtype, a_.data.itemsize)
     o = a.astype(predict_type) + a_.astype(predict_type)
     o1 = b.astype(nb_type_2_np[predict_type]) + array.astype(nb_type_2_np[predict_type])
     indice = np.where(o.data != o1.astype(o.data.dtype))
@@ -23,8 +23,8 @@ def assert_operation(a, b, array):
                                                                           f" {nb_type_2_np[predict_type]}\n"
                                                                           f"tensor diff: {o[indice]}\n\n"
                                                                           f"array diff: {o1[indice]}")
-    predict_type = result_type(Sub, np_type_2_nb[a.data.dtype],
-                               a.data.itemsize, np_type_2_nb[a_.data.dtype], a_.data.itemsize)
+    predict_type = result_type(Sub, a.dtype,
+                               a.data.itemsize, a_.dtype, a_.data.itemsize)
     o = a.astype(predict_type) - a_.astype(predict_type)
     o1 = b.astype(nb_type_2_np[predict_type]) - array.astype(nb_type_2_np[predict_type])
     indice = np.where(o.data != o1.astype(o.data.dtype))
@@ -34,8 +34,8 @@ def assert_operation(a, b, array):
                                                                           f" {nb_type_2_np[predict_type]}\n"
                                                                           f"tensor diff: {o[indice]}\n\n"
                                                                           f"array diff: {o1[indice]}")
-    predict_type = result_type(Mul, np_type_2_nb[a.data.dtype],
-                               a.data.itemsize, np_type_2_nb[a_.data.dtype], a_.data.itemsize)
+    predict_type = result_type(Mul, a.dtype,
+                               a.data.itemsize, a_.dtype, a_.data.itemsize)
     o = a.astype(predict_type) * a_.astype(predict_type)
     o1 = b.astype(nb_type_2_np[predict_type]) * array.astype(nb_type_2_np[predict_type])
     indice = np.where(o.data != o1.astype(o.data.dtype))
@@ -45,8 +45,8 @@ def assert_operation(a, b, array):
                                                                           f" {nb_type_2_np[predict_type]}\n"
                                                                           f"tensor diff: {o[indice]}\n\n"
                                                                           f"array diff: {o1[indice]}")
-    predict_type = result_type(Div, np_type_2_nb[a.data.dtype], a.data.itemsize,
-                               np_type_2_nb[a_.data.dtype], a_.data.itemsize)
+    predict_type = result_type(Div, a.dtype, a.data.itemsize,
+                               a_.dtype, a_.data.itemsize)
     o = a.astype(predict_type) / a_.astype(predict_type)
     o1 = b.astype(nb_type_2_np[predict_type]) / array.astype(nb_type_2_np[predict_type])
     indice = np.where(o.data != o1.astype(o.data.dtype))

@@ -2,7 +2,7 @@
 #define NO_IMPORT_ARRAY
 #define PY_SSIZE_T_CLEAN
 #include "broadcast_impl.h"
-#include "../op.h"
+#include "../numboost_utils.h"
 #include "broadcast_def.h"
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -147,7 +147,7 @@ PyArrayObject *numboost_broadcast(PyArrayObject *a, PyArrayObject *b,
     b_handler = b_;
   }
   PyArrayObject *result =
-      broadcast_operations[enum_op][result_type](a_, b_, enum_op, result_type);
+      broadcast_operations[enum_op][result_type](a_, b_, result_type);
   if (a_handler)
     Py_DECREF(a_handler);
   if (b_handler)

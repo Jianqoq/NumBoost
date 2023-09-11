@@ -1,6 +1,7 @@
 #ifndef NUMBOOST_API_H
 #define NUMBOOST_API_H
-#include "binary_ops/binary_node_fuse.h"
+#include "macro_utils.h"
+#include "omp.h"
 #include "shape.h"
 #include "type_convertor/type_convertor.h"
 #include <numpy/npy_math.h>
@@ -16,7 +17,24 @@
 // #define calloc(count, size) je_calloc(count, size)
 // #endif
 // #endif
+/*================= Assertion =================*/
+#define Numboost_AssertNULL(obj)                                               \
+  if ((obj) == NULL) {                                                         \
+    return NULL;                                                               \
+  }
 
+#define Numboost_AssertNULL_Backward(obj, out)                                 \
+  if ((obj) == NULL) {                                                         \
+    *out = NULL;                                                               \
+    return;                                                                    \
+  }
+
+#define Numboost_AssertRequireGrad(/*Tensor */ tensor,                         \
+                                   /*const char* */ error_message)             \
+  if ((tensor)->require_grad) {                                                \
+    PyErr_SetString(PyExc_RuntimeError, error_message);                        \
+    return NULL;                                                               \
+  }
 /*================================== check half ===================*/
 /*if is half, it will apply float_cast_half method*/
 #define Is_Half(x) Concat_(Is_, x)
@@ -25,19 +43,33 @@
 #define Cast_Half_If_Is_Half(x) Concat_(Half_, x)
 #define Cast_Float_If_Is_Half(x) Concat_(Float_, x)
 #define To_Float_If_Is_Half(x) Concat_(To_Float_, x)
+#define Cast_Half_If_Is_Double(x) Concat_(Double_, x)
+#define Cast_Half_If_Is_Long(x) Concat_(Long_, x)
+#define Cast_Half_If_Is_Bool(x) Concat_(Bool_, x)
 #define Should_Change_Type_To_Float(x) Second(Is_Half(x), 0)
 #define Half_1 float_cast_half
 #define Half_0
 #define Float_1 half_cast_float
 #define Float_0
+#define Double_1 double_cast_half
+#define Double_0
+#define Long_1 long_cast_half
+#define Long_0
+#define Bool_1 bool_cast_half
+#define Bool_0
 #define To_Float_1(x) npy_float
 #define To_Float_0(x) x
-#define Cast_Half_When_Half(x, args)                                           \
-  Cast_Half_If_Is_Half(Should_Cast_To(x))(args)
-#define Cast_Float_When_Half(x, args)                                          \
-  Cast_Float_If_Is_Half(Should_Cast_To(x))(args)
-#define Use_Float_When_Half(x)                                                 \
-  To_Float_If_Is_Half(Should_Change_Type_To_Float(x))(x)
+#define To_Double_1(x) npy_double
+#define To_Double_0(x) x
+#define Demote(x, args) Cast_Half_If_Is_Half(Should_Cast_To(x))(args)
+#define Promote(x, args) Cast_Float_If_Is_Half(Should_Cast_To(x))(args)
+#define Generic(x) To_Float_If_Is_Half(Should_Change_Type_To_Float(x))(x)
+#define PyDouble_AsHalf(x, args)                                               \
+  Cast_Half_If_Is_Double(Should_Change_Type_To_Float(x))(args)
+#define PyLong_AsHalf(x, args)                                                 \
+  Cast_Half_If_Is_Long(Should_Change_Type_To_Float(x))(args)
+#define PyBool_AsHalf(x, args)                                                 \
+  Cast_Half_If_Is_Bool(Should_Change_Type_To_Float(x))(args)
 /*================================== check half end ===================*/
 
 /*================================== check specific method ===================*/
@@ -51,24 +83,32 @@
 #define Method_npy_float(method) method##f
 #define Method_npy_double(method) method
 #define Method_npy_longdouble(method) method##l
+#define Method_int(method) method##i
 #define Should_Use_1(x) Method_##x
-#define Should_Use_0(x) Empty
+#define Should_Use_0(x) Method_int
 #define Should_Cast_To_Float(x) Concat_(Should_Cast_To_Float_, x)
 #define Should_Cast_To_Float_1(x) half_cast_float(x)
 #define Should_Cast_To_Float_0(x) x
-#define Empty(x)
 #define Is_Type(x) Concat_(Is_Type_, x)
 #define Should_Use_Specific_Method(x) Second(Is_Type(x), 0)
-#define Use_Method(x, name, ...)                                               \
-  Should_Use(Should_Use_Specific_Method(x))(x)(name)(Replicate_With_Comma(     \
-      Cast_Float_If_Is_Half, Should_Cast_To, x, __VA_ARGS__))
 
-/*================================== check specific method end
- * ===================*/
+/*
+@params:
+    type: the type of the input parameters
+    method_name: the name of the double method, npy_pow, npy_sin, etc.
+    ...: the parameters of the method
+*/
+#define Map_Method(type, method_name, ...)                                     \
+  Map_Method_Helper(type, method_name,                                         \
+                    Replicate_With_Comma(Cast_Float_If_Is_Half,                \
+                                         Should_Cast_To, type, __VA_ARGS__))
 
-/*================================== use sepcific inf/nan ===================*/
+#define Map_Method_Helper(type, method_name, ...)                              \
+  Should_Use(Should_Use_Specific_Method(type))(type)(method_name)(__VA_ARGS__)
+/*================= check specific method end ===================*/
+
+/*================ use sepcific inf/nan ===================*/
 #define Should_Use_Specific_Inf_Nan(x) Second(Is_Type(x), 0)
-#define Should_Use_Inf_Nan(x) Concat_(Should_Use_Inf_Nan_, x)
 #define Inf_npy_half 0x7C00
 #define Inf_npy_float NPY_INFINITYF
 #define Inf_npy_double NPY_INFINITY
@@ -78,17 +118,29 @@
 #define Nan_npy_double NPY_NAN
 #define Nan_npy_longdouble NPY_NANL
 #define Should_Use_Inf_1(x) Inf_##x
-#define Should_Use_Inf_0(x)                                                    \
-  0 /*Should not happen, numboost will always predict div result type as       \
-       floating type*/
+#define Should_Use_Inf_0(x) 0
+/*Should not happen, numboost will always predict div result type as
+     floating type*/
 #define Should_Use_Nan_1(x) Nan_##x
-#define Should_Use_Nan_0(x)                                                    \
-  0 /*Should not happen, numboost will always predict div result type as       \
+#define Should_Use_Nan_0(x) 0
+/*Should not happen, numboost will always predict div result type as
        floating type*/
 #define Should_Use_Inf(x) Concat_(Should_Use_Inf_, x)
 #define Use_Inf(x) Should_Use_Inf(Should_Use_Specific_Inf_Nan(x))(x)
 #define Should_Use_Nan(x) Concat_(Should_Use_Nan_, x)
 #define Use_Nan(x) Should_Use_Nan(Should_Use_Specific_Inf_Nan(x))(x)
+
+/*================= check is sequential method ===================*/
+#define Cat_Seq(x) Concat_(Is_Sequential_, x)
+#define If_Seq(x) Second(Cat_Seq(x), 1)
+#define Is_Sequential_Seq Place_Holder, 0
+#define If_Sequential_1(x, stride) x *stride
+#define If_Sequential_0(x, stride) x
+#define Should_Use_Stride(x, index, stride)                                    \
+  Concat_(If_Sequential_, x)(index, stride)
+#define Use_Stride(x, index, stride) Should_Use_Stride(If_Seq(x), index, stride)
+
+#define Replicate6(x, y, ...) Expand(MAP6(x, y, __VA_ARGS__))
 
 #define Perform_Binary_Operation(a, b, result, operation, data_type, npy_enum) \
   OPERATION_PICKER(a, b, result, operation, data_type, npy_enum)
@@ -110,20 +162,6 @@
 #define nb_power_float(x, y) (npy_powf((x), (y)))
 #define nb_power_double(x, y) (npy_pow((x), (y)))
 #define nb_power_long_double(x, y) (npy_powl((x), (y)))
-#define nb_floor_divide_int(x, y)                                              \
-  ((y) == 0 ? 0 : ((x) / (y))) // floor division for integer types, e.g. int,
-                               // long, ..., ulonglong, etc.
-#define nb_floor_divide_float(x, y)                                            \
-  ((y) == 0 ? NAN : npy_floorf(((x) / (y)))) // floor division for float
-#define nb_floor_divide_double(x, y)                                           \
-  ((y) == 0 ? NAN : npy_floor((x) / (y))) // floor division for double
-#define nb_floor_divide_long_double(x, y)                                      \
-  ((y) == NAN ? 0 : npy_floorl(((x) / (y)))) // floor division for long double
-#define nb_floor_divide_half(x, y)                                             \
-  ((y) == 0 ? 0x7FFF                                                           \
-            : float_cast_half(npy_floorf(                                      \
-                  half_cast_float((x)) /                                       \
-                  half_cast_float((y))))) // floor division for half
 #define nb_remainder(x, y) ((y) == 0 ? 0 : (x) % (y))
 #define nb_mod_int(x, y) ((y) == 0 ? 0 : (x) % (y))
 #define nb_mod_half(x, y)                                                      \
@@ -133,6 +171,35 @@
 #define nb_mod_float(x, y) ((y) == 0 ? 0 : npy_fmodf((x), (y)))
 #define nb_mod_double(x, y) ((y) == 0 ? 0 : npy_fmod((x), (y)))
 #define nb_mod_long_double(x, y) ((y) == 0 ? 0 : npy_fmodl((x), (y)))
+
+#define Div(val1, val2, result, input_type, output_type)                       \
+  do {                                                                         \
+    if (!(val2)) {                                                             \
+      if (val1 > 0)                                                            \
+        result = Use_Inf(output_type);                                         \
+      else if (val1 < 0)                                                       \
+        result = -Use_Inf(output_type);                                        \
+      else                                                                     \
+        result = Use_Nan(output_type);                                         \
+      continue;                                                                \
+    } else                                                                     \
+      result = Demote(output_type,                                             \
+                      Demote(input_type, val1) / Demote(input_type, val2));    \
+  } while (0)
+
+#define Div2(val1, val2, result, input_type, output_type)                      \
+  do {                                                                         \
+    if (!(val2)) {                                                             \
+      if (val1 > 0)                                                            \
+        result = Use_Inf(output_type);                                         \
+      else if (val1 < 0)                                                       \
+        result = -Use_Inf(output_type);                                        \
+      else                                                                     \
+        result = Use_Nan(output_type);                                         \
+    } else                                                                     \
+      result = Demote(output_type,                                             \
+                      Demote(input_type, val1) / Demote(input_type, val2));    \
+  } while (0)
 
 #ifdef _MSC_VER
 #define nb_lshift(x, y) (((x) << (y)) * ((y) < (sizeof(y) * 8)))
@@ -173,7 +240,7 @@
   useconds = end.tv_usec - start.tv_usec;                                      \
   elapsed##label = ((seconds)*1000 + useconds / 1000.0) + 0.5;
 #define PrintTimer(label)                                                      \
-  printf("%s. Time taken: %lf ms\n", label, elapsed##label);
+  printf("%s. Time taken: %lf ms\n", #label, elapsed##label);
 #define GetTime(label) elapsed##label
 #endif
 
@@ -304,55 +371,60 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     free(shape_copy);                                                          \
   } while (0)
 
-#define wrapper(body, type, i, inner_loop_size, result_data_ptr_, ...)         \
-  for (i = 0; i < inner_loop_size; ++i) {                                      \
-    body(type, i, result_data_ptr_, __VA_ARGS__)                               \
+#define wrapper(body, generic_type, type, i, inner_loop_size,                  \
+                result_data_ptr_, ...)                                         \
+  for (i = 0; i < inner_loop_size; i++) {                                      \
+    body(generic_type, type, i, result_data_ptr_, __VA_ARGS__)                 \
   }
 
-#define Universal_Operation_Sequential(type, result, inner_loop_body, ...)     \
+#define Universal_Operation_Sequential(type, results, first_result,            \
+                                       inner_loop_body, ...)                   \
   do {                                                                         \
     Replicate(Ptrs, type, __VA_ARGS__);                                        \
-    npy_intp _size = PyArray_SIZE(result);                                     \
-    type *result_data_ptr_ = (type *)PyArray_DATA(result);                     \
+    npy_intp _size = PyArray_SIZE(first_result);                               \
+    Replicate(Result_Ptrs, type,                                               \
+              Replicate0_With_Comma(Extract, Remove_Parentheses(results)));    \
     npy_intp i;                                                                \
-    _Pragma("omp parallel for schedule(static)")                               \
-        wrapper(inner_loop_body, type, i, _size, result_data_ptr_,             \
-                Replicate0(Ptr_Saved, __VA_ARGS__));                           \
+    _Pragma("omp parallel for schedule(static)") wrapper(                      \
+        inner_loop_body, Generic(type), type, i, _size,                        \
+        Replicate0_With_Comma(Results_Ptr, Remove_Parentheses(results)),       \
+        Replicate0(Stries_Last, __VA_ARGS__),                                  \
+        Replicate0(Ptr_Saved, __VA_ARGS__));                                   \
   } while (0)
 
-#define Universal_Operation(type, result, inner_loop_body, new_shapes, ...)    \
+#define Universal_Operation(type, results, first_result, inner_loop_body,      \
+                            new_shapes, ...)                                   \
   do {                                                                         \
-    int ndim = PyArray_NDIM(result);                                           \
+    int ndim = PyArray_NDIM(first_result);                                     \
     npy_intp max_dim = ndim - 1;                                               \
-    Replicate5(Alloc_Copy_Strides_And_Indices, type, new_shapes, __VA_ARGS__); \
+    Replicate5(Alloc_Copy_Strides_And_Indices, type, new_shapes, first_result, \
+               __VA_ARGS__);                                                   \
     for (int i = 0; i < ndim; i++) {                                           \
       Replicate(Normalize_Strides_By_Type, type, __VA_ARGS__);                 \
     }                                                                          \
     Replicate(Retrieve_Last_Stride, max_dim, __VA_ARGS__);                     \
-    npy_intp _size = PyArray_SIZE(result);                                     \
+    npy_intp _size = PyArray_SIZE(first_result);                               \
     npy_intp *shape_cpy =                                                      \
-        (npy_intp *)malloc(sizeof(npy_intp) * PyArray_NDIM(result));           \
-    npy_intp *__shape = PyArray_SHAPE(result);                                 \
-    memcpy(shape_cpy, PyArray_SHAPE(result),                                   \
-           sizeof(npy_intp) * PyArray_NDIM(result));                           \
-    int axis_sep = ndim - 1;                                                   \
-    npy_intp inner_loop_size = PyArray_SHAPE(result)[axis_sep];                \
+        (npy_intp *)malloc(sizeof(npy_intp) * PyArray_NDIM(first_result));     \
+    npy_intp *__shape = PyArray_SHAPE(first_result);                           \
+    memcpy(shape_cpy, PyArray_SHAPE(first_result),                             \
+           sizeof(npy_intp) * PyArray_NDIM(first_result));                     \
+    int axis_sep = ndim - 1; /*optimize*/                                      \
+    npy_intp inner_loop_size = PyArray_SHAPE(first_result)[axis_sep];          \
     npy_intp outter_loop_size = _size / inner_loop_size;                       \
     npy_intp outer_start = max_dim - axis_sep;                                 \
     npy_intp *shape_copy = (npy_intp *)malloc(sizeof(npy_intp) * ndim);        \
-    type *result_data_ptr_saved = (type *)PyArray_DATA(result);                \
-    type *result_data_ptr_ = (type *)PyArray_DATA(result);                     \
-    type *result_data_ptr_cpy = (type *)PyArray_DATA(result);                  \
+    Replicate(Init_Result_Ptrs, type, Remove_Parentheses(results));            \
     for (int i = 0; i < ndim; i++) {                                           \
       shape_cpy[i]--;                                                          \
       shape_copy[i] = 0;                                                       \
       Replicate2(Cache_Indice, i, shape_cpy, __VA_ARGS__);                     \
     }                                                                          \
-    npy_intp k = 0;                                                            \
     npy_intp num_threads = outter_loop_size < omp_get_max_threads()            \
                                ? outter_loop_size                              \
                                : omp_get_max_threads();                        \
-    type **result_ptr_ = (type **)malloc(sizeof(type *) * num_threads);        \
+    Replicate2(Init_Result_Ptrs_Arr, num_threads, type,                        \
+               Remove_Parentheses(results));                                   \
     npy_intp **current_shape_process_ =                                        \
         (npy_intp **)malloc(sizeof(npy_intp *) * num_threads);                 \
     for (npy_intp id = 0; id < num_threads; id++) {                            \
@@ -360,32 +432,37 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
                              min(id, outter_loop_size % num_threads);          \
       npy_intp end_index = start_index + outter_loop_size / num_threads +      \
                            (id < outter_loop_size % num_threads);              \
-      result_ptr_[id] = result_data_ptr_cpy;                                   \
-      result_data_ptr_cpy += (end_index - start_index) * inner_loop_size;      \
-      npy_intp prd = result_ptr_[id] - result_data_ptr_saved;                  \
+      Replicate_Adjust_Result_Ptrs(Adjust_Result_Ptrs, start_index, end_index, \
+                                   inner_loop_size,                            \
+                                   Remove_Parentheses(results));               \
+      Init_Prd(_First(                                                         \
+          Replicate0_With_Comma(Extract, Remove_Parentheses(results))));       \
       npy_intp *current_shape_process =                                        \
           (npy_intp *)calloc(ndim, sizeof(npy_intp));                          \
       for (npy_intp j = max_dim; j >= 0; j--) {                                \
-        current_shape_process[j] = prd % __shape[j];                           \
-        prd /= __shape[j];                                                     \
+        Adjust_Prd(_First(                                                     \
+            Replicate0_With_Comma(Extract, Remove_Parentheses(results))))      \
       }                                                                        \
       current_shape_process_[id] = current_shape_process;                      \
     }                                                                          \
-    Omp_Parallel(num_threads, result_data_ptr_,                                \
+    npy_intp k = 0;                                                            \
+    Omp_Parallel(num_threads,                                                  \
+                 Replicate0(Get_Result_Ptr, Remove_Parentheses(results)),      \
                  Replicate0(Ptr_Saved, __VA_ARGS__)) {                         \
       int thread_id = omp_get_thread_num();                                    \
-      result_data_ptr_ = result_ptr_[thread_id];                               \
+      Replicate0_No_Comma(Retrieve_Result_Ptrs, Remove_Parentheses(results));  \
       npy_intp *current_process = current_shape_process_[thread_id];           \
       for (npy_intp j = max_dim; j >= 0; j--) {                                \
         Replicate2(Adjust_Ptr, j, current_process, __VA_ARGS__);               \
       }                                                                        \
-      npy_intp i;                                                              \
       _Pragma("omp for schedule(static)") for (k = 0; k < outter_loop_size;    \
                                                k++) {                          \
-        wrapper(inner_loop_body, type, i, inner_loop_size, result_data_ptr_,   \
+        npy_intp i;                                                            \
+        wrapper(inner_loop_body, Generic(type), type, i, inner_loop_size,      \
+                Replicate0(Get_Result_Ptr, Remove_Parentheses(results)),       \
                 Replicate0(Stries_Last, __VA_ARGS__),                          \
                 Replicate0(Ptr_Saved, __VA_ARGS__));                           \
-        result_data_ptr_ += inner_loop_size;                                   \
+        Replicate0_No_Comma(Result_Ptr_Jump, Remove_Parentheses(results));     \
         for (npy_intp j = outer_start; j >= 0; j--) {                          \
           if (current_process[j] < __shape[j]) {                               \
             current_process[j]++;                                              \
@@ -400,20 +477,30 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       free(current_process);                                                   \
     }                                                                          \
     free(current_shape_process_);                                              \
-    free(result_ptr_);                                                         \
+    Replicate0_No_Comma(Free_Result_Ptr_Arr, Remove_Parentheses(results));     \
     Replicate0_No_Comma(Free, __VA_ARGS__);                                    \
     free(shape_cpy);                                                           \
     free(shape_copy);                                                          \
   } while (0)
 
-#define Perform_Universal_Operation(                                           \
-    type, result_type, inner_loop_body_universal, inner_loop_body_seq, ...)    \
+#define Perform_Universal_Operation(type, return_arr, result_type,             \
+                                    inner_loop_body, outs_array,               \
+                                    outs_array_len, results, ...)              \
   do {                                                                         \
+    if (outs_array_len > Args_Num(Remove_Parentheses(results))) {              \
+      PyErr_SetString(PyExc_ValueError, "Number of outputs must be equal or "  \
+                                        "less than the number of results");    \
+      return NULL;                                                             \
+    }                                                                          \
     bool shape_equal = true;                                                   \
+    bool all_scalar = true;                                                    \
+    DEBUG_PRINT("%s: Entered\n", __func__);                                    \
     Replicate0_No_Comma(Handlers, __VA_ARGS__);                                \
-    Replicate2(Correct_Type, result_type, type, __VA_ARGS__);                  \
+    DEBUG_PRINT("%s: Handlers done\n", __func__);                              \
+    Replicate_Correct_Type(Correct_Type, result_type, type, __VA_ARGS__);      \
+    DEBUG_PRINT("%s: Correct_Type done\n", __func__);                          \
     npy_intp *shapes[] = {Replicate0(Shapes, __VA_ARGS__)};                    \
-    npy_intp ndims[] = {Replicate0(NDims, __VA_ARGS__)};                       \
+    int ndims[] = {Replicate0(NDims, __VA_ARGS__)};                            \
     npy_intp *shape_ref = shapes[0];                                           \
     int ndim_ref = ndims[0];                                                   \
     for (int i = 0; i < Args_Num(__VA_ARGS__); i++) {                          \
@@ -422,22 +509,41 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
         break;                                                                 \
       }                                                                        \
     }                                                                          \
+    DEBUG_PRINT("%s: shape_equal done\n", __func__);                           \
     PyArrayObject *arr[] = {Replicate0(Arrays, __VA_ARGS__)};                  \
-    if (!shape_equal || Replicate_Or(Contiguous_OrNot, __VA_ARGS__)) {         \
-      PyArrayObject *biggest_array = NULL;                                     \
-      npy_intp biggest_size = 0;                                               \
-      for (int i = 0; i < Args_Num(__VA_ARGS__); i++) {                        \
-        npy_intp size = 1;                                                     \
-        for (int j = 0; j < ndims[i]; j++) {                                   \
-          size *= shapes[i][j];                                                \
-        }                                                                      \
-        if (size > biggest_size) {                                             \
-          biggest_size = size;                                                 \
-          biggest_array = arr[i];                                              \
-        }                                                                      \
+    npy_intp sizes[Args_Num(__VA_ARGS__)] = {0};                               \
+    int biggest_index = 0;                                                     \
+    PyArrayObject *biggest_array = NULL;                                       \
+    npy_intp biggest_size = 0;                                                 \
+    for (int i = 0; i < (Args_Num(__VA_ARGS__)); i++) {                        \
+      npy_intp size = 1;                                                       \
+      for (int j = 0; j < ndims[i]; j++) {                                     \
+        size *= shapes[i][j];                                                  \
       }                                                                        \
+      sizes[i] = size;                                                         \
+      if (size > biggest_size) {                                               \
+        biggest_size = size;                                                   \
+        biggest_array = arr[i];                                                \
+        biggest_index = i;                                                     \
+      }                                                                        \
+    }                                                                          \
+    DEBUG_PRINT("%s: biggest_size done\n", __func__);                          \
+    for (int j = 0; j < (Args_Num(__VA_ARGS__)); j++) {                        \
+      if (j != biggest_index && sizes[j] != 1) {                               \
+        all_scalar = false;                                                    \
+        break;                                                                 \
+      }                                                                        \
+    }                                                                          \
+    PyObject *outs_arr[Args_Num(Remove_Parentheses(results))] = {NULL};        \
+    if (outs_array != NULL) {                                                  \
+      memcpy(outs_arr, outs_array, sizeof(PyArrayObject *) * outs_array_len);  \
+    }                                                                          \
+    DEBUG_PRINT("%s: all_scalar done\n", __func__);                            \
+    if ((!shape_equal && !all_scalar) ||                                       \
+        (Replicate_Or(Contiguous_OrNot, __VA_ARGS__))) {                       \
+      DEBUG_PRINT("%s: broadcast start\n", __func__);                          \
       npy_intp *new_shapes[Args_Num(__VA_ARGS__)] = {NULL};                    \
-      for (int i = 0; i < Args_Num(__VA_ARGS__); i++) {                        \
+      for (int i = 0; i < (Args_Num(__VA_ARGS__)); i++) {                      \
         if (!shape_isbroadcastable_to_ex(                                      \
                 shapes[i], PyArray_SHAPE(biggest_array), ndims[i],             \
                 PyArray_NDIM(biggest_array), &new_shapes[i])) {                \
@@ -449,29 +555,56 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
           PyArray_STRIDE((const PyArrayObject *)biggest_array,                 \
                          PyArray_NDIM(biggest_array) - 1);                     \
       npy_intp *broadcast_shape = NULL;                                        \
-      for (int j = 0; j < Args_Num(__VA_ARGS__); j++) {                        \
-        if (!broadcast_shape) {                                                \
-          free(broadcast_shape);                                               \
-        }                                                                      \
+      npy_intp broadcast_size = 1;                                             \
+      for (int j = 0; j < (Args_Num(__VA_ARGS__)); j++) {                      \
+        npy_intp *broadcast_shape_tmp = NULL;                                  \
         predict_broadcast_shape(PyArray_SHAPE(biggest_array), new_shapes[j],   \
                                 PyArray_NDIM(biggest_array),                   \
-                                &broadcast_shape);                             \
+                                &broadcast_shape_tmp);                         \
+        npy_intp tmp = 1;                                                      \
+        for (int k = 0; k < PyArray_NDIM(biggest_array); k++) {                \
+          tmp *= broadcast_shape_tmp[k];                                       \
+        }                                                                      \
+        if (tmp < broadcast_size) {                                            \
+          free(broadcast_shape_tmp);                                           \
+        } else {                                                               \
+          broadcast_shape = broadcast_shape_tmp;                               \
+          broadcast_size = tmp;                                                \
+        }                                                                      \
       }                                                                        \
-      PyArrayObject *result = (PyArrayObject *)PyArray_EMPTY(                  \
-          PyArray_NDIM(biggest_array), broadcast_shape, result_type, 0);       \
-      Universal_Operation(type, result, inner_loop_body_universal, new_shapes, \
-                          __VA_ARGS__);                                        \
+      Replicate_Alloc_Results(biggest_array, broadcast_shape, result_type,     \
+                              Remove_Parentheses(results));                    \
+      DEBUG_PRINT("%s: broacast looping start\n", __func__);                   \
+      Universal_Operation(                                                     \
+          type,                                                                \
+          (Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))),   \
+          _First(Replicate0_With_Comma(Get_Results,                            \
+                                       Remove_Parentheses(results))),          \
+          inner_loop_body, new_shapes, __VA_ARGS__);                           \
+      DEBUG_PRINT("%s: broacast looping end\n", __func__);                     \
+      PyArrayObject *results_arr[] = {                                         \
+          Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))};    \
       Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
-      return (PyObject *)result;                                               \
+      memcpy(return_arr, results_arr,                                          \
+             sizeof(PyArrayObject *) *                                         \
+                 (Args_Num(Remove_Parentheses(results))));                     \
+      DEBUG_PRINT("%s: Ended\n", __func__);                                    \
     } else {                                                                   \
-      PyArrayObject *result = (PyArrayObject *)PyArray_EMPTY(                  \
-          PyArray_NDIM((PyArrayObject *)_First_(__VA_ARGS__)),                 \
-          PyArray_DIMS((PyArrayObject *)_First_(__VA_ARGS__)), result_type,    \
-          0);                                                                  \
-      Universal_Operation_Sequential(type, result, inner_loop_body_seq,        \
-                                     __VA_ARGS__);                             \
+      Replicate(Get_Strides_Sequential, type, __VA_ARGS__);                    \
+      Replicate_Alloc_Results(biggest_array, PyArray_SHAPE(biggest_array),     \
+                              result_type, Remove_Parentheses(results));       \
+      Universal_Operation_Sequential(                                          \
+          type,                                                                \
+          (Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))),   \
+          _First(Replicate0_With_Comma(Get_Results,                            \
+                                       Remove_Parentheses(results))),          \
+          inner_loop_body, __VA_ARGS__);                                       \
       Replicate0_No_Comma(Free_Array, __VA_ARGS__);                            \
-      return (PyObject *)result;                                               \
+      PyArrayObject *results_arr[] = {                                         \
+          Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))};    \
+      memcpy(return_arr, results_arr,                                          \
+             sizeof(PyArrayObject *) *                                         \
+                 (Args_Num(Remove_Parentheses(results))));                     \
     }                                                                          \
   } while (0)
 

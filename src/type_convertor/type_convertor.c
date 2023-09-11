@@ -1,7 +1,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #include "type_convertor.h"
-#include "../op.h"
+#include "../numboost_utils.h"
 #include "stdbool.h"
 #ifndef max
 #define max(a, b) (((a) > (b)) ? (a) : (b))
@@ -35,7 +35,10 @@ int gloabal_float_type = NPY_FLOAT;
   case BITWISE_AND:                                                            \
   case BITWISE_OR:                                                             \
   case BITWISE_XOR:                                                            \
-    return NPY_BOOL;                                                           \
+    if (is_float_number(b_dtype))                                              \
+      return float_type_based_on_size(max(a_size, b_size));                    \
+    else                                                                       \
+      return max(a_dtype, b_dtype);                                            \
   case LSHIFT:                                                                 \
   case RSHIFT:                                                                 \
     if (is_float_number(b_dtype))                                              \
@@ -43,6 +46,7 @@ int gloabal_float_type = NPY_FLOAT;
     else                                                                       \
       return max(a_dtype, b_dtype);                                            \
   case SQUARE:                                                                 \
+  case DIVMOD:                                                                 \
     if (is_float_number(b_dtype))                                              \
       return float_type_based_on_size(max(a_size, b_size));                    \
     else                                                                       \
@@ -75,7 +79,10 @@ int gloabal_float_type = NPY_FLOAT;
   case BITWISE_AND:                                                            \
   case BITWISE_OR:                                                             \
   case BITWISE_XOR:                                                            \
-    return NPY_BOOL;                                                           \
+    if (is_float_number(b_dtype))                                              \
+      return float_type_based_on_size(max(a_size, b_size));                    \
+    else                                                                       \
+      return max(a_dtype, b_dtype);                                            \
   case LSHIFT:                                                                 \
   case RSHIFT:                                                                 \
     if (is_float_number(b_dtype))                                              \
@@ -83,6 +90,7 @@ int gloabal_float_type = NPY_FLOAT;
     else                                                                       \
       return max(a_dtype, b_dtype);                                            \
   case SQUARE:                                                                 \
+  case DIVMOD:                                                                 \
     if (is_float_number(b_dtype))                                              \
       return float_type_based_on_size(max(a_size, b_size));                    \
     else                                                                       \
@@ -94,6 +102,8 @@ int gloabal_float_type = NPY_FLOAT;
 
 PyObject *set_global_float_type(PyObject *self, PyObject *const *args,
                                 size_t nargsf) {
+  (void)self;
+  (void)nargsf;
   int type = (int)PyLong_AsLong(args[0]);
   if (type == NPY_FLOAT || type == NPY_DOUBLE || type == NPY_LONGDOUBLE ||
       type == NPY_HALF)
@@ -156,6 +166,35 @@ void Any_to_Double(PyArrayObject **array, PyArrayObject **result, int type) {
     NO_CONVERT_CASE(NPY_DOUBLE)
     CAST_ARRAY_CASE(NPY_LONGDOUBLE, npy_longdouble, npy_double, NPY_DOUBLE)
     F_CAST_ARRAY_CASE(NPY_HALF, npy_half, npy_double, NPY_DOUBLE,
+                      half_cast_double)
+  }
+}
+
+void Any_to_LongDouble(PyArrayObject **array, PyArrayObject **result,
+                       int type) {
+  npy_intp ndims = PyArray_NDIM(*array);
+  npy_intp *shape = PyArray_SHAPE(*array);
+  npy_intp size = PyArray_SIZE(*array);
+  npy_intp *strides = ((PyArrayObject_fields *)*array)->strides;
+  npy_intp *new_strides = (npy_intp *)malloc(sizeof(npy_intp) * ndims);
+  npy_intp i;
+  switch (type) {
+    CAST_ARRAY_CASE(NPY_BOOL, npy_bool, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_BYTE, npy_byte, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_UBYTE, npy_ubyte, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_SHORT, npy_short, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_USHORT, npy_ushort, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_INT, npy_int, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_UINT, npy_uint, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_LONG, npy_long, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_ULONG, npy_ulong, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_LONGLONG, npy_longlong, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_ULONGLONG, npy_ulonglong, npy_longdouble,
+                    NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_FLOAT, npy_float, npy_longdouble, NPY_LONGDOUBLE)
+    CAST_ARRAY_CASE(NPY_DOUBLE, npy_double, npy_longdouble, NPY_LONGDOUBLE)
+    NO_CONVERT_CASE(NPY_LONGDOUBLE)
+    F_CAST_ARRAY_CASE(NPY_HALF, npy_half, npy_longdouble, NPY_LONGDOUBLE,
                       half_cast_double)
   }
 }
@@ -497,6 +536,7 @@ inline void As_Type(PyArrayObject **a, PyArrayObject **result, int self_type,
     As_Type_Cases(ULongLong, NPY_ULONGLONG);
     As_Type_Cases(Float, NPY_FLOAT);
     As_Type_Cases(Double, NPY_DOUBLE);
+    As_Type_Cases(LongDouble, NPY_LONGDOUBLE);
     As_Type_Cases(Half, NPY_HALF);
   default:
     *a = NULL;
@@ -506,7 +546,11 @@ inline void As_Type(PyArrayObject **a, PyArrayObject **result, int self_type,
 
 void as_type(PyArrayObject **a, PyArrayObject **result, int target_type) {
   int a_dtype = PyArray_TYPE(*a);
-  As_Type(a, result, a_dtype, target_type);
+  if (target_type == a_dtype) {
+    *result = *a;
+  } else {
+    As_Type(a, result, a_dtype, target_type);
+  }
 }
 
 int div_result_type_pick(int npy_enum) {
@@ -558,13 +602,13 @@ bool is_uint_number(int dtype) {
 int float_type_based_on_size(int size) {
   switch (size) {
   case 2:
-    return max(NPY_HALF, gloabal_float_type);
+    return NPY_HALF;
   case 4:
-    return max(NPY_FLOAT, gloabal_float_type);
+    return NPY_FLOAT;
   case 8:
-    return max(NPY_DOUBLE, gloabal_float_type);
+    return NPY_DOUBLE;
   case 16:
-    return max(NPY_LONGDOUBLE, gloabal_float_type);
+    return NPY_LONGDOUBLE;
   default:
     return gloabal_float_type;
   }
@@ -611,7 +655,7 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
     case BITWISE_AND:
     case BITWISE_OR:
     case BITWISE_XOR:
-      return NPY_BOOL;
+      return float_type_based_on_size(max(a_size, b_size));
     case LSHIFT:
     case RSHIFT:
       PyErr_SetString(
@@ -619,6 +663,7 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
           "unsupported operand type(s) for >> or <<: 'float' and 'float'");
       return -1;
     case SQUARE:
+    case DIVMOD:
       return float_type_based_on_size(max(a_size, b_size));
     default:
       return max(a_dtype, b_dtype);
@@ -653,7 +698,7 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
     case BITWISE_AND:
     case BITWISE_OR:
     case BITWISE_XOR:
-      return NPY_BOOL;
+      return float_type_based_on_size(max(a_size, b_size));
     case LSHIFT:
     case RSHIFT:
       PyErr_SetString(
@@ -691,6 +736,7 @@ int elementwise_result_type(int op, int a_dtype) {
   case SQRT:
   case EXP:
   case LOG:
+  case LOG10:
     return float_type_based_on_size(max(a_size, gloabal_float_size));
   case ABS:
     return a_dtype;
@@ -701,6 +747,8 @@ int elementwise_result_type(int op, int a_dtype) {
 
 PyObject *binary_result_type_(PyObject *self, PyObject *const *args,
                               size_t nargsf) {
+  (void)self;
+  (void)nargsf;
   long op = PyLong_AsLong(args[0]);
   long a_dtype = PyLong_AsLong(args[1]);
   long a_size = PyLong_AsLong(args[2]);
@@ -716,9 +764,11 @@ PyObject *binary_result_type_(PyObject *self, PyObject *const *args,
 }
 
 int any_to_type_enum(PyObject *a) {
-  if (PyArray_Check(a))
+  if (Py_IS_TYPE(a, Tensor_type)) {
+    return ((PyArrayObject_fields *)((Tensor *)a)->data)->descr->type_num;
+  } else if (PyArray_Check(a)) {
     return ((PyArrayObject_fields *)a)->descr->type_num;
-  else if (PyBool_Check(a))
+  } else if (PyBool_Check(a))
     return NPY_BOOL;
   else if (PyLong_Check(a))
     return NPY_LONG;

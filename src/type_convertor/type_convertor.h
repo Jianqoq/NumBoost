@@ -36,6 +36,7 @@ typedef struct
 
 void Any_to_Float(PyArrayObject **array, PyArrayObject **result, int type);
 
+//need a higher level function
 void as_type(PyArrayObject **a, PyArrayObject **result, int target_type);
 
 int div_result_type_pick(int npy_enum);
@@ -93,7 +94,7 @@ inline npy_half float_cast_half(npy_float value)
     if (e <= 0x38000000u)
     {
         if (e < 0x33000000u)
-            return float32_sign;
+            return (uint16_t)float32_sign;
         e >>= 23;
         float32_m += 0x00800000u;
         float32_m >>= (113 - e);
