@@ -45,9 +45,13 @@ Broadcast:
 
 # Installation
 NumBoost is still in pretty early stage, therefore, there will be a lot of bugs and missing features.
+
 If you want to try it out, you can install it by:
+
 In Linux:
+
 First: Download the source code
+
 Second: Install Dependencies
 ```
 pip install -r requirements.txt
@@ -71,13 +75,17 @@ python setup.py build_ext
 Fifth: You might need to add the path of src folder to PYTHONPATH, example is in benchmarks folder
 
 Windows:
+
 Since NumBoost is developed in Windows, however, it might not as easy as in Linux.
+
 First: Download the source code
+
 Second: Install Dependencies
 ```
 pip install -r requirements.txt
 ```
 Third: Install mkl, go to https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html and download mkl, make sure your system environment variable has MKLROOT
+
 Forth: cd to src folder and run
 ```
 python setup.py build_ext
