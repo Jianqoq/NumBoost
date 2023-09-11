@@ -158,7 +158,8 @@ PyObject *create_Tensor(Tensor *tensor, PyObject *other, PyObject *data,
     Tensor_SetGrad_without_init_value(self, zero);
     return (PyObject *)self;
   } else {
-    PyErr_SetString(PyExc_MemoryError, "Unable to allocate memory for Tensor Object");
+    PyErr_SetString(PyExc_MemoryError,
+                    "Unable to allocate memory for Tensor Object");
     return NULL;
   }
 }
@@ -298,6 +299,7 @@ PyObject *tensor_div(PyObject *self, PyObject *other) {
   Numboost_AssertNULL(result);
   PyObject *to_return =
       create_Tensor((Tensor *)self, other, result, "DivBackward");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 

@@ -9,6 +9,28 @@ Compiler: GCC, MSVC
 # Feature:
 Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, highly compatible with numpy
 
+# Performance:
+spec: i5-12600k, 64 GB 3600MHz, 1TB 990 Pro, RTX 4090, Windows 11
+Object creation:
+```
+a = np.array([-4, 2, 3])
+start = time.time()
+for i in range(10000):
+    a_ = Tensor(a)
+end = time.time()
+print(end - start)
+start = time.time()
+for i in range(10000):
+    a_ = torch.tensor(a)
+end = time.time()
+print(end - start)
+
+output: 
+0.0014982223510742188
+0.030042648315429688
+```
+
+
 # To do
 1. implement methods supports dynamic output
 2. ~~add tensordot(forward, backward)~~
