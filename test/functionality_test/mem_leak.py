@@ -22,7 +22,7 @@ def test_C_Tensor_addition_backward(array, array2, grad):
         autograd_grad = grad
         result1 = autograd_grad_operands1 + autograd_grad_operands2
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -34,7 +34,7 @@ def test_C_Tensor_subtraction_backward(array, array2, grad):
         autograd_grad = grad
         result1 = autograd_grad_operands1 - autograd_grad_operands2
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -46,7 +46,7 @@ def test_C_Tensor_division_backward(array, array2, grad):
         autograd_grad = grad
         result1 = autograd_grad_operands1 / autograd_grad_operands2
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -58,7 +58,7 @@ def test_C_Tensor_matmul_backward(array, array2, grad):
         autograd_grad = grad
         result1 = autograd_grad_operands1 @ autograd_grad_operands2
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -80,7 +80,7 @@ def test_C_Tensor_mul_backward(array, array2, grad):
         autograd_grad = grad
         result1 = autograd_grad_operands1 * autograd_grad_operands2
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -91,7 +91,7 @@ def test_C_Tensor_sin_backward(array, grad):
         autograd_grad = grad
         result1 = core.sin(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -102,7 +102,7 @@ def test_C_Tensor_cos_backward(array, grad):
         autograd_grad = grad
         result1 = core.cos(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -113,7 +113,7 @@ def test_C_Tensor_tan_backward(array, grad):
         autograd_grad = grad
         result1 = core.tan(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -124,7 +124,7 @@ def test_C_Tensor_sinh_backward(array, grad):
         autograd_grad = grad
         result1 = core.sinh(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -135,7 +135,7 @@ def test_C_Tensor_cosh_backward(array, grad):
         autograd_grad = grad
         result1 = core.cosh(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -146,7 +146,7 @@ def test_C_Tensor_tanh_backward(array, grad):
         autograd_grad = grad
         result1 = core.tanh(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -157,7 +157,7 @@ def test_C_Tensor_arcsin_backward(array, grad):
         autograd_grad = grad
         result1 = core.arcsin(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -168,7 +168,7 @@ def test_C_Tensor_arctan_backward(array, grad):
         autograd_grad = grad
         result1 = core.arctan(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -179,7 +179,7 @@ def test_C_Tensor_arcsinh_backward(array, grad):
         autograd_grad = grad
         result1 = core.arcsinh(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -199,7 +199,7 @@ def test_C_Tensor_sqrt_backward(array, grad):
         autograd_grad = grad
         result1 = core.sqrt(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -210,7 +210,7 @@ def test_C_Tensor_reshape_backward(array, grad):
         autograd_grad = grad
         result1 = core.reshape(autograd_grad_operands1, (3, ))
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 
 
@@ -221,6 +221,6 @@ def test_C_Tensor_log_backward(array, grad):
         autograd_grad = grad
         result1 = core.log(autograd_grad_operands1)
         set_track(1)
-        res = to_dict(jax.jit(result1.backward)(autograd_grad))
+        res = jax.jit(result1.backward)(autograd_grad)
         set_track(0)
 

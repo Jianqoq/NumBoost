@@ -1,8 +1,7 @@
-
 #ifndef utils_h
 #define utils_h
 #include "stdbool.h"
-#include "import_methods.h"
+#include "import_module_methods.h"
 #include "numboost_api.h"
 #define NO_IMPORT_ARRAY
 
