@@ -7,7 +7,8 @@ Python: 3.11+
 Compiler: GCC, MSVC
 
 # Feature:
-Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, highly compatible with numpy
+Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, highly compatible with numpy,
+currently only support CPU, GPU support will be added in the future
 
 # Performance:
 spec: i5-12600k, 64 GB 3600MHz, 1TB 990 Pro, RTX 4090, Windows 11
