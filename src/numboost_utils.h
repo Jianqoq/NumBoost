@@ -14,11 +14,11 @@ typedef enum {
   BITWISE_OR,
   BITWISE_XOR,
   BITWISE_INVERT,
-  POSITIVE,
-  NEGATIVE,
   SQUARE,
   DIVMOD,
   /*====== seperator for binary and elementwise operation ======*/
+  POSITIVE,
+  NEGATIVE,
   SIN,
   COS,
   TAN,

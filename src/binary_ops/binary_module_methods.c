@@ -52,7 +52,7 @@ PyObject *nb_module_pow(PyObject *numboost_module, PyObject *args,
       return (PyObject *)to_replace;
     }
   } else {
-    PyObject *to_return = create_Tensor(a_, Py_None, result, "PowBackward");
+    PyObject *to_return = create_tensor(a_, Py_None, result, "PowBackward");
     if (a_->require_grad)
       store_power((Tensor*)to_return, power);
     return to_return;

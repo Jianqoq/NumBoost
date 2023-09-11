@@ -721,6 +721,9 @@ int elementwise_result_type(int op, int a_dtype) {
   int a_size = type_2_size[a_dtype];
   int gloabal_float_size = type_2_size[gloabal_float_type];
   switch (op) {
+  case POSITIVE:
+  case NEGATIVE:
+    return a_dtype;
   case SIN:
   case COS:
   case TAN:

@@ -3,17 +3,11 @@
 #include "../binary_ops/binary_op_def.h"
 #include "../import_module_methods.h"
 #include "../python_magic/python_math_magic.h"
-#include "../set_tensor_properties.h"
 #include "../tensor.h"
 #include "../type_convertor/type_convertor.h"
 #include "../utils.h"
 #include "element_ops_def.h"
-#include "mkl_vml_functions.h"
-#include "numpy/ndarraytypes.h"
-#include <math.h>
 #include <numpy/arrayobject.h>
-#include <numpy/npy_math.h>
-#include <omp.h>
 #include <stdlib.h>
 
 static char *keyword_list[] = {"a", "b", "out", NULL};
@@ -118,177 +112,6 @@ Tensordot_Metadata *get_tensordot_data(Tensor *key) {
     return NULL;
   }
   return s->metadata;
-}
-
-inline static Tensor *Generic_function_new_float(
-    void (*vect_func)(const int, const float *, float *), float (*func)(float),
-    Tensor *self, PyArrayObject *array, Tensor *out, const char *grad_fn) {
-  npy_intp ndims = PyArray_NDIM(array);
-  npy_intp *shape = PyArray_SHAPE(array);
-  npy_intp size = 1;
-  for (npy_intp i = 0; i < ndims; i++) {
-    size *= shape[i];
-  }
-  if (out == NULL) {
-    PyArrayObject *array2 =
-        (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_FLOAT, 0);
-    float *data2 = (float *)PyArray_DATA(array2);
-    const float *data = (const float *)PyArray_DATA(array);
-    vect_func((const int)size, data,
-              data2); // need benchmark to see if needed to release GIL
-    return (Tensor *)__new_Tensor(self, (PyObject *)array2, NULL,
-                                  self->require_grad ? grad_fn : "");
-  } else {
-    long long i;
-
-    npy_float *data = (npy_float *)PyArray_DATA(
-        (PyArrayObject *)out->data); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-#pragma omp parallel for // need benchmark to see if needed to release GIL
-    for (i = 0; i < size; i++) {
-      data[i] = func(data[i]);
-    }
-    out->grad_fn = out->require_grad ? grad_fn : "";
-    Py_INCREF(out);
-    return out;
-  }
-}
-
-inline static Tensor *Generic_function_new_double(
-    void (*vect_func)(const int, const double *, double *),
-    double (*func)(double), Tensor *self, PyArrayObject *array, Tensor *out,
-    const char *grad_fn) {
-  npy_intp ndims = PyArray_NDIM(array);
-  npy_intp *shape = PyArray_SHAPE(array);
-  npy_intp size = 1;
-  for (npy_intp i = 0; i < ndims; i++) {
-    size *= shape[i];
-  }
-  if (out == NULL) {
-    PyArrayObject *array2 =
-        (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_DOUBLE, 0);
-    double *data2 = (double *)PyArray_DATA(array2);
-    const double *data = (const double *)PyArray_DATA(array);
-    vect_func((const int)size, data,
-              data2); // need benchmark to see if needed to release GIL
-    return (Tensor *)__new_Tensor(self, (PyObject *)array2, NULL,
-                                  self->require_grad ? grad_fn : "");
-  } else {
-    long long i;
-    double *data = (double *)PyArray_DATA(
-        (PyArrayObject *)out->data); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-#pragma omp parallel for
-    for (i = 0; i < size; i++) {
-      data[i] = func(data[i]);
-    }
-    out->grad_fn = out->require_grad ? grad_fn : "";
-    Py_INCREF(out);
-    return out;
-  }
-}
-
-inline static Tensor *Generic_function(PyObject *func, const char *grad_fn,
-                                       PyObject *const *args, size_t nargsf) {
-  PyObject *result;
-  Tensor *tensor = NULL;
-  if (nargsf == 1) {
-    tensor = (Tensor *)args[0];
-    result = PyObject_CallOneArg(func, tensor->data);
-    if (result == NULL) {
-      return NULL;
-    }
-  } else {
-    tensor = (Tensor *)args[0];
-    Tensor *out = NULL;
-    if (Py_IsNone(args[1]))
-      out = (Tensor *)args[1];
-    if (out == NULL) {
-      result = PyObject_CallFunctionObjArgs(func, tensor->data, Py_None, NULL);
-    } else {
-      result =
-          PyObject_CallFunctionObjArgs(func, tensor->data, out->data, NULL);
-    }
-    if (result == NULL) {
-      return NULL;
-    }
-  }
-  if (!tensor->require_grad)
-    grad_fn = "";
-  Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, grad_fn);
-  return to_return;
-}
-
-inline static PyObject *
-Generic_function_internal(PyObject *func, PyObject *args, PyObject *out) {
-  PyObject *result;
-  if (out == NULL) {
-    result = PyObject_CallOneArg(func, args);
-  } else {
-    result = PyObject_CallFunctionObjArgs(func, args, out, NULL);
-  }
-  if (result == NULL) {
-    return NULL;
-  }
-  return result;
-}
-
-inline static PyObject *Generic_function_new_float_internal(
-    void (*vect_func)(const int, const float *, float *), float (*func)(float),
-    PyArrayObject *array, PyObject *out) {
-  npy_intp ndims = PyArray_NDIM(array);
-  npy_intp *shape = PyArray_SHAPE(array);
-  npy_intp size = 1;
-  for (npy_intp i = 0; i < ndims; i++) {
-    size *= shape[i];
-  }
-  if (out == NULL) {
-    PyArrayObject *array2 =
-        (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_FLOAT, 0);
-    float *data2 = (float *)PyArray_DATA(array2);
-    const float *data = (const float *)PyArray_DATA(array);
-    vect_func((const int)size, data,
-              data2); // need benchmark to see if needed to release GIL
-    return (PyObject *)array2;
-  } else {
-    npy_intp i;
-    npy_float *data = (npy_float *)PyArray_DATA(
-        (PyArrayObject *)out); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-#pragma omp parallel for       // need benchmark to see if needed to release GIL
-    for (i = 0; i < size; i++) {
-      data[i] = func(data[i]);
-    }
-    Py_INCREF(out);
-    return out;
-  }
-}
-
-inline static PyObject *Generic_function_new_double_internal(
-    void (*vect_func)(const int, const double *, double *),
-    double (*func)(double), PyArrayObject *array, PyObject *out) {
-  npy_intp ndims = PyArray_NDIM(array);
-  npy_intp *shape = PyArray_SHAPE(array);
-  npy_intp size = 1;
-  for (npy_intp i = 0; i < ndims; i++) {
-    size *= shape[i];
-  }
-  if (out == NULL) {
-    PyArrayObject *array2 =
-        (PyArrayObject *)PyArray_EMPTY((int)ndims, shape, NPY_DOUBLE, 0);
-    double *data2 = (double *)PyArray_DATA(array2);
-    const double *data = (const double *)PyArray_DATA(array);
-    vect_func((const int)size, data, data2);
-    PyObject *ret = (PyObject *)array2;
-    return ret;
-  } else {
-    long long i;
-    npy_float64 *data = (npy_float64 *)PyArray_DATA(
-        (PyArrayObject *)out); // ONLY WHEN MEM SIZE IS SAME OR SMALLER
-#pragma omp parallel for
-    for (i = 0; i < size; i++) {
-      data[i] = func(data[i]);
-    }
-    Py_INCREF(out);
-    return out;
-  }
 }
 
 Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf,
@@ -979,33 +802,6 @@ Tensor *_argmin_wrapper(PyObject *self, PyObject *const *args, size_t nargsf) {
   }
   Tensor *to_return = (Tensor *)__new_Tensor(tensor, result, NULL, "");
   return to_return;
-}
-
-static inline PyObject *internal_npy_cal_oneArgs(
-    void (*vect_func1)(const int, const double *, double *),
-    void (*vect_func2)(const int, const float *, float *),
-    float (*func1)(float), double (*func2)(double), PyObject *args,
-    PyObject *out) {
-  PyArrayObject *array = (PyArrayObject *)args;
-  PyObject *ret;
-  int typenum = PyArray_TYPE(array);
-  if (typenum == NPY_FLOAT) {
-    DEBUG_PRINT("internal_npy_cal_oneArgs: NPY_FLOAT\n")
-    ret = Generic_function_new_float_internal(vect_func2, func1, array, out);
-    DEBUG_PRINT("Got ret: %p\n", ret)
-    return ret;
-  } else if (typenum == NPY_DOUBLE) {
-    DEBUG_PRINT("internal_npy_cal_oneArgs: NPY_DOUBLE\n")
-    ret = Generic_function_new_double_internal(vect_func1, func2, array, out);
-    DEBUG_PRINT("Got ret: %p\n", ret)
-    return ret;
-  } else {
-    DEBUG_PRINT("internal_npy_cal_oneArgs: Any_to_Float\n")
-    Any_to_Float(&array, NULL, typenum);
-    ret = Generic_function_new_float_internal(vect_func2, func1, array, out);
-    DEBUG_PRINT("Got ret: %p\n", ret)
-    return ret;
-  }
 }
 
 Register_mudule_elementwise_methods(sin, "SinBackward");

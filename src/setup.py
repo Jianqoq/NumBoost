@@ -65,13 +65,14 @@ if len(files) > 0:
         os.remove(f)
 
 mymodule = Extension('Numboost',
-                     sources=['element_ops/element_ops_def.c', 'auto_diff/ufunc_backward_def.c', 'tensor.c', 'python_magic/python_math_magic.c',
-                              'auto_diff/backward_fn.c', 'stack.c', 'set_tensor_properties.c',
-                              'element_ops/element_ops_impl.c', 'auto_diff/binaray_backward_fn.c', 'random/pcg_basic.c',
-                              'import_module_methods.c', 'broadcast_ops/broadcast_impl.c', 'shape.c',
+                     sources=['element_ops/element_ops_def.c', 'auto_diff/ufunc_backward_def.c', 'tensor.c',
+                              'python_magic/python_math_magic.c',
+                              'auto_diff/backward_fn.c', 'stack.c', 'element_ops/element_ops_impl.c',
+                              'auto_diff/binaray_backward_fn.c', 'random/pcg_basic.c',
+                              'import_module_methods.c', 'shape.c',
                               'type_convertor/type_convertor.c', 'tensor_methods.c', 'Iterator/nb_iter.c',
                               'allocator/allocator.c', 'binary_ops/binary_op_def.c',
-                              'binary_ops/binary_module_methods.c', 'broadcast_ops/broadcast_def.c',
+                              'binary_ops/binary_module_methods.c',
                               'allocator/tensor_alloc.c'],
                      include_dirs=[
                          numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',
@@ -79,7 +80,7 @@ mymodule = Extension('Numboost',
                          'lib_include/include',
                          r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\include',
                          r'C:\Users\123\autograd-C\Autograd-C\src\jemalloc-5.3.0\jemalloc-5.3.0\include\msvc_compat'
-                         ],
+                     ],
                      library_dirs=[
                          'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/intel64',
                          r'C:\Program Files (x86)\Intel\oneAPI\mkl\latest\redist\intel64',

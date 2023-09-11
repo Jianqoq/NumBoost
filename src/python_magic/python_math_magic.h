@@ -2,7 +2,6 @@
 
 #ifndef PYTHON_MATH_MAGIC_H
 #define PYTHON_MATH_MAGIC_H
-#include "../broadcast_ops/broadcast_impl.h"
 #include "../tensor.h"
 
 PyObject *__new_Tensor(Tensor *tensor, PyObject *array, PyObject *to_y,
@@ -14,7 +13,7 @@ PyObject *new_Tensor(Tensor *tensor, Tensor *tensor2, PyObject *data,
 PyObject *new_Tensor_scalar(Tensor *self, PyObject *tensor2, PyObject *data,
                             const char *grad_fn);
 
-PyObject *create_Tensor(Tensor *tensor, PyObject *other, PyObject *data,
+PyObject *create_tensor(Tensor *tensor, PyObject *other, PyObject *data,
                         const char *grad_fn);
 
 PyObject *new_Tensor_x(Tensor *self, PyObject *data, const char *grad_fn);

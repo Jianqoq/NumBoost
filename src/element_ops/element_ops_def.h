@@ -162,12 +162,13 @@
       }                                                                        \
     } else {                                                                   \
       PyObject *to_return =                                                    \
-          create_Tensor((Tensor *)a, Py_None, result, backward_fn_name);       \
+          create_tensor((Tensor *)a, Py_None, result, backward_fn_name);       \
       return (Tensor *)to_return;                                              \
     }                                                                          \
   }
 
 PyObject *numboost_abs(PyObject *a, PyObject **out_arr);
+PyObject *numboost_negative(PyObject *a, PyObject **out_arr);
 PyObject *numboost_sin(PyObject *a, PyObject **out_arr);
 PyObject *numboost_cos(PyObject *a, PyObject **out_arr);
 PyObject *numboost_tan(PyObject *a, PyObject **out_arr);

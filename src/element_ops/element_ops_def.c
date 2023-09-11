@@ -10,6 +10,12 @@ Register_ElementWise_Operation_Err_Not_Support_Types(abs);
 Register_ElementWise_Operation_Array(abs, );
 Register_ElementWise_Operation_Method(abs, ABS);
 
+Register_ElementWise_Operations_Floating_Types(negative, Negative_LoopBody);
+Register_ElementWise_Operations_Interger_Types(negative, Negative_LoopBody);
+Register_ElementWise_Operation_Err_Not_Support_Types(negative);
+Register_ElementWise_Operation_Array(negative, );
+Register_ElementWise_Operation_Method(negative, NEGATIVE);
+
 Register_ElementWise_Operations_Floating_Types(sin, Sin_LoopBody);
 Register_ElementWise_Operation_Err_Interger_Types(sin);
 Register_ElementWise_Operation_Err_Not_Support_Types(sin);
