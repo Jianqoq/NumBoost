@@ -11,6 +11,7 @@ Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, h
 
 # Performance:
 spec: i5-12600k, 64 GB 3600MHz, 1TB 990 Pro, RTX 4090, Windows 11
+
 Object creation:
 ```
 a = np.array([-4, 2, 3])
