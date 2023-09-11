@@ -46,6 +46,7 @@ int gloabal_float_type = NPY_FLOAT;
     else                                                                       \
       return max(a_dtype, b_dtype);                                            \
   case SQUARE:                                                                 \
+  case DIVMOD:                                                                 \
     if (is_float_number(b_dtype))                                              \
       return float_type_based_on_size(max(a_size, b_size));                    \
     else                                                                       \
@@ -89,6 +90,7 @@ int gloabal_float_type = NPY_FLOAT;
     else                                                                       \
       return max(a_dtype, b_dtype);                                            \
   case SQUARE:                                                                 \
+  case DIVMOD:                                                                 \
     if (is_float_number(b_dtype))                                              \
       return float_type_based_on_size(max(a_size, b_size));                    \
     else                                                                       \
@@ -661,6 +663,7 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
           "unsupported operand type(s) for >> or <<: 'float' and 'float'");
       return -1;
     case SQUARE:
+    case DIVMOD:
       return float_type_based_on_size(max(a_size, b_size));
     default:
       return max(a_dtype, b_dtype);

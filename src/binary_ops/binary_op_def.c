@@ -76,3 +76,11 @@ Register_Binary_Operations_Interger_Types(bitwise_or, Or_LoopBody);
 Register_Binary_Operation_Err_Not_Support_Types(bitwise_or);
 Register_Binary_Operation_Array(bitwise_or, );
 Register_Binary_Operation_Method(bitwise_or, BITWISE_OR);
+
+Register_Binary_Operations_Floating_Types_MultiOut(divmod, DivMod_LoopBody,
+                                                   result1, result2);
+Register_Binary_Operations_Interger_Types_MultiOut(divmod, DivMod_LoopBody,
+                                                   result1, result2);
+Register_Binary_Operation_Err_Not_Support_Types_MultiOut(divmod);
+Register_Binary_Operation_Array_MultiOut(divmod, );
+Register_Binary_Operation_Method_MultiOut(divmod, DIVMOD);

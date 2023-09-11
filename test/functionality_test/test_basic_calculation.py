@@ -248,7 +248,8 @@ def test_C_Tensor_divmod(array):
     p = Tensor(array)
     l = divmod(p, 3)
     o = divmod(array, 3)
-    assert np.allclose(o, l.data, equal_nan=True), f"correct: {o}({o.dtype}) | got: {l.data}"
+    assert np.allclose(o[0], l[0].data, equal_nan=True), f"correct: {o[0]}({o[0].dtype}) | got: {l[0].data}"
+    assert np.allclose(o[1], l[1].data, equal_nan=True), f"correct: {o[1]}({o[1].dtype}) | got: {l[1].data}"
 
 
 @pytest.mark.parametrize("array", test_cases1)

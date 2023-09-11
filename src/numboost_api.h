@@ -450,7 +450,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
                  Replicate0(Get_Result_Ptr, Remove_Parentheses(results)),      \
                  Replicate0(Ptr_Saved, __VA_ARGS__)) {                         \
       int thread_id = omp_get_thread_num();                                    \
-      Replicate0(Retrieve_Result_Ptrs, Remove_Parentheses(results));           \
+      Replicate0_No_Comma(Retrieve_Result_Ptrs, Remove_Parentheses(results));  \
       npy_intp *current_process = current_shape_process_[thread_id];           \
       for (npy_intp j = max_dim; j >= 0; j--) {                                \
         Replicate2(Adjust_Ptr, j, current_process, __VA_ARGS__);               \
@@ -462,7 +462,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
                 Replicate0(Get_Result_Ptr, Remove_Parentheses(results)),       \
                 Replicate0(Stries_Last, __VA_ARGS__),                          \
                 Replicate0(Ptr_Saved, __VA_ARGS__));                           \
-        Replicate0(Result_Ptr_Jump, Remove_Parentheses(results));              \
+        Replicate0_No_Comma(Result_Ptr_Jump, Remove_Parentheses(results));     \
         for (npy_intp j = outer_start; j >= 0; j--) {                          \
           if (current_process[j] < __shape[j]) {                               \
             current_process[j]++;                                              \

@@ -158,6 +158,7 @@ PyObject *create_Tensor(Tensor *tensor, PyObject *other, PyObject *data,
     Tensor_SetGrad_without_init_value(self, zero);
     return (PyObject *)self;
   } else {
+    PyErr_SetString(PyExc_MemoryError, "Unable to allocate memory for Tensor Object");
     return NULL;
   }
 }
@@ -241,6 +242,7 @@ PyObject *tensor_add(PyObject *self, PyObject *other) {
   Numboost_AssertNULL(result);
   PyObject *to_return =
       create_Tensor((Tensor *)self, other, result, "AddBackward");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 
@@ -269,6 +271,7 @@ PyObject *tensor_mul(PyObject *self, PyObject *other) {
   Numboost_AssertNULL(result);
   PyObject *to_return =
       create_Tensor((Tensor *)self, other, result, "MulBackward");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 
@@ -357,6 +360,7 @@ PyObject *tensor_sub(PyObject *self, PyObject *other) {
   Numboost_AssertNULL(result);
   PyObject *to_return =
       create_Tensor((Tensor *)self, other, result, "SubBackward");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 
@@ -383,6 +387,7 @@ PyObject *tensor_pow(PyObject *self, PyObject *other) {
   Numboost_AssertNULL(result);
   PyObject *to_return =
       create_Tensor((Tensor *)self, Py_None, result, "PowBackward");
+  Numboost_AssertNULL(to_return);
   if (((Tensor *)self)->require_grad)
     store_power((Tensor *)to_return, other);
   return to_return;
@@ -415,6 +420,7 @@ PyObject *tensor_matmul(PyObject *self, PyObject *other) {
   }
   PyObject *new_tensor =
       create_Tensor(_self, other, numpy_result, "MatMulBackward");
+  Numboost_AssertNULL(new_tensor);
   return new_tensor;
 }
 
@@ -492,6 +498,7 @@ PyObject *tensor_lshift(PyObject *self, PyObject *other) {
   PyObject *result = numboost_lshift(_self->data, other, NULL);
   Numboost_AssertNULL(result);
   PyObject *to_return = create_Tensor(_self, other, result, "");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 
@@ -516,6 +523,7 @@ PyObject *tensor_rshift(PyObject *self, PyObject *other) {
   PyObject *result = numboost_rshift(_self->data, other, NULL);
   Numboost_AssertNULL(result);
   PyObject *to_return = create_Tensor(_self, other, result, "");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 
@@ -539,6 +547,7 @@ PyObject *tensor_and(PyObject *self, PyObject *other) {
   PyObject *result = numboost_bitwise_and(_self->data, other, NULL);
   Numboost_AssertNULL(result);
   PyObject *to_return = create_Tensor(_self, other, result, "");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 
@@ -548,6 +557,7 @@ PyObject *tensor_xor(PyObject *self, PyObject *other) {
   PyObject *result = numboost_bitwise_xor(_self->data, other, NULL);
   Numboost_AssertNULL(result);
   PyObject *to_return = create_Tensor(_self, other, result, "");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 
@@ -557,6 +567,7 @@ PyObject *tensor_or(PyObject *self, PyObject *other) {
   PyObject *result = numboost_bitwise_or(_self->data, other, NULL);
   Numboost_AssertNULL(result);
   PyObject *to_return = create_Tensor(_self, other, result, "");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 
@@ -606,6 +617,7 @@ PyObject *tensor_remainder(PyObject *self, PyObject *other) {
   PyObject *result = numboost_mod(_self->data, other, NULL);
   Numboost_AssertNULL(result);
   PyObject *to_return = create_Tensor(_self, other, result, "");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 
@@ -652,33 +664,18 @@ PyObject *tensor_ixor(PyObject *self, PyObject *other) {
 }
 
 PyObject *tensor_divmod(PyObject *self, PyObject *other) {
-  Tensor *tmp;
-  if (TRACK) {
-    PyObject *jaxarray = PyNumber_Divmod(self, other);
-    return jaxarray;
-  }
   Tensor *_self = (Tensor *)self;
-  if (_self->require_grad) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "Divmod operation is not differentiable");
-    return NULL;
+  Numboost_AssertRequireGrad(_self,
+                             "DivMod operation not support auto backward");
+  PyObject **result = numboost_divmod(_self->data, other, NULL, 0);
+  Numboost_AssertNULL(result);
+  PyObject *ret = (PyObject *)PyTuple_New(2);
+  for (int i = 0; i < 2; i++) {
+    PyObject *to_return = create_Tensor(_self, other, result[i], "");
+    Numboost_AssertNULL(to_return);
+    PyTuple_SET_ITEM(ret, i, to_return);
   }
-  if (Py_TYPE(other) == Tensor_type) {
-    tmp = (Tensor *)other;
-    PyObject *numpy_result = PyNumber_Divmod(_self->data, tmp->data);
-    if (numpy_result == NULL) {
-      return NULL;
-    }
-    PyObject *new_tensor = new_Tensor(_self, tmp, numpy_result, "");
-    return new_tensor;
-  } else {
-    PyObject *numpy_result = PyNumber_Divmod(_self->data, other);
-    if (numpy_result == NULL) {
-      return NULL;
-    }
-    PyObject *new_tensor = create_Tensor(_self, other, numpy_result, "");
-    return new_tensor;
-  }
+  return ret;
 }
 
 PyObject *tensor_iremainder(PyObject *self, PyObject *other) {
@@ -701,6 +698,7 @@ PyObject *tensor_floordiv(PyObject *self, PyObject *other) {
   PyObject *result = numboost_fdiv(_self->data, other, NULL);
   Numboost_AssertNULL(result);
   PyObject *to_return = create_Tensor(_self, other, result, "");
+  Numboost_AssertNULL(to_return);
   return to_return;
 }
 

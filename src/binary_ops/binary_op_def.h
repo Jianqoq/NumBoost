@@ -19,6 +19,22 @@
       binary_##name##_void##sufix,        binary_##name##_datetime##sufix,     \
       binary_##name##_timedelta##sufix,   binary_##name##_half##sufix};
 
+#define Register_Binary_Operation_Array_MultiOut(name, sufix)                  \
+  PyObject **(*name##_operations##sufix[])(PyObject *, PyObject *,             \
+                                           PyObject **, int) = {               \
+      binary_##name##_bool##sufix,        binary_##name##_byte##sufix,         \
+      binary_##name##_ubyte##sufix,       binary_##name##_short##sufix,        \
+      binary_##name##_ushort##sufix,      binary_##name##_int##sufix,          \
+      binary_##name##_uint##sufix,        binary_##name##_long##sufix,         \
+      binary_##name##_ulong##sufix,       binary_##name##_longlong##sufix,     \
+      binary_##name##_ulonglong##sufix,   binary_##name##_float##sufix,        \
+      binary_##name##_double##sufix,      binary_##name##_longdouble##sufix,   \
+      binary_##name##_cfloat##sufix,      binary_##name##_cdouble##sufix,      \
+      binary_##name##_clongdouble##sufix, binary_##name##_object##sufix,       \
+      binary_##name##_string##sufix,      binary_##name##_unicode##sufix,      \
+      binary_##name##_void##sufix,        binary_##name##_datetime##sufix,     \
+      binary_##name##_timedelta##sufix,   binary_##name##_half##sufix};
+
 #define Register_Binary_Operations_Floating_Types(name, loop_body)             \
   Register_Binary_Operation(name, float, NPY_FLOAT, loop_body);                \
   Register_Binary_Operation(name, double, NPY_DOUBLE, loop_body);              \
@@ -68,6 +84,72 @@
   Register_Binary_Operation_Err(name, datetime);                               \
   Register_Binary_Operation_Err(name, timedelta);
 
+#define Register_Binary_Operations_Floating_Types_MultiOut(name, loop_body,    \
+                                                           ...)                \
+  Register_Binary_Operation_MultiOut(name, float, NPY_FLOAT, loop_body,        \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, double, NPY_DOUBLE, loop_body,      \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, longdouble, NPY_LONGDOUBLE,         \
+                                     loop_body, __VA_ARGS__);                  \
+  Register_Binary_Operation_MultiOut(name, half, NPY_HALF, loop_body,          \
+                                     __VA_ARGS__);
+
+#define Register_Binary_Operations_Interger_Types_MultiOut(name, loop_body,    \
+                                                           ...)                \
+  Register_Binary_Operation_MultiOut(name, bool, NPY_BOOL, loop_body,          \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, byte, NPY_BYTE, loop_body,          \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, ubyte, NPY_UBYTE, loop_body,        \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, short, NPY_SHORT, loop_body,        \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, ushort, NPY_USHORT, loop_body,      \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, int, NPY_INT, loop_body,            \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, uint, NPY_UINT, loop_body,          \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, long, NPY_LONG, loop_body,          \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, ulong, NPY_ULONG, loop_body,        \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, longlong, NPY_LONGLONG, loop_body,  \
+                                     __VA_ARGS__);                             \
+  Register_Binary_Operation_MultiOut(name, ulonglong, NPY_ULONGLONG,           \
+                                     loop_body, __VA_ARGS__);
+
+#define Register_Binary_Operations_Err_Floating_Types_MultiOut(name)           \
+  Register_Binary_Operation_Err_MultiOut(name, float);                         \
+  Register_Binary_Operation_Err_MultiOut(name, double);                        \
+  Register_Binary_Operation_Err_MultiOut(name, longdouble);                    \
+  Register_Binary_Operation_Err_MultiOut(name, half);
+
+#define Register_Binary_Operations_Err_Interger_Types_MultiOut(name)           \
+  Register_Binary_Operation_Err_MultiOut(name, bool);                          \
+  Register_Binary_Operation_Err_MultiOut(name, byte);                          \
+  Register_Binary_Operation_Err_MultiOut(name, ubyte);                         \
+  Register_Binary_Operation_Err_MultiOut(name, short);                         \
+  Register_Binary_Operation_Err_MultiOut(name, ushort);                        \
+  Register_Binary_Operation_Err_MultiOut(name, int);                           \
+  Register_Binary_Operation_Err_MultiOut(name, uint);                          \
+  Register_Binary_Operation_Err_MultiOut(name, long);                          \
+  Register_Binary_Operation_Err_MultiOut(name, ulong);                         \
+  Register_Binary_Operation_Err_MultiOut(name, longlong);                      \
+  Register_Binary_Operation_Err_MultiOut(name, ulonglong);
+
+#define Register_Binary_Operation_Err_Not_Support_Types_MultiOut(name)         \
+  Register_Binary_Operation_Err_MultiOut(name, cfloat);                        \
+  Register_Binary_Operation_Err_MultiOut(name, cdouble);                       \
+  Register_Binary_Operation_Err_MultiOut(name, clongdouble);                   \
+  Register_Binary_Operation_Err_MultiOut(name, object);                        \
+  Register_Binary_Operation_Err_MultiOut(name, string);                        \
+  Register_Binary_Operation_Err_MultiOut(name, unicode);                       \
+  Register_Binary_Operation_Err_MultiOut(name, void);                          \
+  Register_Binary_Operation_Err_MultiOut(name, datetime);                      \
+  Register_Binary_Operation_Err_MultiOut(name, timedelta);
+
 #define Register_Binary_Operation_Method(name, op_enum)                        \
   PyObject *numboost_##name(PyObject *a, PyObject *b, PyObject **outs_arr) {   \
     int a_type = any_to_type_enum(a);                                          \
@@ -88,7 +170,8 @@
   }
 
 #define Register_Binary_Operation_Method_MultiOut(name, op_enum)               \
-  PyObject *numboost_##name(PyObject *a, PyObject *b, PyObject **outs_arr) {   \
+  PyObject **numboost_##name(PyObject *a, PyObject *b, PyObject **outs,        \
+                             int outs_len) {                                   \
     int a_type = any_to_type_enum(a);                                          \
     int b_type = any_to_type_enum(b);                                          \
     int result_type = binary_result_type(op_enum, a_type, type_2_size[a_type], \
@@ -99,7 +182,7 @@
       return NULL;                                                             \
     }                                                                          \
     assert(result_type <= NPY_HALF);                                           \
-    PyObject *result = name##_operations[result_type](a, b, outs_arr, 1);      \
+    PyObject **result = name##_operations[result_type](a, b, outs, outs_len);  \
     if (result == NULL) {                                                      \
       return NULL;                                                             \
     }                                                                          \
@@ -126,8 +209,8 @@
 
 #define Register_Binary_Operation_MultiOut(name, type, result_type,            \
                                            inner_loop_body_universal, ...)     \
-  PyObject *binary_##name##_##type(PyObject *a, PyObject *b,                   \
-                                   PyObject **out_arr, int out_arr_len) {      \
+  PyObject **binary_##name##_##type(PyObject *a, PyObject *b,                  \
+                                    PyObject **out_arr, int out_arr_len) {     \
     PyArrayObject **return_arr = (PyArrayObject **)malloc(                     \
         sizeof(PyArrayObject *) * (Args_Num(__VA_ARGS__)));                    \
     Perform_Universal_Operation(npy_##type, return_arr, result_type,           \
@@ -136,7 +219,6 @@
     if (return_arr == NULL) {                                                  \
       return NULL;                                                             \
     } else {                                                                   \
-      PyObject *ret = (PyObject *)PyTuple_New((Args_Num(__VA_ARGS__)));        \
       for (int i = 0; i < (Args_Num(__VA_ARGS__)); i++) {                      \
         if (return_arr[i] == NULL) {                                           \
           for (int j = 0; j < (Args_Num(__VA_ARGS__)); j++) {                  \
@@ -145,19 +227,23 @@
             }                                                                  \
           }                                                                    \
           free(return_arr);                                                    \
-          Py_DECREF(ret);                                                      \
           return NULL;                                                         \
-        } else {                                                               \
-          PyTuple_SET_ITEM(ret, i, return_arr[i])                              \
         }                                                                      \
       }                                                                        \
-      return ret;                                                              \
+      return (PyObject **)return_arr;                                          \
     }                                                                          \
   }
 
 #define Register_Binary_Operation_Err(name, type)                              \
   PyObject *binary_##name##_##type(PyObject *a, PyObject *b,                   \
                                    PyObject **outs_arr, int outs_arr_len) {    \
+    PyErr_SetString(PyExc_TypeError, Str(name not supported for type));        \
+    return NULL;                                                               \
+  }
+
+#define Register_Binary_Operation_Err_MultiOut(name, type)                     \
+  PyObject **binary_##name##_##type(PyObject *a, PyObject *b,                  \
+                                    PyObject **outs_arr, int outs_arr_len) {   \
     PyErr_SetString(PyExc_TypeError, Str(name not supported for type));        \
     return NULL;                                                               \
   }
@@ -174,4 +260,6 @@ PyObject *numboost_fdiv(PyObject *a, PyObject *b, PyObject **out);
 PyObject *numboost_bitwise_and(PyObject *a, PyObject *b, PyObject **out);
 PyObject *numboost_bitwise_xor(PyObject *a, PyObject *b, PyObject **out);
 PyObject *numboost_bitwise_or(PyObject *a, PyObject *b, PyObject **out);
+PyObject **numboost_divmod(PyObject *a, PyObject *b, PyObject **outs,
+                           int outs_len);
 #endif

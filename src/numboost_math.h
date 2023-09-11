@@ -72,6 +72,11 @@
 #define nb_modf(x, y) ((y) == 0 ? 0 : npy_fmodf((x), (y)))
 #define nb_modl(x, y) ((y) == 0 ? 0 : npy_fmodl((x), (y)))
 
+#define nb_floori(x) (x)
+#define nb_floor(x) npy_floor((x))
+#define nb_floorf(x) npy_floorf((x))
+#define nb_floorl(x) npy_floorl((x))
+
 #define nb_add(x, y) ((x) + (y))
 #define nb_addi(x, y) ((x) + (y))
 #define nb_addf(x, y) ((x) + (y))
