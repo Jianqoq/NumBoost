@@ -412,7 +412,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     int axis_sep = ndim - 1; /*optimize*/                                      \
     npy_intp inner_loop_size = PyArray_SHAPE(first_result)[axis_sep];          \
     npy_intp outter_loop_size = _size / inner_loop_size;                       \
-    npy_intp outer_start = max_dim - axis_sep;                                 \
+    npy_intp outer_start = max_dim - 1; /*optimize*/                           \
     npy_intp *shape_copy = (npy_intp *)malloc(sizeof(npy_intp) * ndim);        \
     Replicate(Init_Result_Ptrs, type, Remove_Parentheses(results));            \
     for (int i = 0; i < ndim; i++) {                                           \
@@ -464,7 +464,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
                 Replicate0(Ptr_Saved, __VA_ARGS__));                           \
         Replicate0_No_Comma(Result_Ptr_Jump, Remove_Parentheses(results));     \
         for (npy_intp j = outer_start; j >= 0; j--) {                          \
-          if (current_process[j] < __shape[j]) {                               \
+          if (current_process[j] < shape_cpy[j]) {                             \
             current_process[j]++;                                              \
             Replicate(Adjust_Ptr2, j, __VA_ARGS__);                            \
             break;                                                             \
