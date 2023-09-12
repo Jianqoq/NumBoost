@@ -89,7 +89,7 @@ mymodule = Extension('Numboost',
                          r'C:\Users\123\autograd-C\Autograd-C\src\libraries\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release',
                          os.path.join(os.path.dirname(numpy.core.__file__), 'lib')
                      ],
-                     libraries=['mkl_rt', 'npymath', 'jemalloc']
+                     libraries=['mkl_rt', 'npymath']
                      if platform.system() == 'Windows' else [
                          'mkl_rt', 'gomp', 'npymath'],
                      language='c',
