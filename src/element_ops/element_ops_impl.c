@@ -506,17 +506,6 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
   } else {
     keepdims_c = PyObject_IsTrue(keepdims);
   }
-  if (PyArray_IsAnyScalar(axis)) {
-    axises[0] = (int)PyLong_AsLong(axis);
-  } else if (PyTuple_Check(axis)) {
-    axis_len = (int)PyTuple_GET_SIZE(axis);
-    for (int i = 0; i < axis_len; i++) {
-      axises[i] = (int)PyLong_AsLong(PyTuple_GET_ITEM(axis, i));
-    }
-  } else {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for axis");
-    return NULL;
-  }
   if (_a == NULL || axis == NULL) {
     PyErr_SetString(PyExc_TypeError,
                     "Expected at least 2 positional arguments");
@@ -527,91 +516,112 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
     return NULL;
   }
   PyArrayObject *a = (PyArrayObject *)((Tensor *)_a)->data;
+  if (PyArray_IsAnyScalar(axis)) {
+#define Assert_Axis_Valid(idx, axises, array)                                  \
+  if (axises[idx] >= PyArray_NDIM(array)) {                                    \
+    PyErr_SetString(PyExc_TypeError, "Invalid axis");                          \
+    return NULL;                                                               \
+  }
+    axises[0] = (int)PyLong_AsLong(axis);
+    Assert_Axis_Valid(0, axises, a);
+  } else if (PyTuple_Check(axis)) {
+    axis_len = (int)PyTuple_GET_SIZE(axis);
+    for (int i = 0; i < axis_len; i++) {
+      axises[i] = (int)PyLong_AsLong(PyTuple_GET_ITEM(axis, i));
+      Assert_Axis_Valid(i, axises, a);
+    }
+  } else {
+    PyErr_SetString(PyExc_TypeError, "Invalid type for axis");
+    return NULL;
+  }
   int a_ndim = PyArray_NDIM(a);
   npy_intp *a_shape = PyArray_SHAPE(a);
-  npy_intp *new_shape = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);
-  npy_intp *_result_shape = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);
-  npy_intp *tmp_result_strides = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);
-  npy_intp *a_strides = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);
-  memcpy(new_shape, a_shape, sizeof(npy_intp) * a_ndim);
-  memcpy(_result_shape, a_shape, sizeof(npy_intp) * a_ndim);
-  memcpy(tmp_result_strides, PyArray_STRIDES(a), sizeof(npy_intp) * a_ndim);
-  memcpy(a_strides, PyArray_STRIDES(a), sizeof(npy_intp) * a_ndim);
+  npy_intp *a_shape_cpy = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);
+  npy_intp *transpose_axis = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);
+  memcpy(a_shape_cpy, a_shape, sizeof(npy_intp) * a_ndim);
   for (int i = 0; i < axis_len; i++) {
-    new_shape[axises[i]] = 1;
-    _result_shape[axises[i]] = 0;
-    tmp_result_strides[axises[i]] = 0;
+    a_shape_cpy[axises[i]] = 0;
   }
-  npy_intp *result_shape = (npy_intp *)calloc(
-      keepdims_c ? a_ndim : a_ndim - axis_len, sizeof(npy_intp));
-  for (int i = 0, j = 0; i < a_ndim; i++) {
-    if (_result_shape[i] != 0) {
-      result_shape[j++] = _result_shape[i];
-    } else if (keepdims_c) {
-      result_shape[j++] = 1;
+  int j = a_ndim - axis_len;
+  int k = 0;
+  int track_idx = 0;
+  for (int i = 0; i < a_ndim; i++) {
+    if (a_shape_cpy[i] != 0) {
+      transpose_axis[k++] = i;
+    } else {
+      transpose_axis[j++] = axises[track_idx++];
     }
-    tmp_result_strides[i] /= sizeof(npy_double);
-    a_strides[i] /= sizeof(npy_double);
+  }
+  PyArray_Dims d = {transpose_axis, a_ndim};
+  PyObject *new = PyArray_Transpose(a, &d);
+  npy_intp *new_strides = PyArray_STRIDES((PyArrayObject *)new);
+  npy_intp *new_strides_cpy = malloc(sizeof(npy_intp) * a_ndim);
+  memcpy(new_strides_cpy, new_strides, sizeof(npy_intp) * a_ndim);
+  for (int i = 0; i < a_ndim; i++) {
+    new_strides_cpy[i] /= sizeof(npy_double);
+  }
+  npy_intp outter_size = 1;
+  npy_intp *new_shape_cpy = malloc(sizeof(npy_intp) * a_ndim);
+  memcpy(new_shape_cpy, PyArray_SHAPE((PyArrayObject *)new),
+         sizeof(npy_intp) * a_ndim);
+  for (int i = 0; i < a_ndim - axis_len; i++) {
+    outter_size *= a_shape[transpose_axis[i]];
+  }
+  npy_intp inner_size = PyArray_SHAPE((PyArrayObject *)new)[a_ndim - 1];
+  npy_intp outer_size_ = 1;
+  if (axis_len > 1) {
+    for (int i = a_ndim - axis_len; i < (a_ndim - 1); i++) {
+      outer_size_ *= new_shape_cpy[i];
+    }
+  }
+  npy_intp *progress = malloc(sizeof(npy_intp) * a_ndim);
+  for (int j = 0; j < a_ndim; j++) {
+    new_shape_cpy[j]--;
+    progress[j] = 0;
+  }
+  npy_intp end = 0;
+  npy_double *a_data = PyArray_DATA((PyArrayObject *)new);
+  npy_intp *result_shape = malloc(sizeof(npy_intp) * (a_ndim - axis_len));
+  k = 0;
+  for (int i = 0; i < a_ndim; i++) {
+    if (a_shape_cpy[i] != 0) {
+      result_shape[k++] = a_shape_cpy[i];
+    }
   }
   PyArrayObject *result = (PyArrayObject *)PyArray_EMPTY(
-      keepdims_c ? a_ndim : a_ndim - axis_len, result_shape, NPY_DOUBLE, 0);
-      int result_ndim = PyArray_NDIM(result);
-  free(_result_shape);
-  free(result_shape);
-  npy_double *a_data = (npy_double *)PyArray_DATA(a);
-  npy_double *result_data = (npy_double *)PyArray_DATA(result);
-  npy_intp size = PyArray_SIZE(a);
-  npy_intp outter_size = 1;
-  for (int i = 0; i < (a_ndim - 1); i++) {
-    outter_size *= a_shape[i];
-  }
-  npy_intp highest_axis = 0;
-  npy_intp inner_size = size / outter_size;
-  npy_intp *progress = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);
-  npy_intp *shape_cpy = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);
-  npy_intp *indice_result_cache = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);
-  memcpy(shape_cpy, a_shape, sizeof(npy_intp) * a_ndim);
-  for (int i = 0; i < a_ndim; i++) {
-    shape_cpy[i]--;
-    progress[i] = 0;
-    indice_result_cache[i] = tmp_result_strides[i] * shape_cpy[i];
-  }
-  npy_intp idx;
-  npy_intp result_size = PyArray_SIZE(result);
-  npy_intp result_stride_last =
-      tmp_result_strides[keepdims_c ? a_ndim - 1 : (a_ndim - axis_len - 1)];
-  npy_intp a_stride_last = PyArray_STRIDES(a)[a_ndim - 1] / sizeof(npy_double);
-#pragma omp parallel for
-  for (idx = 0; idx < result_size; idx++) {
-    result_data[idx] = 0;
-  }
-  int cnt = 0;
-  for (npy_intp i = 0; i < outter_size; i++) {
-
-    for (npy_intp k = 0; k < inner_size; k++) {
-      result_data[k] += a_data[k * a_stride_last];
-    }
-    for (npy_intp j = a_ndim - 2; j >= 0; j--) {
-      if (progress[j] < shape_cpy[j]) {
-        progress[j]++;
-        result_data += tmp_result_strides[j];
-        a_data += a_strides[j];
-        break;
-      } else {
-        progress[j] = 0;
-        result_data -= tmp_result_strides[j] * shape_cpy[j];
-        a_data -= a_strides[j] * shape_cpy[j];
+      a_ndim - axis_len, result_shape, NPY_DOUBLE, 0);
+  npy_double *result_data = PyArray_DATA(result);
+  npy_intp i;
+  npy_double sum = 0;
+#pragma omp parallel for firstprivate(sum)
+  for (i = 0; i < outter_size; i++) {
+    sum = 0;
+    for (npy_intp u = 0; u < outer_size_; u++) {
+      for (npy_intp k = 0; k < inner_size; k++) {
+        sum += a_data[k * new_strides_cpy[a_ndim - 1]];
+      }
+      for (npy_intp j = a_ndim - 2; j >= end; j--) {
+        if (progress[j] < new_shape_cpy[j]) {
+          progress[j]++;
+          a_data += new_strides_cpy[j];
+          break;
+        } else {
+          progress[j] = 0;
+          a_data -= new_strides_cpy[j] * new_shape_cpy[j];
+          if (j == end && j > 0)
+            a_data += new_strides_cpy[j - 1];
+        }
       }
     }
+    result_data[i] = sum;
   }
-  free(progress);
-  free(shape_cpy);
-  free(indice_result_cache);
+  //   free(progress);
+  //   free(shape_cpy);
+  //   free(indice_result_cache);
   Tensor *to_return =
       (Tensor *)create_tensor((Tensor *)_a, Py_None, (PyObject *)result, "");
   return to_return;
 }
-
 Tensor *_max(PyObject *self, PyObject *const *args, size_t nargsf) {
   (void)nargsf;
   (void)self;
