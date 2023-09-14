@@ -91,6 +91,8 @@
         Demote(type, (generic_type)npy_copysign(0.0, (npy_double)div_res2));   \
   }
 
+/*logic operation don't need to promote data type since it doesn't support float
+ * type*/
 #define And_LoopBody(generic_type, type, i, result_ptr, a_last_stride,         \
                      b_last_stride, a_ptr, b_ptr)                              \
   result_ptr[i] = a_ptr[i * a_last_stride] & b_ptr[i * b_last_stride];
@@ -111,9 +113,9 @@
   if (!b_val) {                                                                \
     remainder_ptr[i] = 0;                                                      \
   } else {                                                                     \
-    remainder_ptr[i] =                                                         \
-        Demote(type, mod_result +                                              \
-                         ((mod_result != 0) & ((a_val < 0) != (b_val < 0))) * b_val); \
+    remainder_ptr[i] = Demote(                                                 \
+        type, mod_result +                                                     \
+                  ((mod_result != 0) & ((a_val < 0) != (b_val < 0))) * b_val); \
   }                                                                            \
   generic_type div_res;                                                        \
   Div((a_val - mod_result), b_val, div_res, generic_type, generic_type);       \

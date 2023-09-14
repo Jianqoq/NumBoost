@@ -581,6 +581,11 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
   }
   npy_intp end = 0;
   npy_double *a_data = PyArray_DATA((PyArrayObject *)new);
+  npy_intp *new_shape = PyArray_SHAPE((PyArrayObject *)new);
+  npy_intp *new_result_strides = malloc(sizeof(npy_intp) * a_ndim);
+  for (int i = 0; i < a_ndim; i++) {
+    new_result_strides[i] = new_strides[i] / sizeof(npy_double);
+  }
   npy_intp *result_shape = malloc(sizeof(npy_intp) * (a_ndim - axis_len));
   k = 0;
   for (int i = 0; i < a_ndim; i++) {
@@ -592,32 +597,65 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
       a_ndim - axis_len, result_shape, NPY_DOUBLE, 0);
   npy_double *result_data = PyArray_DATA(result);
   npy_intp i;
-  npy_double sum = 0;
-#pragma omp parallel for firstprivate(sum)
-  for (i = 0; i < outter_size; i++) {
-    sum = 0;
-    for (npy_intp u = 0; u < outer_size_; u++) {
-      for (npy_intp k = 0; k < inner_size; k++) {
-        sum += a_data[k * new_strides_cpy[a_ndim - 1]];
-      }
-      for (npy_intp j = a_ndim - 2; j >= end; j--) {
-        if (progress[j] < new_shape_cpy[j]) {
-          progress[j]++;
-          a_data += new_strides_cpy[j];
-          break;
-        } else {
-          progress[j] = 0;
-          a_data -= new_strides_cpy[j] * new_shape_cpy[j];
-          if (j == end && j > 0)
-            a_data += new_strides_cpy[j - 1];
+
+  npy_intp num_threads =
+      outter_size < omp_get_max_threads() ? outter_size : omp_get_max_threads();
+  npy_intp task_amount = 0;
+  npy_intp **current_shape_process_ =
+      (npy_intp **)malloc(sizeof(npy_intp *) * num_threads);
+  for (npy_intp id = 0; id < num_threads; id++) {
+    npy_intp start_index =
+        id * (outter_size / num_threads) + min(id, outter_size % num_threads);
+    npy_intp end_index = start_index + outter_size / num_threads +
+                         (id < outter_size % num_threads);
+    npy_intp current_task_amount = task_amount;
+    task_amount += (end_index - start_index) * outer_size_ * inner_size;
+    npy_intp *current_shape_process =
+        (npy_intp *)calloc(a_ndim, sizeof(npy_intp));
+    for (npy_intp j = a_ndim - 1; j >= 0; j--) {
+      current_shape_process[j] = current_task_amount % new_shape[j];
+      current_task_amount /= new_shape[j];
+    }
+    current_shape_process_[id] = current_shape_process;
+  }
+  for (int id = 0; id < num_threads; id++) {
+    npy_intp *current_process = current_shape_process_[id];
+    npy_double *a_data_saved = a_data;
+    for (npy_intp j = a_ndim - 1; j >= 0; j--) {
+      a_data_saved += current_process[j] * new_result_strides[j];
+    }
+  }
+  npy_intp a_last_stride = new_strides_cpy[a_ndim - 1];
+#pragma omp parallel num_threads(num_threads) firstprivate(a_data)
+  {
+    npy_intp id = omp_get_thread_num();
+    npy_intp *current_process = current_shape_process_[id];
+    for (npy_intp j = a_ndim - 1; j >= 0; j--) {
+      a_data += current_process[j] * new_result_strides[j];
+    }
+#pragma omp for schedule(static)
+    for (i = 0; i < outter_size; i++) {
+      npy_double sum = 0;
+      for (npy_intp u = 0; u < outer_size_; u++) {
+        for (npy_intp k = 0; k < inner_size; k++) {
+          sum += a_data[k * a_last_stride];
+        }
+        for (npy_intp j = a_ndim - 2; j >= end; j--) {
+          if (current_process[j] < new_shape_cpy[j]) {
+            current_process[j]++;
+            a_data += new_strides_cpy[j];
+            break;
+          } else {
+            current_process[j] = 0;
+            a_data -= new_strides_cpy[j] * new_shape_cpy[j];
+            if (j == end && j > 0)
+              a_data += new_strides_cpy[j - 1];
+          }
         }
       }
+      result_data[i] = sum;
     }
-    result_data[i] = sum;
   }
-  //   free(progress);
-  //   free(shape_cpy);
-  //   free(indice_result_cache);
   Tensor *to_return =
       (Tensor *)create_tensor((Tensor *)_a, Py_None, (PyObject *)result, "");
   return to_return;
