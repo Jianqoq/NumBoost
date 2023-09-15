@@ -13,8 +13,8 @@ inline bool shape_isequal(npy_intp *a_shape, npy_intp *b_shape, int a_ndim,
 }
 
 inline bool isbroadcastable_same_ndim(npy_intp *a_shape, npy_intp *b_shape,
-                                       int ndim, npy_intp **a_new_shape,
-                                       npy_intp **b_new_shape) {
+                                      int ndim, npy_intp **a_new_shape,
+                                      npy_intp **b_new_shape) {
   int i;
   for (i = 0; i < ndim; i++)
     if (a_shape[i] != b_shape[i]) {
@@ -79,6 +79,31 @@ inline bool shape_smaller(npy_intp *a_shape, npy_intp *b_shape, int a_ndim,
       return true;
     else
       return false;
+  }
+}
+
+inline bool is_in(npy_intp *arr, int len, int target) {
+  for (npy_intp i = 0; i < len; i++) {
+    if (arr[i] == target)
+      return true;
+  }
+  return false;
+}
+
+inline void move_axes_to_innermost(int *axises, int axises_len, npy_intp *shape,
+                         int a_ndim, npy_intp *shape_to_transpose) {
+  for (int i = 0; i < axises_len; i++) {
+    shape[axises[i]] = 0;
+  }
+  int j = a_ndim - axises_len;
+  int k = 0;
+  int track_idx = 0;
+  for (int i = 0; i < a_ndim; i++) {
+    if (shape[i] != 0) {
+      shape_to_transpose[k++] = i;
+    } else {
+      shape_to_transpose[j++] = axises[track_idx++];
+    }
   }
 }
 
