@@ -37,7 +37,7 @@ Broadcast:
 ![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_5.png)
 
 Sum:
-![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/sum.png)
+![](https://github.com/Jianqoq/NumBoost/blob/main/src/benchmarks/sum.png)
 
 # Installation
 NumBoost is still in pretty early stage, therefore, there will be a lot of bugs and missing features.
