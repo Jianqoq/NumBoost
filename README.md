@@ -31,17 +31,13 @@ output:
 0.030042648315429688
 ```
 Elementwise:
-
-![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img.png)
-![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_1.png)
 ![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_2.png)
-![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_3.png)
 
 Broadcast:
-
-![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_4.png)
 ![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_5.png)
-![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_6.png)
+
+Sum:
+![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/sum.png)
 
 # Installation
 NumBoost is still in pretty early stage, therefore, there will be a lot of bugs and missing features.
