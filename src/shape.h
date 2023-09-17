@@ -82,8 +82,8 @@ inline bool shape_smaller(npy_intp *a_shape, npy_intp *b_shape, int a_ndim,
   }
 }
 
-inline bool is_in(npy_intp *arr, int len, int target) {
-  for (npy_intp i = 0; i < len; i++) {
+inline bool is_in(int *arr, int len, int target) {
+  for (int i = 0; i < len; i++) {
     if (arr[i] == target)
       return true;
   }
