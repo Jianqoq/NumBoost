@@ -567,7 +567,7 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
 
   PyArray_Dims d = {transposed_axis, a_ndim};
   PyArrayObject *transposed_arr = (PyArrayObject *)PyArray_Transpose(a, &d);
-
+  free(transposed_axis);
   npy_intp *transposed_strides = PyArray_STRIDES(transposed_arr);
   npy_intp *transposed_strides_cpy = malloc(sizeof(npy_intp) * a_ndim);
   memcpy(transposed_strides_cpy, transposed_strides, sizeof(npy_intp) * a_ndim);
@@ -592,27 +592,11 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
       result_shape[k++] = a_shape_cpy[i];
     }
   }
+  free(a_shape_cpy);
   PyArrayObject *result = (PyArrayObject *)PyArray_ZEROS(
       a_ndim - axis_len, result_shape, NPY_DOUBLE, 0);
+  free(result_shape);
   npy_double *result_data = PyArray_DATA(result);
-  npy_intp *strides_cpy = malloc(sizeof(npy_intp) * (a_ndim - axis_len));
-  npy_intp *progress = calloc(a_ndim - axis_len, sizeof(npy_intp));
-  npy_intp *shape_progress = calloc(a_ndim, sizeof(npy_intp));
-  npy_intp *result_strides = PyArray_STRIDES(result);
-  npy_intp *result_strides_cpy = malloc(sizeof(npy_intp) * (a_ndim - axis_len));
-  memcpy(result_strides_cpy, result_strides,
-         sizeof(npy_intp) * (a_ndim - axis_len));
-  for (int i = 0; i < a_ndim - axis_len; i++) {
-    result_strides_cpy[i] /= sizeof(npy_double);
-  }
-
-  for (int k = 0; k < a_ndim - axis_len; k++) {
-    strides_cpy[k] = transposed_strides_cpy[k];
-  }
-
-  int *tracker = malloc(sizeof(int) * (a_ndim - axis_len));
-  npy_intp *result_strides_map = calloc(a_ndim, sizeof(npy_intp));
-  npy_intp mock_ptr = 0;
 
   if (a_ndim == axis_len) {
     npy_double sum = 0;
@@ -726,6 +710,8 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
       free(progress_init_a_data_arr);
       free(a_data_ptr_arr);
       free(result_ptr_arr);
+      free(transposed_shape_cpy);
+      free(transposed_strides_cpy);
     } else {
       npy_intp outer_loop_size = result_size / inner_loop_size;
       npy_intp inner_loop_size_2 = a_size / result_size;
@@ -815,6 +801,8 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
         free(progress_init_a_data_arr[id]);
       }
       free(progress_init_a_data_arr);
+      free(transposed_shape_cpy);
+      free(transposed_strides_cpy);
     }
   }
   Tensor *to_return =
