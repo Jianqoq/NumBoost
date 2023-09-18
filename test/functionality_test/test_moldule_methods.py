@@ -11,7 +11,7 @@ import num_boost as nb
 
 
 def test_sum():
-    array = np.arange(10*10*10*10*10).reshape((10, 10, 10, 10, 10)).astype(np.float64)
+    array = np.arange(20*10*20*10*20).reshape((20, 10, 20, 10, 20)).astype(np.float64)
     test_cases = [0, 1, 2, 3, (0, 1), (0, 2), (0, 3), (1, 2), (1, 3),
                   (2, 3), (0, 1, 2), (0, 1, 3), (0, 1, 4), (0, 2, 3),
                   (0, 2, 4), (0, 3, 4), (1, 2, 3), (1, 2, 4), (1, 3, 4),
