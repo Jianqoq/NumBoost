@@ -330,7 +330,6 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       current_shape_process_[id] = current_shape_process;                      \
     }                                                                          \
     npy_intp k = 0;                                                            \
-    Py_BEGIN_ALLOW_THREADS;                                                    \
     Omp_Parallel(num_threads,                                                  \
                  Replicate0(Get_Result_Ptr, Remove_Parentheses(results)),      \
                  Replicate0(Ptr_Saved, __VA_ARGS__)) {                         \
@@ -361,7 +360,6 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       }                                                                        \
       free(current_process);                                                   \
     }                                                                          \
-    Py_END_ALLOW_THREADS;                                                      \
     free(current_shape_process_);                                              \
     Replicate0_No_Comma(Free_Result_Ptr_Arr, Remove_Parentheses(results));     \
     Replicate0_No_Comma(Free, __VA_ARGS__);                                    \

@@ -5,10 +5,6 @@ Python: 3.11+
 
 Developed with Clangd in VSCode, compile with MSVC and GCC
 
-# Feature:
-Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, highly compatible with numpy,
-currently only support CPU, GPU support will be added in the future
-
 # Installation
 NumBoost is still in pretty early stage, therefore, there will be a lot of bugs and missing features.
 
