@@ -998,6 +998,7 @@ Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds) {
       }
     }
     result_data[0] = min_value;
+    free(min_vals);
   } else {
     /*most inner axis is the one that could be sequential*/
     npy_intp a_last_index = a_ndim - 1;

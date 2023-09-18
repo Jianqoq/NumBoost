@@ -36,7 +36,7 @@ Elementwise:
 Broadcast:
 ![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_5.png)
 
-Sum:
+Reduction:
 ![](https://github.com/Jianqoq/NumBoost/blob/main/src/benchmarks/sum.png)
 
 # Installation
