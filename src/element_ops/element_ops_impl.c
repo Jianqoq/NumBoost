@@ -696,7 +696,6 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
         npy_double *a_data_ptr = a_data_ptr_arr[thread_id];
         npy_intp *_prg = prg_arr[thread_id];
         npy_intp p = 0;
-        int cnt = 0;
 #pragma omp for schedule(static)
         for (p = 0; p < result_size; p++) {
           for (npy_intp j = 0; j < inner_loop_size_2; j++) {
