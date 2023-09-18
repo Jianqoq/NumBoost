@@ -2,7 +2,6 @@ import sys
 
 import jax
 import numpy as np
-import torch
 import os
 import pytest
 import platform
