@@ -9,36 +9,6 @@ Developed with Clangd in VSCode, compile with MSVC and GCC
 Fast, fully parallelized, vectorisation, JaxJit support, auto differentiation, highly compatible with numpy,
 currently only support CPU, GPU support will be added in the future
 
-# Performance:
-spec: i5-12600k, 64 GB 3600MHz, 1TB 990 Pro, RTX 4090, Windows 11
-
-Object creation:
-```
-a = np.array([-4, 2, 3])
-start = time.time()
-for i in range(10000):
-    a_ = Tensor(a)
-end = time.time()
-print(end - start)
-start = time.time()
-for i in range(10000):
-    a_ = torch.tensor(a)
-end = time.time()
-print(end - start)
-
-output: 
-0.0014982223510742188
-0.030042648315429688
-```
-Elementwise:
-![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_2.png)
-
-Broadcast:
-![](https://github.com/Jianqoq/NumBoost/blob/allocator_lru_cache/src/benchmarks/img_5.png)
-
-Reduction:
-![](https://github.com/Jianqoq/NumBoost/blob/main/src/benchmarks/sum.png)
-
 # Installation
 NumBoost is still in pretty early stage, therefore, there will be a lot of bugs and missing features.
 
