@@ -719,10 +719,11 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
         }
       }
       free(progress_init_a_data);
-      free(prg_arr);
       for (npy_intp id = 0; id < num_threads; id++) {
         free(progress_init_a_data_arr[id]);
+        free(prg_arr[id]);
       }
+      free(prg_arr);
       free(progress_init_a_data_arr);
       free(a_data_ptr_arr);
       free(result_ptr_arr);
