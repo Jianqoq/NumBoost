@@ -595,7 +595,6 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
   free(a_shape_cpy);
   PyArrayObject *result = (PyArrayObject *)PyArray_ZEROS(
       a_ndim - axis_len, result_shape, NPY_DOUBLE, 0);
-  free(result_shape);
   npy_double *result_data = PyArray_DATA(result);
 
   if (a_ndim == axis_len) {
@@ -618,6 +617,7 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
     npy_intp a_size = PyArray_SIZE(a);
     npy_double *a_data_ptr_cpy = a_data;
     npy_double *result_data_cpy = result_data;
+    npy_intp last_stride = PyArray_STRIDE(a, a_ndim - 1) / sizeof(npy_double);
 
     if (!is_left) {
       npy_intp outer_loop_size = a_size / inner_loop_size;
@@ -684,7 +684,7 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
         for (p = 0; p < result_size; p++) {
           for (npy_intp j = 0; j < inner_loop_size_2; j++) {
             for (npy_intp i = 0; i < inner_loop_size; i++) {
-              *result_data_ptr += a_data_ptr[i];
+              *result_data_ptr += a_data_ptr[i * last_stride];
             }
             for (int h = a_ndim_except_last - 1; h >= 0; h--) {
               if (_prg[h] < transposed_shape_cpy[h]) {
@@ -765,7 +765,7 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
         for (p2 = 0; p2 < outer_loop_size; p2++) {
           for (npy_intp j = 0; j < inner_loop_size_2; j++) {
             for (npy_intp idx = 0; idx < inner_loop_size; idx++) {
-              result_data_ptr[idx] += a_data_ptr[idx];
+              result_data_ptr[idx] += a_data_ptr[idx * last_stride];
             }
             for (int h = a_last_index; h >= result_nd; h--) {
               if (prg[h] < transposed_shape_cpy[h]) {
