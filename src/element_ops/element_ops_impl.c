@@ -638,7 +638,7 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
       npy_intp **progress_init_a_data_arr =
           malloc(sizeof(npy_intp *) * num_threads);
       npy_intp *progress_init_a_data =
-          calloc(a_ndim_except_last, sizeof(npy_intp));
+          calloc(result_nd, sizeof(npy_intp));
       npy_intp **prg_arr = malloc(sizeof(npy_intp *) * num_threads);
 
       /*init ptrs for different threads*/
@@ -650,14 +650,14 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
                              (id < result_size % num_threads);
 
         a_data_ptr_cpy = a_data;
-        for (npy_intp k = a_last_index; k >= 0; k--) {
+        for (npy_intp k = result_nd - 1; k >= 0; k--) {
           a_data_ptr_cpy += progress_init_a_data[k] * transposed_strides_cpy[k];
         }
 
         npy_intp *progress_init_a_data_cpy =
-            malloc(sizeof(npy_intp) * result_nd_except_last);
+            malloc(sizeof(npy_intp) * result_nd);
         memcpy(progress_init_a_data_cpy, progress_init_a_data,
-               sizeof(npy_intp) * result_nd_except_last);
+               sizeof(npy_intp) * result_nd);
         progress_init_a_data_arr[id] = progress_init_a_data_cpy;
         npy_intp tmp1 = task_amount * inner_loop_size_2;
         npy_intp *prg = calloc(a_ndim_except_last, sizeof(npy_intp));
@@ -1027,7 +1027,7 @@ Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds) {
       npy_intp **progress_init_a_data_arr =
           malloc(sizeof(npy_intp *) * num_threads);
       npy_intp *progress_init_a_data =
-          calloc(a_ndim_except_last, sizeof(npy_intp));
+          calloc(result_nd, sizeof(npy_intp));
       npy_intp **prg_arr = malloc(sizeof(npy_intp *) * num_threads);
 
       /*init ptrs for different threads*/
@@ -1039,14 +1039,14 @@ Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds) {
                              (id < result_size % num_threads);
 
         a_data_ptr_cpy = a_data;
-        for (npy_intp k = a_last_index; k >= 0; k--) {
+        for (npy_intp k = result_nd - 1; k >= 0; k--) {
           a_data_ptr_cpy += progress_init_a_data[k] * transposed_strides_cpy[k];
         }
 
         npy_intp *progress_init_a_data_cpy =
-            malloc(sizeof(npy_intp) * result_nd_except_last);
+            malloc(sizeof(npy_intp) * result_nd);
         memcpy(progress_init_a_data_cpy, progress_init_a_data,
-               sizeof(npy_intp) * result_nd_except_last);
+               sizeof(npy_intp) * result_nd);
         progress_init_a_data_arr[id] = progress_init_a_data_cpy;
         npy_intp tmp1 = task_amount * inner_loop_size_2;
         npy_intp *prg = calloc(a_ndim_except_last, sizeof(npy_intp));

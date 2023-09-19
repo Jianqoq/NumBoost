@@ -1,6 +1,5 @@
 #ifndef NUMBOOST_API_H
 #define NUMBOOST_API_H
-#include "shape.h"
 #include "macro_utils.h"
 #include "omp.h"
 #include "shape.h"
@@ -492,7 +491,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     }                                                                          \
   } while (0)
 
-#define Perform_Reduction_Operation(type, result_type, inner_loop_body)        \
+#define Perform_Reduction_Operation(a, type, result_type, inner_loop_body)     \
   int a_ndim = PyArray_NDIM(a);                                                \
   npy_intp *a_shape = PyArray_SHAPE(a);                                        \
   npy_intp *a_shape_cpy = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);       \
@@ -500,9 +499,10 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   memcpy(a_shape_cpy, a_shape, sizeof(npy_intp) * a_ndim);                     \
   move_axes_to_innermost(axes, axis_len, a_shape_cpy, a_ndim,                  \
                          transposed_axis);                                     \
+                                                                               \
   PyArray_Dims d = {transposed_axis, a_ndim};                                  \
   PyArrayObject *transposed_arr = (PyArrayObject *)PyArray_Transpose(a, &d);   \
-                                                                               \
+  free(transposed_axis);                                                       \
   npy_intp *transposed_strides = PyArray_STRIDES(transposed_arr);              \
   npy_intp *transposed_strides_cpy = malloc(sizeof(npy_intp) * a_ndim);        \
   memcpy(transposed_strides_cpy, transposed_strides,                           \
@@ -510,37 +510,17 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
                                                                                \
   /*normalize the transposed strides*/                                         \
   for (int i = 0; i < a_ndim; i++) {                                           \
-    transposed_strides_cpy[i] /= sizeof(npy_double);                           \
+    transposed_strides_cpy[i] /= sizeof(type);                                 \
   }                                                                            \
+  assert(transposed_strides_cpy[a_ndim - 1] == 1);                             \
+  npy_intp *transposed_shape = PyArray_SHAPE(transposed_arr);                  \
   npy_intp *transposed_shape_cpy = malloc(sizeof(npy_intp) * a_ndim);          \
-  memcpy(transposed_shape_cpy, PyArray_SHAPE(transposed_arr),                  \
-         sizeof(npy_intp) * a_ndim);                                           \
-                                                                               \
-  /*calculate the outer loop size, we can parallelize in this outter loop*/    \
-  npy_intp outter_loop_size = 1;                                               \
-  for (int i = 0; i < a_ndim - axis_len; i++) {                                \
-    outter_loop_size *= a_shape[transposed_axis[i]];                           \
+  memcpy(transposed_shape_cpy, transposed_shape, sizeof(npy_intp) * a_ndim);   \
+  for (int i = 0; i < a_ndim; i++) {                                           \
+    transposed_shape_cpy[i]--;                                                 \
   }                                                                            \
                                                                                \
-  npy_intp *new_shape = PyArray_SHAPE(transposed_arr);                         \
-  npy_intp inner_size = new_shape[a_ndim - 1];                                 \
-                                                                               \
-  /*calculate second outter loop size*/                                        \
-  npy_intp outer_size_2 = 1;                                                   \
-  if (axis_len > 1) {                                                          \
-    for (int i = a_ndim - axis_len; i < (a_ndim - 1); i++) {                   \
-      outer_size_2 *= transposed_shape_cpy[i];                                 \
-    }                                                                          \
-  }                                                                            \
-                                                                               \
-  /*init progress which is used to maintain the main loop*/                    \
-  npy_intp *progress = malloc(sizeof(npy_intp) * a_ndim);                      \
-  for (int j = 0; j < a_ndim; j++) {                                           \
-    transposed_shape_cpy[j]--;                                                 \
-    progress[j] = 0;                                                           \
-  }                                                                            \
-                                                                               \
-  result_type *a_data = PyArray_DATA(transposed_arr);                          \
+  type *a_data = PyArray_DATA(a);                                              \
   npy_intp *result_shape = malloc(sizeof(npy_intp) * (a_ndim - axis_len));     \
   int k = 0;                                                                   \
   for (int i = 0; i < a_ndim; i++) {                                           \
@@ -548,65 +528,243 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       result_shape[k++] = a_shape_cpy[i];                                      \
     }                                                                          \
   }                                                                            \
+  free(a_shape_cpy);                                                           \
   PyArrayObject *result = (PyArrayObject *)PyArray_EMPTY(                      \
       a_ndim - axis_len, result_shape, NPY_DOUBLE, 0);                         \
-  result_type *result_data = PyArray_DATA(result);                             \
-  npy_intp i;                                                                  \
+  type *result_data = PyArray_DATA(result);                                    \
                                                                                \
-  npy_intp num_threads = outter_loop_size < omp_get_max_threads()              \
-                             ? outter_loop_size                                \
-                             : omp_get_max_threads();                          \
-  npy_intp task_amount = 0;                                                    \
-  npy_intp **current_shape_process_ =                                          \
-      (npy_intp **)malloc(sizeof(npy_intp *) * num_threads);                   \
-  for (npy_intp id = 0; id < num_threads; id++) {                              \
-    npy_intp start_index = id * (outter_loop_size / num_threads) +             \
-                           min(id, outter_loop_size % num_threads);            \
-    npy_intp end_index = start_index + outter_loop_size / num_threads +        \
-                         (id < outter_loop_size % num_threads);                \
-    npy_intp current_task_amount = task_amount;                                \
-    task_amount += (end_index - start_index) * outer_size_2 * inner_size;      \
-    npy_intp *current_shape_process =                                          \
-        (npy_intp *)calloc(a_ndim, sizeof(npy_intp));                          \
-    for (npy_intp j = a_ndim - 1; j >= 0; j--) {                               \
-      current_shape_process[j] = current_task_amount % new_shape[j];           \
-      current_task_amount /= new_shape[j];                                     \
-    }                                                                          \
-    current_shape_process_[id] = current_shape_process;                        \
+  npy_intp init_idx;                                                           \
+  _Pragma("omp parallel for schedule(static)") for (init_idx = 0;              \
+                                                    init_idx <                 \
+                                                    PyArray_SIZE(result);      \
+                                                    init_idx++) {              \
+    result_data[init_idx] = NPY_INFINITY;                                      \
   }                                                                            \
-  for (int id = 0; id < num_threads; id++) {                                   \
-    npy_intp *current_process = current_shape_process_[id];                    \
-    result_type *a_data_saved = a_data;                                        \
-    for (npy_intp j = a_ndim - 1; j >= 0; j--) {                               \
-      a_data_saved += current_process[j] * transposed_strides_cpy[j];          \
-    }                                                                          \
-  }                                                                            \
-  npy_intp a_last_stride = transposed_strides_cpy[a_ndim - 1];                 \
-  _Pragma("omp parallel num_threads(num_threads) firstprivate(a_data)") {      \
-    npy_intp id = omp_get_thread_num();                                        \
-    npy_intp *current_process = current_shape_process_[id];                    \
-    for (npy_intp j = a_ndim - 1; j >= 0; j--) {                               \
-      a_data += current_process[j] * transposed_strides_cpy[j];                \
-    }                                                                          \
-    _Pragma("omp for schedule(static)") for (i = 0; i < outter_loop_size;      \
-                                             i++) {                            \
-      result_type val = 0;                                                     \
-      for (npy_intp u = 0; u < outer_size_2; u++) {                            \
-        for (npy_intp k = 0; k < inner_size; k++) {                            \
-          val += a_data[k * a_last_stride];                                    \
-        }                                                                      \
-        for (npy_intp j = a_ndim - 2; j >= 0; j--) {                           \
-          if (current_process[j] < transposed_shape_cpy[j]) {                  \
-            current_process[j]++;                                              \
-            a_data += transposed_strides_cpy[j];                               \
-            break;                                                             \
-          } else {                                                             \
-            current_process[j] = 0;                                            \
-            a_data -= transposed_strides_cpy[j] * transposed_shape_cpy[j];     \
-          }                                                                    \
+                                                                               \
+  if (a_ndim == axis_len) {                                                    \
+    npy_intp size = PyArray_SIZE(a);                                           \
+    int num_threads =                                                          \
+        size < omp_get_max_threads() ? size : omp_get_max_threads();           \
+    type *min_vals = malloc(sizeof(type) * num_threads);                       \
+    _Pragma("omp parallel") /*need to improve when omp is upgraded*/           \
+    {                                                                          \
+      int thread_id = omp_get_thread_num();                                    \
+      type min_val = NPY_INFINITY;                                             \
+      npy_intp i;                                                              \
+      _Pragma("omp for schedule(static)") for (i = 0; i < size; i++) {         \
+        if (a_data[i] < min_val) {                                             \
+          min_val = a_data[i];                                                 \
         }                                                                      \
       }                                                                        \
-      result_data[i] = val;                                                    \
+      min_vals[thread_id] = min_val;                                           \
+    }                                                                          \
+    type min_value = NPY_INFINITY;                                             \
+    for (int i = 0; i < num_threads; i++) {                                    \
+      if (min_vals[i] < min_value) {                                           \
+        min_value = min_vals[i];                                               \
+      }                                                                        \
+    }                                                                          \
+    result_data[0] = min_value;                                                \
+    free(min_vals);                                                            \
+  } else {                                                                     \
+    /*most inner axis is the one that could be sequential*/                    \
+    npy_intp a_last_index = a_ndim - 1;                                        \
+    int result_nd = PyArray_NDIM(result);                                      \
+    int result_nd_except_last = result_nd - 1;                                 \
+    int a_ndim_except_last = a_last_index;                                     \
+    npy_intp inner_loop_size = a_shape[a_last_index];                          \
+    npy_intp result_size = PyArray_SIZE(result);                               \
+    npy_intp a_size = PyArray_SIZE(a);                                         \
+    type *a_data_ptr_cpy = a_data;                                             \
+    type *result_data_cpy = result_data;                                       \
+    npy_intp last_stride = PyArray_STRIDE(a, a_ndim - 1) / sizeof(type);       \
+                                                                               \
+    if (!is_left) {                                                            \
+      npy_intp outer_loop_size = a_size / inner_loop_size;                     \
+      npy_intp inner_loop_size_2 = outer_loop_size / result_size;              \
+      npy_intp num_threads = result_size < omp_get_max_threads()               \
+                                 ? result_size                                 \
+                                 : omp_get_max_threads();                      \
+      npy_intp task_amount = 0;                                                \
+                                                                               \
+      type **result_ptr_arr = (type **)calloc(num_threads, sizeof(type *));    \
+      type **a_data_ptr_arr = (type **)malloc(sizeof(type *) * num_threads);   \
+      npy_intp **progress_init_a_data_arr =                                    \
+          malloc(sizeof(npy_intp *) * num_threads);                            \
+      npy_intp *progress_init_a_data =                                         \
+          calloc(result_nd, sizeof(npy_intp));                        \
+      npy_intp **prg_arr = malloc(sizeof(npy_intp *) * num_threads);           \
+                                                                               \
+      /*init ptrs for different threads*/                                      \
+      for (npy_intp id = 0; id < num_threads; id++) {                          \
+                                                                               \
+        npy_intp start_index = id * (result_size / num_threads) +              \
+                               min(id, result_size % num_threads);             \
+        npy_intp end_index = start_index + result_size / num_threads +         \
+                             (id < result_size % num_threads);                 \
+                                                                               \
+        a_data_ptr_cpy = a_data;                                               \
+        for (npy_intp k = result_nd - 1; k >= 0; k--) {                         \
+          a_data_ptr_cpy +=                                                    \
+              progress_init_a_data[k] * transposed_strides_cpy[k];             \
+        }                                                                      \
+                                                                               \
+        npy_intp *progress_init_a_data_cpy =                                   \
+            malloc(sizeof(npy_intp) * result_nd);                  \
+        memcpy(progress_init_a_data_cpy, progress_init_a_data,                 \
+               sizeof(npy_intp) * result_nd);                      \
+        progress_init_a_data_arr[id] = progress_init_a_data_cpy;               \
+        npy_intp tmp1 = task_amount * inner_loop_size_2;                       \
+        npy_intp *prg = calloc(a_ndim_except_last, sizeof(npy_intp));          \
+        prg_arr[id] = prg;                                                     \
+        for (npy_intp j = a_ndim_except_last - 1; j >= 0; j--) {               \
+          prg[j] = tmp1 % transposed_shape[j];                                 \
+          tmp1 /= transposed_shape[j];                                         \
+        }                                                                      \
+        a_data_ptr_arr[id] = a_data_ptr_cpy;                                   \
+        task_amount += (end_index - start_index);                              \
+        result_ptr_arr[id] = result_data_cpy;                                  \
+        result_data_cpy += end_index - start_index;                            \
+        npy_intp tmp2 = task_amount;                                           \
+        for (npy_intp j = result_nd - 1; j >= 0; j--) {                        \
+          progress_init_a_data[j] = tmp2 % result_shape[j];                    \
+          tmp2 /= result_shape[j];                                             \
+        }                                                                      \
+      }                                                                        \
+                                                                               \
+      _Pragma("omp parallel num_threads(num_threads)") {                       \
+        int thread_id = omp_get_thread_num();                                  \
+        type *result_data_ptr = result_ptr_arr[thread_id];                     \
+        type *a_data_ptr = a_data_ptr_arr[thread_id];                          \
+        npy_intp *_prg = prg_arr[thread_id];                                   \
+        npy_intp p = 0;                                                        \
+        _Pragma("omp for schedule(static)") for (p = 0; p < result_size;       \
+                                                 p++) {                        \
+          for (npy_intp j = 0; j < inner_loop_size_2; j++) {                   \
+            for (npy_intp i = 0; i < inner_loop_size; i++) {                   \
+              type a_val = a_data_ptr[i * last_stride];                        \
+              if (a_val < *result_data_ptr)                                    \
+                *result_data_ptr = a_val;                                      \
+            }                                                                  \
+            for (int h = a_ndim_except_last - 1; h >= 0; h--) {                \
+              if (_prg[h] < transposed_shape_cpy[h]) {                         \
+                _prg[h]++;                                                     \
+                a_data_ptr += transposed_strides_cpy[h];                       \
+                break;                                                         \
+              } else {                                                         \
+                _prg[h] = 0;                                                   \
+                a_data_ptr -=                                                  \
+                    transposed_shape_cpy[h] * transposed_strides_cpy[h];       \
+              }                                                                \
+            }                                                                  \
+          }                                                                    \
+          result_data_ptr++;                                                   \
+        }                                                                      \
+      }                                                                        \
+      free(progress_init_a_data);                                              \
+      for (npy_intp id = 0; id < num_threads; id++) {                          \
+        free(progress_init_a_data_arr[id]);                                    \
+        free(prg_arr[id]);                                                     \
+      }                                                                        \
+      free(prg_arr);                                                           \
+      free(progress_init_a_data_arr);                                          \
+      free(a_data_ptr_arr);                                                    \
+      free(result_ptr_arr);                                                    \
+      free(transposed_shape_cpy);                                              \
+      free(transposed_strides_cpy);                                            \
+    } else {                                                                   \
+      npy_intp outer_loop_size = result_size / inner_loop_size;                \
+      npy_intp inner_loop_size_2 = a_size / result_size;                       \
+                                                                               \
+      npy_intp num_threads = outer_loop_size < omp_get_max_threads()           \
+                                 ? outer_loop_size                             \
+                                 : omp_get_max_threads();                      \
+      npy_intp task_amount = 0;                                                \
+      type **result_ptr_arr = (type **)calloc(num_threads, sizeof(type *));    \
+      type **a_data_ptr_arr = (type **)malloc(sizeof(type *) * num_threads);   \
+      npy_intp *progress_init_a_data = calloc(result_nd, sizeof(npy_intp));    \
+      npy_intp **progress_init_a_data_arr =                                    \
+          malloc(sizeof(npy_intp *) * num_threads);                            \
+      for (npy_intp id = 0; id < num_threads; id++) {                          \
+        npy_intp start_index = id * (outer_loop_size / num_threads) +          \
+                               min(id, outer_loop_size % num_threads);         \
+        npy_intp end_index = start_index + outer_loop_size / num_threads +     \
+                             (id < outer_loop_size % num_threads);             \
+        a_data_ptr_cpy = a_data;                                               \
+        for (npy_intp k = result_nd_except_last - 1; k >= 0; k--) {            \
+          a_data_ptr_cpy +=                                                    \
+              progress_init_a_data[k] * transposed_strides_cpy[k];             \
+        }                                                                      \
+                                                                               \
+        npy_intp *progress_init_a_data_cpy =                                   \
+            malloc(sizeof(npy_intp) * result_nd);                              \
+        memcpy(progress_init_a_data_cpy, progress_init_a_data,                 \
+               sizeof(npy_intp) * result_nd);                                  \
+                                                                               \
+        progress_init_a_data_arr[id] = progress_init_a_data_cpy;               \
+        a_data_ptr_arr[id] = a_data_ptr_cpy;                                   \
+        task_amount += (end_index - start_index);                              \
+        result_ptr_arr[id] = result_data_cpy;                                  \
+        result_data_cpy += (end_index - start_index) * inner_loop_size;        \
+        npy_intp tmp = task_amount;                                            \
+        for (npy_intp j = result_nd_except_last - 1; j >= 0; j--) {            \
+          progress_init_a_data[j] = tmp % result_shape[j];                     \
+          tmp /= result_shape[j];                                              \
+        }                                                                      \
+      }                                                                        \
+      _Pragma("omp parallel num_threads(num_threads)") {                       \
+        int thread_id = omp_get_thread_num();                                  \
+        type *result_data_ptr = result_ptr_arr[thread_id];                     \
+        type *a_data_ptr = a_data_ptr_arr[thread_id];                          \
+        npy_intp *a_data_progess = progress_init_a_data_arr[thread_id];        \
+        npy_intp *prg = calloc(a_ndim, sizeof(npy_intp));                      \
+        npy_intp p2;                                                           \
+        _Pragma("omp for schedule(static)") for (p2 = 0; p2 < outer_loop_size; \
+                                                 p2++) {                       \
+          for (npy_intp j = 0; j < inner_loop_size_2; j++) {                   \
+            for (npy_intp idx = 0; idx < inner_loop_size; idx++) {             \
+              type a_val = a_data_ptr[idx * last_stride];                      \
+              if (a_val < result_data_ptr[idx]) {                              \
+                result_data_ptr[idx] = a_val;                                  \
+              }                                                                \
+            }                                                                  \
+            for (int h = a_last_index; h >= result_nd; h--) {                  \
+              if (prg[h] < transposed_shape_cpy[h]) {                          \
+                prg[h]++;                                                      \
+                a_data_ptr += transposed_strides_cpy[h];                       \
+                break;                                                         \
+              } else {                                                         \
+                prg[h] = 0;                                                    \
+                a_data_ptr -=                                                  \
+                    transposed_shape_cpy[h] * transposed_strides_cpy[h];       \
+              }                                                                \
+            }                                                                  \
+          }                                                                    \
+          for (npy_intp t = result_nd_except_last - 1; t >= 0; t--) {          \
+            if (a_data_progess[t] < transposed_shape_cpy[t]) {                 \
+              a_data_progess[t]++;                                             \
+              a_data_ptr += transposed_strides_cpy[t];                         \
+              break;                                                           \
+            } else {                                                           \
+              a_data_progess[t] = 0;                                           \
+              a_data_ptr -=                                                    \
+                  transposed_shape_cpy[t] * transposed_strides_cpy[t];         \
+            }                                                                  \
+          }                                                                    \
+          result_data_ptr += inner_loop_size;                                  \
+          memset(prg, 0, sizeof(npy_intp) * a_ndim);                           \
+        }                                                                      \
+        free(prg);                                                             \
+      }                                                                        \
+      free(progress_init_a_data);                                              \
+      free(a_data_ptr_arr);                                                    \
+      free(result_ptr_arr);                                                    \
+      for (npy_intp id = 0; id < num_threads; id++) {                          \
+        free(progress_init_a_data_arr[id]);                                    \
+      }                                                                        \
+      free(progress_init_a_data_arr);                                          \
+      free(transposed_shape_cpy);                                              \
+      free(transposed_strides_cpy);                                            \
     }                                                                          \
   }
 

@@ -76,8 +76,8 @@ void chain_move_node_to_head(Mem_Chain *self, cache *s) {
 Being linked to mem_chain pop function in tensor.c PyInit_Numboost function
 The chain_pop function is used to free the least recently used memory block.
 It will free the memory block in the tail of the mem_chain.
-But this node will stay in hash table "cache_pool". This node will points to
-NULL in next and prev.
+But this node will stay in hash table "cache_pool" when there is no more blocks.
+This node will points to NULL in next and prev.
 @param self mem_chain
  */
 void chain_pop(Mem_Chain *self) {
