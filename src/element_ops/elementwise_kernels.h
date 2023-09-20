@@ -1,5 +1,3 @@
-#include "../numboost_api.h"
-
 #define Abs_LoopBody(generic_type, type, i, result_ptr, stride_a_last, a_ptr)  \
   generic_type a_val = Promote(type, a_ptr[i * stride_a_last]);                \
   result_ptr[i] = Demote(type, a_val > 0 ? a_val : -a_val);

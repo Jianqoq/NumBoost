@@ -9,8 +9,8 @@
 #define _First(...) _First_(__VA_ARGS__)
 #define Second_(a, b, ...) b
 #define Second(...) Second_(__VA_ARGS__)
-#define Logic_Not(x) Second(Concat_(Is_, x), 0)
-#define Is_True(x) Logic_Not(Logic_Not(x))
+#define Logic_Not(prefix, x) Second(Concat_(prefix, x), 0)
+#define Is_True(x) Logic_Not(Is_, Logic_Not(Is_, x))
 #define Is_0 Place_Holder, 1
 #define If(x) Concat_(If_, x)
 #define Has_Args(...) Is_True(_First(End_Of_Arguments_ __VA_ARGS__)())
@@ -25,6 +25,22 @@
 #define Remove_Parentheses(x) Remove_Parentheses_Helper x
 #define Remove_Parentheses_Helper(...) __VA_ARGS__
 #define Extract(x) x
+#define Init_zero Place_Holder, 1
+#define Should_Init_Zeros(x) Concat_(zeros_, x)
+#define Should_Init_Arr(x) Concat_(Init_arr_, x)
+#define zeros_0(nd, shape, type_enum, order)                                   \
+  PyArray_EMPTY(nd, shape, type_enum, order);
+#define zeros_1(nd, shape, type_enum, order)                                   \
+  PyArray_ZEROS(nd, shape, type_enum, order);
+
+#define Init_arr_0(size, init_val, result_ptr)                                 \
+  npy_intp init_idx;                                                           \
+  _Pragma("omp parallel for") for (init_idx = 0; init_idx < size;              \
+                                   init_idx++) {                               \
+    result_ptr[init_idx] = init_val;                                           \
+  }
+
+#define Init_arr_1(size, init_val, result_ptr)
 
 #define MAP0_No_Comma(m, x, ...)                                               \
   m(x) If(Has_Args(__VA_ARGS__))(DEFER2(_MAP0_No_Comma)()(m, __VA_ARGS__))

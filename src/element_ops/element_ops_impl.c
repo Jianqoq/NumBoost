@@ -600,16 +600,29 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
   PyArrayObject *result = (PyArrayObject *)PyArray_ZEROS(
       a_ndim - axis_len, result_shape, NPY_DOUBLE, 0);
   npy_double *result_data = PyArray_DATA(result);
+  npy_intp result_size = PyArray_SIZE(result);
+      npy_intp last_stride = PyArray_STRIDE(a, a_ndim - 1) / sizeof(npy_double);
 
   if (a_ndim == axis_len) {
-    npy_double sum = 0;
     npy_intp size = PyArray_SIZE(a);
-    npy_intp i;
-#pragma omp parallel for reduction(+ : sum)
-    for (i = 0; i < size; i++) {
-      sum += a_data[i];
+    int num_threads =
+        size < omp_get_max_threads() ? size : omp_get_max_threads();
+    npy_double *sum_vals = malloc(sizeof(npy_double) * num_threads);
+#pragma omp parallel /*need to improve when omp is upgraded*/
+    {
+      int thread_id = omp_get_thread_num();
+      npy_double sum_val = 0;
+      npy_intp i;
+#pragma omp for schedule(static)
+      for (i = 0; i < size; i++) {
+        sum_val += a_data[i];
+      }
+      sum_vals[thread_id] = sum_val;
     }
-    result_data[0] = sum;
+    for (int i = 0; i < num_threads; i++) {
+      result_data[0] += sum_vals[i];
+    }
+    free(sum_vals);
   } else {
     /*most inner axis is the one that could be sequential*/
     npy_intp a_last_index = a_ndim - 1;
@@ -617,11 +630,9 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
     int result_nd_except_last = result_nd - 1;
     int a_ndim_except_last = a_last_index;
     npy_intp inner_loop_size = a_shape[a_last_index];
-    npy_intp result_size = PyArray_SIZE(result);
     npy_intp a_size = PyArray_SIZE(a);
     npy_double *a_data_ptr_cpy = a_data;
     npy_double *result_data_cpy = result_data;
-    npy_intp last_stride = PyArray_STRIDE(a, a_ndim - 1) / sizeof(npy_double);
 
     if (!is_left) {
       npy_intp outer_loop_size = a_size / inner_loop_size;
@@ -637,8 +648,7 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
           (npy_double **)malloc(sizeof(npy_double *) * num_threads);
       npy_intp **progress_init_a_data_arr =
           malloc(sizeof(npy_intp *) * num_threads);
-      npy_intp *progress_init_a_data =
-          calloc(result_nd, sizeof(npy_intp));
+      npy_intp *progress_init_a_data = calloc(result_nd, sizeof(npy_intp));
       npy_intp **prg_arr = malloc(sizeof(npy_intp *) * num_threads);
 
       /*init ptrs for different threads*/
@@ -1026,8 +1036,7 @@ Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds) {
           (npy_double **)malloc(sizeof(npy_double *) * num_threads);
       npy_intp **progress_init_a_data_arr =
           malloc(sizeof(npy_intp *) * num_threads);
-      npy_intp *progress_init_a_data =
-          calloc(result_nd, sizeof(npy_intp));
+      npy_intp *progress_init_a_data = calloc(result_nd, sizeof(npy_intp));
       npy_intp **prg_arr = malloc(sizeof(npy_intp *) * num_threads);
 
       /*init ptrs for different threads*/

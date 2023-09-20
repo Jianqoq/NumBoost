@@ -1,5 +1,6 @@
 #ifndef _ELEMENT_OPS_DEF_H
 #define _ELEMENT_OPS_DEF_H
+#include "../numboost_api.h"
 #include "elementwise_kernels.h"
 
 #define Register_ElementWise_Operation_Array(name, sufix)                      \
