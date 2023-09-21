@@ -575,61 +575,44 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
   return to_return;
 }
 
-Tensor *_max(PyObject *self, PyObject *const *args, size_t nargsf) {
-  (void)nargsf;
-  (void)self;
-  Tensor *tensor = (Tensor *)args[0];
-  PyArrayObject *tmp = (PyArrayObject *)tensor->data;
-  int axis = NPY_MAXDIMS;
-  PyArray_Descr *descr = NULL;
-  if (args[2] != Py_None) {
-    PyArray_DescrConverter(args[2], &descr);
+Tensor *_max(PyObject *self, PyObject *args, PyObject *kwds) {
+    (void)self;
+  char *kwds_ls[] = {"a", "axis", "keepdims", "out", NULL};
+  PyObject *_a = NULL;
+  PyObject *axis = NULL;
+  PyObject *keepdims = NULL;
+  PyObject *out = NULL;
+  bool keepdims_c = true;
+  int axes[NPY_MAXDIMS] = {NULL};
+  int axis_len = 1;
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OO", kwds_ls, &_a, &axis,
+                                   &keepdims, &out)) {
+    return NULL;
+  }
+  if (keepdims == NULL) {
+    keepdims_c = false;
   } else {
-    PyArrayObject_fields *fields = (PyArrayObject_fields *)tmp;
-    descr = fields->descr;
+    keepdims_c = PyObject_IsTrue(keepdims);
   }
-  if (descr == NULL)
-    return NULL;
-  int dtype_enum = descr->type_num;
-  int ndims;
-  uint8_t i;
-  PyObject *result = NULL;
-  PyArrayObject *out = NULL;
-  if (args[1] != Py_None)
-    axis = PyLong_AsLong(args[1]);
-  if (args[3] != Py_None)
-    out = (PyArrayObject *)args[3];
-  if (PyArray_CheckAxis(tmp, &axis, 0) == NULL) {
-    return NULL;
-  };
-  if (PyObject_IsTrue(args[4])) {
-    npy_intp new_shape[NPY_MAXDIMS] = {0};
-    if (out != NULL)
-      result = PyArray_Sum(tmp, axis, dtype_enum, out);
-    else
-      result = PyArray_Sum(tmp, axis, dtype_enum, NULL);
-    if (result == NULL)
-      return NULL;
-    PyArrayObject *r = (PyArrayObject *)result;
-    npy_intp *shape = PyArray_SHAPE(r);
-    ndims = PyArray_NDIM(r);
-    for (i = 0; i < axis; i++) {
-      new_shape[i] = shape[i];
-    }
-    new_shape[axis] = 1;
-    for (i = 0; i < ndims - axis; i++) {
-      new_shape[i + axis + 1] = shape[axis];
-      axis++;
-    }
-    PyArray_Dims d = {new_shape, ndims + 1};
-    result = PyArray_Newshape(r, &d, 0);
-  } else {
-    result = PyArray_Sum(tmp, axis, dtype_enum, out);
-  }
-  if (result == NULL) {
+  if (_a == NULL) {
+    PyErr_SetString(PyExc_TypeError, "Expected at least an array");
     return NULL;
   }
-  Tensor *to_return = (Tensor *)create_tensor(tensor, Py_None, result, "");
+  if (!Py_IS_TYPE(_a, Tensor_type)) {
+    PyErr_SetString(PyExc_TypeError, "Expected a as Tensor obj");
+    return NULL;
+  }
+
+  PyArrayObject *a = (PyArrayObject *)((Tensor *)_a)->data;
+  if (!preprocess_axes(a, axis, axes, &axis_len)) {
+    return NULL;
+  }
+
+  PyObject *result =
+      numboost_max((PyObject *)a, &out, axes, axis_len, keepdims_c);
+  Numboost_AssertNULL(result);
+  Tensor *to_return =
+      (Tensor *)create_tensor((Tensor *)_a, Py_None, result, "");
   return to_return;
 }
 

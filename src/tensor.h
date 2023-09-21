@@ -265,7 +265,7 @@ Tensor *_exp(PyObject *numboost_module, PyObject *args, PyObject *kwds);
 
 Tensor *_mean(PyObject *self, PyObject *const *args, size_t nargsf);
 Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds);
-Tensor *_max(PyObject *self, PyObject *const *args, size_t nargsf);
+Tensor *_max(PyObject *self, PyObject *args, PyObject *kwds);
 Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds);
 Tensor *_argmax_wrapper(PyObject *self, PyObject *const *args, size_t nargsf);
 Tensor *_argmin_wrapper(PyObject *self, PyObject *const *args, size_t nargsf);

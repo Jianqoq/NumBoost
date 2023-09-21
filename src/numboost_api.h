@@ -624,7 +624,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       npy_intp i;                                                              \
       type val[] = {init_val};                                                 \
       _Pragma("omp for schedule(static)") for (i = 0; i < size; i++) {         \
-        Kernel(Generic(type), type, val, a_data, 0, i, 1);             \
+        Kernel(Generic(type), type, val, a_data, 0, i, 1);                     \
       }                                                                        \
       results[thread_id] = val[0];                                             \
     }                                                                          \
