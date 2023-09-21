@@ -37,7 +37,15 @@ typedef enum {
   LOG10,
   ABS
 } op_type;
-
+typedef enum {
+  SUM,
+  PROD,
+  MAX,
+  MIN,
+  ANY,
+  ALL,
+  MEAN
+} reduction_op_type;
 // typedef enum {
 //   NB_BOOL,
 //   NB_BYTE,

@@ -491,7 +491,15 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     }                                                                          \
   } while (0)
 
-#define Perform_Reduction_Operation(a, init_val, type, result_type, Kernel)    \
+#define Perform_Reduction_Operation(a, result, axes, axis_len, out, init_val,  \
+                                    type, result_type, keepdims, Kernel)       \
+  bool is_left = true;                                                         \
+  for (int i = 0; i < axis_len; i++) {                                         \
+    if (is_in((int *)axes, axis_len, PyArray_NDIM(a) - 1)) {                   \
+      is_left = false;                                                         \
+      break;                                                                   \
+    }                                                                          \
+  }                                                                            \
   int a_ndim = PyArray_NDIM(a);                                                \
   npy_intp *a_shape = PyArray_SHAPE(a);                                        \
   npy_intp *a_shape_cpy = (npy_intp *)malloc(sizeof(npy_intp) * a_ndim);       \
@@ -528,16 +536,82 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       result_shape[k++] = a_shape_cpy[i];                                      \
     }                                                                          \
   }                                                                            \
-  free(a_shape_cpy);                                                           \
   npy_intp last_stride = PyArray_STRIDE(a, a_ndim - 1) / sizeof(type);         \
                                                                                \
-  PyArrayObject *result = (PyArrayObject *)Should_Init_Zeros(Logic_Not(        \
-      Init_, init_val))(a_ndim - axis_len, result_shape, result_type, 0);      \
-  type *result_data = PyArray_DATA(result);                                    \
-  npy_intp result_size = PyArray_SIZE(result);                                 \
-  npy_intp init_idx;                                                           \
-  Should_Init_Arr(Logic_Not(Init_, init_val))(result_size, init_val,           \
-                                              result_data);                    \
+  type *result_data = NULL;                                                    \
+  npy_intp result_size = 0;                                                    \
+  npy_intp *new_shape = NULL;                                                  \
+  if (keepdims) {                                                              \
+    new_shape = malloc(sizeof(npy_intp) * a_ndim);                             \
+    for (int i = 0; i < a_ndim; i++) {                                         \
+      if (a_shape_cpy[i] != 0) {                                               \
+        new_shape[i] = a_shape_cpy[i];                                         \
+      } else {                                                                 \
+        new_shape[i] = 1;                                                      \
+      }                                                                        \
+    }                                                                          \
+  }                                                                            \
+  if (out != NULL) {                                                           \
+    if (!keepdims) {                                                           \
+      for (int i = 0; i < a_ndim - axis_len; i++) {                            \
+        if (PyArray_SHAPE(out)[i] != result_shape[i]) {                        \
+          PyErr_SetString(PyExc_ValueError,                                    \
+                          "Output array has incorrect shape");                 \
+          return NULL;                                                         \
+        }                                                                      \
+      }                                                                        \
+    } else {                                                                   \
+      for (int i = 0; i < a_ndim; i++) {                                       \
+        if (PyArray_SHAPE(out)[i] != new_shape[i]) {                           \
+          PyErr_SetString(PyExc_ValueError,                                    \
+                          "Output array has incorrect shape");                 \
+          return NULL;                                                         \
+        }                                                                      \
+      }                                                                        \
+    }                                                                          \
+    if (PyArray_TYPE(out) != result_type) {                                    \
+      npy_intp out_mem_size =                                                  \
+          PyArray_SIZE(out) * ((PyArrayObject_fields *)out)->descr->elsize;    \
+      npy_intp result_size = 1;                                                \
+      for (int i = 0; i < a_ndim - axis_len; i++) {                            \
+        result_size *= result_shape[i];                                        \
+      }                                                                        \
+      if (out_mem_size != result_size * sizeof(type)) {                        \
+        PyErr_SetString(PyExc_ValueError,                                      \
+                        "Output array has incorrect type or total mem size "   \
+                        "!= result mem size");                                 \
+        return NULL;                                                           \
+      }                                                                        \
+    }                                                                          \
+    result = out;                                                              \
+    result_data = PyArray_DATA(result);                                        \
+    result_size = PyArray_SIZE(result);                                        \
+    npy_intp init_idx;                                                         \
+    _Pragma("omp parallel for") for (init_idx = 0; init_idx < result_size;     \
+                                     init_idx++) {                             \
+      result_data[init_idx] = init_val;                                        \
+    }                                                                          \
+  } else {                                                                     \
+    if (init_val == 0) {                                                       \
+      result = (PyArrayObject *)PyArray_ZEROS(a_ndim - axis_len, result_shape, \
+                                              result_type, 0);                 \
+    } else {                                                                   \
+      result = (PyArrayObject *)PyArray_EMPTY(a_ndim - axis_len, result_shape, \
+                                              result_type, 0);                 \
+    }                                                                          \
+    if (!result) {                                                             \
+      return NULL;                                                             \
+    }                                                                          \
+    result_data = PyArray_DATA(result);                                        \
+    result_size = PyArray_SIZE(result);                                        \
+    if (init_val != 0) {                                                       \
+      npy_intp init_idx;                                                       \
+      _Pragma("omp parallel for") for (init_idx = 0; init_idx < result_size;   \
+                                       init_idx++) {                           \
+        result_data[init_idx] = init_val;                                      \
+      }                                                                        \
+    }                                                                          \
+  }                                                                            \
                                                                                \
   if (a_ndim == axis_len) {                                                    \
     npy_intp size = PyArray_SIZE(a);                                           \
@@ -550,15 +624,13 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       npy_intp i;                                                              \
       type val[] = {init_val};                                                 \
       _Pragma("omp for schedule(static)") for (i = 0; i < size; i++) {         \
-        Kernel_Macro(Generic(type), type, result, a_data, i, 0,                \
-                     a_last_stride);                                           \
+        Kernel(Generic(type), type, val, a_data, 0, i, 1);             \
       }                                                                        \
       results[thread_id] = val[0];                                             \
     }                                                                          \
     for (int i = 0; i < num_threads; i++) {                                    \
-      Kernel_Macro(Generic(type), type, result, a_data, i, 0, a_last_stride);  \
+      Kernel(Generic(type), type, result_data, results, 0, i, 1);              \
     }                                                                          \
-    result_data[0] = min_value;                                                \
     free(results);                                                             \
   } else {                                                                     \
     /*most inner axis is the one that could be sequential*/                    \
@@ -634,8 +706,8 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
                                                  p++) {                        \
           for (npy_intp j = 0; j < inner_loop_size_2; j++) {                   \
             for (npy_intp i = 0; i < inner_loop_size; i++) {                   \
-              Kernel_Macro(Generic(type), type, result_data_ptr, a_data_ptr,   \
-                           i, 0, a_last_stride);                               \
+              Kernel(Generic(type), type, result_data_ptr, a_data_ptr, 0, i,   \
+                     last_stride);                                             \
             }                                                                  \
             for (int h = a_ndim_except_last - 1; h >= 0; h--) {                \
               if (_prg[h] < transposed_shape_cpy[h]) {                         \
@@ -714,8 +786,8 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
                                                  p2++) {                       \
           for (npy_intp j = 0; j < inner_loop_size_2; j++) {                   \
             for (npy_intp idx = 0; idx < inner_loop_size; idx++) {             \
-              Kernel_Macro(Generic(type), type, result_data_ptr, a_data_ptr,   \
-                           idx, idx, a_last_stride);                           \
+              Kernel(Generic(type), type, result_data_ptr, a_data_ptr, idx,    \
+                     idx, last_stride);                                        \
             }                                                                  \
             for (int h = a_last_index; h >= result_nd; h--) {                  \
               if (prg[h] < transposed_shape_cpy[h]) {                          \
@@ -755,6 +827,12 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       free(transposed_shape_cpy);                                              \
       free(transposed_strides_cpy);                                            \
     }                                                                          \
+  }                                                                            \
+  if (new_shape) {                                                             \
+    PyArray_Dims tmp[] = {new_shape, a_ndim};                                  \
+    result = (PyArrayObject *)PyArray_Newshape(result, tmp, NPY_CORDER);       \
+  } else {                                                                     \
+    free(a_shape_cpy);                                                         \
   }
 
 #endif // NUMBOOST_API_H

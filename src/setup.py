@@ -72,7 +72,7 @@ mymodule = Extension('Numboost',
                               'import_module_methods.c', 'shape.c',
                               'type_convertor/type_convertor.c', 'tensor_methods.c', 'Iterator/nb_iter.c',
                               'allocator/allocator.c', 'binary_ops/binary_op_def.c',
-                              'binary_ops/binary_module_methods.c',
+                              'binary_ops/binary_module_methods.c', 'reduction_ops/reduction_ops_def.c',
                               'allocator/tensor_alloc.c'],
                      include_dirs=[
                          numpy.get_include(), 'C:/Program Files (x86)/Intel/oneAPI/mkl/latest/include',

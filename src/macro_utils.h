@@ -18,6 +18,7 @@
 #define If_0(...) EMPTY EMPTY()()
 #define If2_1(...) __VA_ARGS__
 #define If2_0(...) 0
+#define Stall(...) EMPTY()
 #define End_Of_Arguments_() 0
 #define escape(...) __VA_ARGS__
 #define If2(x) Concat_(If2_, x)
@@ -27,7 +28,10 @@
 #define Extract(x) x
 #define Init_zero Place_Holder, 1
 #define Should_Init_Zeros(x) Concat_(zeros_, x)
+#define Should_Use_Zeros(x) Concat_(zero_val_, x)
 #define Should_Init_Arr(x) Concat_(Init_arr_, x)
+#define zero_val_1(x) 0
+#define zero_val_0(x) x
 #define zeros_0(nd, shape, type_enum, order)                                   \
   PyArray_EMPTY(nd, shape, type_enum, order);
 #define zeros_1(nd, shape, type_enum, order)                                   \

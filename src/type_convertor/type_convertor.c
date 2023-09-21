@@ -748,6 +748,24 @@ int elementwise_result_type(int op, int a_dtype) {
   }
 }
 
+int reduction_result_type(int op, int a_dtype) {
+  int a_size = type_2_size[a_dtype];
+  int gloabal_float_size = type_2_size[gloabal_float_type];
+  switch (op) {
+  case SUM:
+  case PROD:
+  case MAX:
+  case MIN:
+  case ANY:
+  case ALL:
+    return a_dtype;
+  case MEAN:
+    return float_type_based_on_size(max(a_size, gloabal_float_size));
+  default:
+    return -1;
+  }
+}
+
 PyObject *binary_result_type_(PyObject *self, PyObject *const *args,
                               size_t nargsf) {
   (void)self;

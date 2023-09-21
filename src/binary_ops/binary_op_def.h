@@ -262,4 +262,5 @@ PyObject *numboost_bitwise_xor(PyObject *a, PyObject *b, PyObject **out);
 PyObject *numboost_bitwise_or(PyObject *a, PyObject *b, PyObject **out);
 PyObject **numboost_divmod(PyObject *a, PyObject *b, PyObject **outs,
                            int outs_len);
+PyObject *numboost_add_test(PyObject *a, PyObject *b, PyObject **outs_arr);
 #endif
