@@ -267,7 +267,7 @@ Tensor *_mean(PyObject *self, PyObject *const *args, size_t nargsf);
 Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds);
 Tensor *_max(PyObject *self, PyObject *args, PyObject *kwds);
 Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds);
-Tensor *_argmax_wrapper(PyObject *self, PyObject *const *args, size_t nargsf);
-Tensor *_argmin_wrapper(PyObject *self, PyObject *const *args, size_t nargsf);
+Tensor *_argmax(PyObject *self, PyObject *args, PyObject *kwds);
+Tensor *_argmin(PyObject *self, PyObject *args, PyObject *kwds);
 
 #endif

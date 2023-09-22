@@ -22,3 +22,15 @@ def test_sum():
         d = np.sum(array, axis=case)
         c = nb.sum(a, axis=case)
         assert np.allclose(c.data, d), f'{c[np.where(c.data != d)], d[np.where(c.data != d)], np.where(c.data != d)}'
+
+def test_arg():
+    test_cases = [0, 1, 2, 3, 4]
+    a = np.random.randn(32, 32, 32, 32, 32)
+    r = nb.tensor(a)
+    for case in test_cases:
+        d = np.argmax(a, axis=case)
+        c = nb.argmax(r, axis=case)
+        assert np.allclose(c.data, d), f'{c[np.where(c.data != d)], d[np.where(c.data != d)], np.where(c.data != d)}'
+        d = np.argmin(a, axis=case)
+        c = nb.argmin(r, axis=case)
+        assert np.allclose(c.data, d), f'{c[np.where(c.data != d)], d[np.where(c.data != d)], np.where(c.data != d)}'

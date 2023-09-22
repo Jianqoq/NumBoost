@@ -761,6 +761,9 @@ int reduction_result_type(int op, int a_dtype) {
     return a_dtype;
   case MEAN:
     return float_type_based_on_size(max(a_size, gloabal_float_size));
+  case ARGMAX:
+  case ARGMIN:
+    return NPY_LONGLONG;
   default:
     return -1;
   }

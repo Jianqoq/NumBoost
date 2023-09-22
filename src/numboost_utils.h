@@ -44,7 +44,9 @@ typedef enum {
   MIN,
   ANY,
   ALL,
-  MEAN
+  MEAN,
+  ARGMIN,
+  ARGMAX
 } reduction_op_type;
 // typedef enum {
 //   NB_BOOL,

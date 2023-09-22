@@ -251,8 +251,10 @@ static PyMethodDef Tensor_methods[] = {
 static PyMethodDef module_methods[] = {
     {"reshape", (PyCFunction)reshape, METH_FASTCALL, "Method docstring"},
     {"transpose", (PyCFunction)transpose, METH_FASTCALL, "Method docstring"},
-    {"argmax", (PyCFunction)_argmax_wrapper, METH_FASTCALL, "Method docstring"},
-    {"argmin", (PyCFunction)_argmin_wrapper, METH_FASTCALL, "Method docstring"},
+    {"argmax", (PyCFunction)_argmax, METH_KEYWORDS | METH_VARARGS,
+     "Method docstring"},
+    {"argmin", (PyCFunction)_argmin, METH_KEYWORDS | METH_VARARGS,
+     "Method docstring"},
     {"sum", (PyCFunction)_sum, METH_KEYWORDS | METH_VARARGS,
      "Method docstring"},
     {"max", (PyCFunction)_max, METH_KEYWORDS | METH_VARARGS,
