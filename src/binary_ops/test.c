@@ -750,7 +750,7 @@ Tensor *reduction_test(PyObject *self, PyObject *args, PyObject *kwds) {
     }
   }
   Tensor *to_return =
-      (Tensor *)create_tensor((Tensor *)_a, Py_None, (PyObject *)result, "");
+      (Tensor *)tensor_new((Tensor *)_a, Py_None, (PyObject *)result, "");
   return to_return;
 }
 

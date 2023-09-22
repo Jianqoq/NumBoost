@@ -3,7 +3,9 @@
 #include "binary_module_methods.h"
 #include "../python_magic/python_math_magic.h"
 #include "../tensor.h"
+#include "../tensor_creation/creation_def.h"
 #include "binary_op_def.h"
+
 
 static char *keyword_list[] = {"a", "b", "out", NULL};
 
@@ -52,9 +54,9 @@ PyObject *nb_module_pow(PyObject *numboost_module, PyObject *args,
       return (PyObject *)to_replace;
     }
   } else {
-    PyObject *to_return = create_tensor(a_, Py_None, result, "PowBackward");
+    PyObject *to_return = tensor_new(a_, Py_None, result, "PowBackward");
     if (a_->require_grad)
-      store_power((Tensor*)to_return, power);
+      store_power((Tensor *)to_return, power);
     return to_return;
   }
 }

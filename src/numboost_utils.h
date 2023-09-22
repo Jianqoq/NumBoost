@@ -16,6 +16,10 @@ typedef enum {
   BITWISE_INVERT,
   SQUARE,
   DIVMOD,
+  LT,
+  GT,
+  EQ,
+  NEQ,
   /*====== seperator for binary and elementwise operation ======*/
   POSITIVE,
   NEGATIVE,

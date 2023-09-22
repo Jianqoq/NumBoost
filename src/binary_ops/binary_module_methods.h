@@ -41,7 +41,7 @@
       }                                                                        \
     } else {                                                                   \
       PyObject *to_return =                                                    \
-          create_tensor((Tensor *)a, b, result, backward_fn_name);             \
+          tensor_new((Tensor *)a, b, result, backward_fn_name);             \
       return to_return;                                                        \
     }                                                                          \
   }

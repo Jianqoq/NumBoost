@@ -12,6 +12,7 @@
 #include "element_ops_def.h"
 #include <numpy/arrayobject.h>
 #include <stdlib.h>
+#include "../tensor_creation/creation_def.h"
 
 static char *keyword_list[] = {"a", "b", "out", NULL};
 
@@ -202,7 +203,7 @@ Tensor *reshape(PyObject *self, PyObject *const *args, size_t nargsf,
     else
       pre_shape2[i] = 0;
   }
-  Tensor *to_return = (Tensor *)create_tensor(tensor, Py_None, result, grad_fn);
+  Tensor *to_return = (Tensor *)tensor_new(tensor, Py_None, result, grad_fn);
   if (pre_shape != NULL) {
     store_array_shape(to_return, pre_shape2, ndim);
   }
@@ -448,7 +449,7 @@ Tensor *tensordot(PyObject *self, PyObject *const *args, size_t nargsf,
   PyArray_Dims olds_merge_dims = {olds_merge_shape, total_len};
   PyObject *result =
       PyArray_Newshape((PyArrayObject *)res, &olds_merge_dims, 0);
-  Tensor *to_return = (Tensor *)create_tensor((Tensor *)args[0], args[1],
+  Tensor *to_return = (Tensor *)tensor_new((Tensor *)args[0], args[1],
                                               result, "TensordotBackward");
   Py_DECREF(a);
   Py_DECREF(b);
@@ -526,7 +527,7 @@ PyObject *transpose(PyObject *self, PyObject *const *args, size_t nargsf,
     return NULL;
   }
   PyObject *to_return =
-      create_tensor(tensor, Py_None, result, "TransposeBackward");
+      tensor_new(tensor, Py_None, result, "TransposeBackward");
   if (tensor->require_grad)
     store_array_shape((Tensor *)to_return, dims, length);
   else
@@ -571,7 +572,7 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
       numboost_sum((PyObject *)a, &out, axes, axis_len, keepdims_c);
   Numboost_AssertNULL(result);
   Tensor *to_return =
-      (Tensor *)create_tensor((Tensor *)_a, Py_None, result, "");
+      (Tensor *)tensor_new((Tensor *)_a, Py_None, result, "");
   return to_return;
 }
 
@@ -612,7 +613,7 @@ Tensor *_max(PyObject *self, PyObject *args, PyObject *kwds) {
       numboost_max((PyObject *)a, &out, axes, axis_len, keepdims_c);
   Numboost_AssertNULL(result);
   Tensor *to_return =
-      (Tensor *)create_tensor((Tensor *)_a, Py_None, result, "");
+      (Tensor *)tensor_new((Tensor *)_a, Py_None, result, "");
   return to_return;
 }
 
@@ -653,7 +654,7 @@ Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds) {
       numboost_min((PyObject *)a, &out, axes, axis_len, keepdims_c);
   Numboost_AssertNULL(result);
   Tensor *to_return =
-      (Tensor *)create_tensor((Tensor *)_a, Py_None, result, "");
+      (Tensor *)tensor_new((Tensor *)_a, Py_None, result, "");
   return to_return;
 }
 
@@ -694,7 +695,7 @@ Tensor *_mean(PyObject *self, PyObject *args, PyObject *kwds) {
       numboost_mean((PyObject *)a, &out, axes, axis_len, keepdims_c);
   Numboost_AssertNULL(result);
   Tensor *to_return =
-      (Tensor *)create_tensor((Tensor *)_a, Py_None, result, "");
+      (Tensor *)tensor_new((Tensor *)_a, Py_None, result, "");
   return to_return;
 }
 
@@ -735,7 +736,7 @@ Tensor *_argmax(PyObject *self, PyObject *args, PyObject *kwds) {
       numboost_argmax((PyObject *)a, &out, axes, axis_len, keepdims_c);
   Numboost_AssertNULL(result);
   Tensor *to_return =
-      (Tensor *)create_tensor((Tensor *)_a, Py_None, result, "");
+      (Tensor *)tensor_new((Tensor *)_a, Py_None, result, "");
   return to_return;
 }
 
@@ -776,7 +777,7 @@ Tensor *_argmin(PyObject *self, PyObject *args, PyObject *kwds) {
       numboost_argmin((PyObject *)a, &out, axes, axis_len, keepdims_c);
   Numboost_AssertNULL(result);
   Tensor *to_return =
-      (Tensor *)create_tensor((Tensor *)_a, Py_None, result, "");
+      (Tensor *)tensor_new((Tensor *)_a, Py_None, result, "");
   return to_return;
 }
 

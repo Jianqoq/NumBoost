@@ -8,6 +8,7 @@
 #include "python_magic/python_math_magic.h"
 #include "set_tensor_properties.h"
 #include "type_convertor/type_convertor.h"
+#include "tensor_creation/creation_def.h"
 
 extern jnp_method *JNP_METHOD;
 extern Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT;
@@ -184,7 +185,7 @@ PyObject *get_item(Tensor *self, PyObject *item) {
     return NULL;
   if (TRACK)
     return subarray;
-  Tensor *to_return = (Tensor *)create_tensor(self, Py_None, subarray, "SliceBackward");
+  Tensor *to_return = (Tensor *)tensor_new(self, Py_None, subarray, "SliceBackward");
   if (self->require_grad) {
     DEBUG_PRINT("refcount of item: %d\n", (int)Py_REFCNT(item));
     PyArrayObject *arr = (PyArrayObject *)self->data;
@@ -216,7 +217,7 @@ Tensor *T(Tensor *self) {
   if (transposed == NULL)
     return NULL;
   Tensor *to_return =
-      (Tensor *)create_tensor(self, Py_None, transposed, "TransposeBackward");
+      (Tensor *)tensor_new(self, Py_None, transposed, "TransposeBackward");
   if (self->require_grad)
     store_array_shape(to_return, new_axes, ndim);
   else
@@ -376,7 +377,7 @@ Tensor *copy(Tensor *self) {
   PyArrayObject *ret = nb_copy((PyArrayObject *)self->data);
   if (ret == NULL)
     return NULL;
-  return (Tensor *)create_tensor(self, Py_None, (PyObject *)ret, "");
+  return (Tensor *)tensor_new(self, Py_None, (PyObject *)ret, "");
 }
 
 PyObject *backward(PyObject *self, PyObject *args) {

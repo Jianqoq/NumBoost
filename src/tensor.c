@@ -11,6 +11,7 @@
 #include "omp.h"
 #include "python_magic/python_math_magic.h"
 #include "structmember.h"
+#include "tensor_creation/creation_def.h"
 #include "tensor_methods.h"
 #include "type_convertor/type_convertor.h"
 #include "utils.h"
@@ -251,6 +252,17 @@ static PyMethodDef Tensor_methods[] = {
 static PyMethodDef module_methods[] = {
     {"reshape", (PyCFunction)reshape, METH_FASTCALL, "Method docstring"},
     {"transpose", (PyCFunction)transpose, METH_FASTCALL, "Method docstring"},
+    {"square", (PyCFunction)_mean, METH_FASTCALL, "Method docstring"},
+    {"tensordot", (PyCFunction)tensordot, METH_FASTCALL, "Method docstring"},
+    {"set_track", (PyCFunction)set_track, METH_FASTCALL, "Method docstring"},
+    {"to_dict", (PyCFunction)convert_tensor_dict_to_Py_dict, METH_FASTCALL,
+     "Method docstring"},
+    {"global_float_type", (PyCFunction)set_global_float_type, METH_FASTCALL,
+     "Method docstring"},
+    {"result_type", (PyCFunction)binary_result_type_, METH_FASTCALL,
+     "Method docstring"},
+    {"arange", (PyCFunction)arange, METH_KEYWORDS | METH_VARARGS,
+     "Method docstring"},
     {"argmax", (PyCFunction)_argmax, METH_KEYWORDS | METH_VARARGS,
      "Method docstring"},
     {"argmin", (PyCFunction)_argmin, METH_KEYWORDS | METH_VARARGS,
@@ -297,15 +309,7 @@ static PyMethodDef module_methods[] = {
      "Method docstring"},
     {"power", (PyCFunction)nb_module_pow, METH_KEYWORDS | METH_VARARGS,
      "Method docstring"},
-    {"mean", (PyCFunction)_mean, METH_KEYWORDS | METH_VARARGS, "Method docstring"},
-    {"square", (PyCFunction)_mean, METH_FASTCALL, "Method docstring"},
-    {"tensordot", (PyCFunction)tensordot, METH_FASTCALL, "Method docstring"},
-    {"set_track", (PyCFunction)set_track, METH_FASTCALL, "Method docstring"},
-    {"to_dict", (PyCFunction)convert_tensor_dict_to_Py_dict, METH_FASTCALL,
-     "Method docstring"},
-    {"global_float_type", (PyCFunction)set_global_float_type, METH_FASTCALL,
-     "Method docstring"},
-    {"result_type", (PyCFunction)binary_result_type_, METH_FASTCALL,
+    {"mean", (PyCFunction)_mean, METH_KEYWORDS | METH_VARARGS,
      "Method docstring"},
     {"tensor", (PyCFunction)__tensor, METH_KEYWORDS | METH_VARARGS,
      "Method docstring"},

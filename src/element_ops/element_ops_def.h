@@ -163,7 +163,7 @@
       }                                                                        \
     } else {                                                                   \
       PyObject *to_return =                                                    \
-          create_tensor((Tensor *)a, Py_None, result, backward_fn_name);       \
+          tensor_new((Tensor *)a, Py_None, result, backward_fn_name);       \
       return (Tensor *)to_return;                                              \
     }                                                                          \
   }
