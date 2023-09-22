@@ -366,7 +366,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     free(shape_copy);                                                          \
   } while (0)
 
-#define Perform_Universal_Operation(type, return_arr, result_type,             \
+#define Perform_Universal_Operation(type, return_arr, result_type_enum,             \
                                     inner_loop_body, outs_array,               \
                                     outs_array_len, results, ...)              \
   do {                                                                         \
@@ -380,7 +380,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     DEBUG_PRINT("%s: Entered\n", __func__);                                    \
     Replicate0_No_Comma(Handlers, __VA_ARGS__);                                \
     DEBUG_PRINT("%s: Handlers done\n", __func__);                              \
-    Replicate_Correct_Type(Correct_Type, result_type, type, __VA_ARGS__);      \
+    Replicate_Correct_Type(Correct_Type, result_type_enum, type, __VA_ARGS__);      \
     DEBUG_PRINT("%s: Correct_Type done\n", __func__);                          \
     npy_intp *shapes[] = {Replicate0(Shapes, __VA_ARGS__)};                    \
     int ndims[] = {Replicate0(NDims, __VA_ARGS__)};                            \
@@ -455,7 +455,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
           broadcast_size = tmp;                                                \
         }                                                                      \
       }                                                                        \
-      Replicate_Alloc_Results(biggest_array, broadcast_shape, result_type,     \
+      Replicate_Alloc_Results(biggest_array, broadcast_shape, result_type_enum,     \
                               Remove_Parentheses(results));                    \
       DEBUG_PRINT("%s: broacast looping start\n", __func__);                   \
       Universal_Operation(                                                     \
@@ -475,7 +475,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     } else {                                                                   \
       Replicate(Get_Strides_Sequential, type, __VA_ARGS__);                    \
       Replicate_Alloc_Results(biggest_array, PyArray_SHAPE(biggest_array),     \
-                              result_type, Remove_Parentheses(results));       \
+                              result_type_enum, Remove_Parentheses(results));       \
       Universal_Operation_Sequential(                                          \
           type,                                                                \
           (Replicate0_With_Comma(Get_Results, Remove_Parentheses(results))),   \
@@ -492,7 +492,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   } while (0)
 
 #define Perform_Reduction_Operation(a, result, axes, axis_len, out, init_val,  \
-                                    type, result_type, keepdims, Kernel,       \
+                                    type, result_type_enum, keepdims, Kernel,       \
                                     Kernel_Pre, Kernel_Post)                   \
   bool is_left = true;                                                         \
   for (int i = 0; i < axis_len; i++) {                                         \
@@ -502,8 +502,8 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     }                                                                          \
   }                                                                            \
   PyArrayObject *handler = NULL;                                               \
-  if (PyArray_TYPE(a) != result_type) {                                        \
-    as_type(&a, &a, result_type);                                              \
+  if (PyArray_TYPE(a) != result_type_enum) {                                        \
+    as_type(&a, &a, result_type_enum);                                              \
     handler = a;                                                               \
   }                                                                            \
   int a_ndim = PyArray_NDIM(a);                                                \
@@ -575,7 +575,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
         }                                                                      \
       }                                                                        \
     }                                                                          \
-    if (PyArray_TYPE(out) != result_type) {                                    \
+    if (PyArray_TYPE(out) != result_type_enum) {                                    \
       npy_intp out_mem_size =                                                  \
           PyArray_SIZE(out) * ((PyArrayObject_fields *)out)->descr->elsize;    \
       npy_intp result_size = 1;                                                \
@@ -600,10 +600,10 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   } else {                                                                     \
     if (init_val == 0) {                                                       \
       result = (PyArrayObject *)PyArray_ZEROS(a_ndim - axis_len, result_shape, \
-                                              result_type, 0);                 \
+                                              result_type_enum, 0);                 \
     } else {                                                                   \
       result = (PyArrayObject *)PyArray_EMPTY(a_ndim - axis_len, result_shape, \
-                                              result_type, 0);                 \
+                                              result_type_enum, 0);                 \
     }                                                                          \
     if (!result) {                                                             \
       return NULL;                                                             \
@@ -849,7 +849,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   }
 
 #define Arg_Reduction_Operation(a, result, axes, axis_len, out, init_val,      \
-                                type, result_type, keepdims, Kernel)           \
+                                type, result_type_enum, keepdims, Kernel)           \
   /*transpose the array along the axes which need to do reduction operation*/  \
   int a_ndim = PyArray_NDIM(a);                                                \
   npy_intp *a_shape = PyArray_SHAPE(a);                                        \
@@ -917,7 +917,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
         }                                                                      \
       }                                                                        \
     }                                                                          \
-    if (PyArray_TYPE(out) != result_type) {                                    \
+    if (PyArray_TYPE(out) != result_type_enum) {                                    \
       npy_intp out_mem_size =                                                  \
           PyArray_SIZE(out) * ((PyArrayObject_fields *)out)->descr->elsize;    \
       npy_intp result_size = 1;                                                \
@@ -1038,7 +1038,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   free(transposed_strides_cpy);
 
 #define Perform_Mean_Operation(a, result, axes, axis_len, out, init_val, type, \
-                               result_type, keepdims)                          \
+                               result_type_enum, keepdims)                          \
   bool is_left = true;                                                         \
   for (int i = 0; i < axis_len; i++) {                                         \
     if (is_in((int *)axes, axis_len, PyArray_NDIM(a) - 1)) {                   \
@@ -1047,8 +1047,8 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     }                                                                          \
   }                                                                            \
   PyArrayObject *handler = NULL;                                               \
-  if (PyArray_TYPE(a) != result_type) {                                        \
-    as_type(&a, &a, result_type);                                              \
+  if (PyArray_TYPE(a) != result_type_enum) {                                        \
+    as_type(&a, &a, result_type_enum);                                              \
     handler = a;                                                               \
   }                                                                            \
   int a_ndim = PyArray_NDIM(a);                                                \
@@ -1120,7 +1120,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
         }                                                                      \
       }                                                                        \
     }                                                                          \
-    if (PyArray_TYPE(out) != result_type) {                                    \
+    if (PyArray_TYPE(out) != result_type_enum) {                                    \
       npy_intp out_mem_size =                                                  \
           PyArray_SIZE(out) * ((PyArrayObject_fields *)out)->descr->elsize;    \
       npy_intp result_size = 1;                                                \
@@ -1145,10 +1145,10 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   } else {                                                                     \
     if (init_val == 0) {                                                       \
       result = (PyArrayObject *)PyArray_ZEROS(a_ndim - axis_len, result_shape, \
-                                              result_type, 0);                 \
+                                              result_type_enum, 0);                 \
     } else {                                                                   \
       result = (PyArrayObject *)PyArray_EMPTY(a_ndim - axis_len, result_shape, \
-                                              result_type, 0);                 \
+                                              result_type_enum, 0);                 \
     }                                                                          \
     if (!result) {                                                             \
       return NULL;                                                             \

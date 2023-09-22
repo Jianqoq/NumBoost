@@ -36,26 +36,23 @@
       binary_##name##_timedelta##sufix,   binary_##name##_half##sufix};
 
 #define Register_Binary_Operations_Floating_Types(name, loop_body)             \
-  Register_Binary_Operation(name, float, float, NPY_FLOAT, loop_body);         \
-  Register_Binary_Operation(name, double, double, NPY_DOUBLE, loop_body);      \
-  Register_Binary_Operation(name, longdouble, longdouble, NPY_LONGDOUBLE,      \
-                            loop_body);                                        \
-  Register_Binary_Operation(name, half, half, NPY_HALF, loop_body);
+  Register_Binary_Operation(name, float, NPY_FLOAT, loop_body);                \
+  Register_Binary_Operation(name, double, NPY_DOUBLE, loop_body);              \
+  Register_Binary_Operation(name, longdouble, NPY_LONGDOUBLE, loop_body);      \
+  Register_Binary_Operation(name, half, NPY_HALF, loop_body);
 
 #define Register_Binary_Operations_Interger_Types(name, loop_body)             \
-  Register_Binary_Operation(name, bool, bool, NPY_BOOL, loop_body);            \
-  Register_Binary_Operation(name, byte, byte, NPY_BYTE, loop_body);            \
-  Register_Binary_Operation(name, ubyte, ubyte, NPY_UBYTE, loop_body);         \
-  Register_Binary_Operation(name, short, short, NPY_SHORT, loop_body);         \
-  Register_Binary_Operation(name, ushort, ushort, NPY_USHORT, loop_body);      \
-  Register_Binary_Operation(name, int, int, NPY_INT, loop_body);               \
-  Register_Binary_Operation(name, uint, uint, NPY_UINT, loop_body);            \
-  Register_Binary_Operation(name, long, long, NPY_LONG, loop_body);            \
-  Register_Binary_Operation(name, ulong, ulong, NPY_ULONG, loop_body);         \
-  Register_Binary_Operation(name, longlong, longlong, NPY_LONGLONG,            \
-                            loop_body);                                        \
-  Register_Binary_Operation(name, ulonglong, ulonglong, NPY_ULONGLONG,         \
-                            loop_body);
+  Register_Binary_Operation(name, bool, NPY_BOOL, loop_body);                  \
+  Register_Binary_Operation(name, byte, NPY_BYTE, loop_body);                  \
+  Register_Binary_Operation(name, ubyte, NPY_UBYTE, loop_body);                \
+  Register_Binary_Operation(name, short, NPY_SHORT, loop_body);                \
+  Register_Binary_Operation(name, ushort, NPY_USHORT, loop_body);              \
+  Register_Binary_Operation(name, int, NPY_INT, loop_body);                    \
+  Register_Binary_Operation(name, uint, NPY_UINT, loop_body);                  \
+  Register_Binary_Operation(name, long, NPY_LONG, loop_body);                  \
+  Register_Binary_Operation(name, ulong, NPY_ULONG, loop_body);                \
+  Register_Binary_Operation(name, longlong, NPY_LONGLONG, loop_body);          \
+  Register_Binary_Operation(name, ulonglong, NPY_ULONGLONG, loop_body);
 
 #define Register_Binary_Operations_Err_Floating_Types(name)                    \
   Register_Binary_Operation_Err(name, float);                                  \
@@ -192,15 +189,15 @@
     return result;                                                             \
   }
 
-#define Register_Binary_Operation(name, in_type, result_type,                  \
-                                  result_type_enum, inner_loop_body_universal) \
-  PyObject *binary_##name##_##in_type(PyObject *a, PyObject *b,                \
-                                      PyObject **out_arr, int out_arr_len) {   \
+#define Register_Binary_Operation(name, type, result_type,                     \
+                                  inner_loop_body_universal)                   \
+  PyObject *binary_##name##_##type(PyObject *a, PyObject *b,                   \
+                                   PyObject **out_arr, int out_arr_len) {      \
     PyArrayObject **return_arr =                                               \
         (PyArrayObject **)malloc(sizeof(PyArrayObject *) * 1);                 \
-    Perform_Universal_Operation(npy_##in_type, result_type, return_arr,        \
-                                result_type_enum, inner_loop_body_universal,   \
-                                out_arr, out_arr_len, (result), a, b);         \
+    Perform_Universal_Operation(npy_##type, return_arr, result_type,           \
+                                inner_loop_body_universal, out_arr,            \
+                                out_arr_len, (result), a, b);                  \
     if (return_arr == NULL) {                                                  \
       return NULL;                                                             \
     } else {                                                                   \
@@ -210,16 +207,15 @@
     }                                                                          \
   }
 
-#define Register_Binary_Operation_MultiOut(name, in_type, result_type,         \
-                                           result_type_enum,                   \
+#define Register_Binary_Operation_MultiOut(name, type, result_type,            \
                                            inner_loop_body_universal, ...)     \
-  PyObject **binary_##name##_##in_type(PyObject *a, PyObject *b,               \
-                                       PyObject **out_arr, int out_arr_len) {  \
+  PyObject **binary_##name##_##type(PyObject *a, PyObject *b,                  \
+                                    PyObject **out_arr, int out_arr_len) {     \
     PyArrayObject **return_arr = (PyArrayObject **)malloc(                     \
         sizeof(PyArrayObject *) * (Args_Num(__VA_ARGS__)));                    \
-    Perform_Universal_Operation(npy_##in_type, npy_##result_type, return_arr,  \
-                                result_type_enum, inner_loop_body_universal,   \
-                                out_arr, out_arr_len, (__VA_ARGS__), a, b);    \
+    Perform_Universal_Operation(npy_##type, return_arr, result_type,           \
+                                inner_loop_body_universal, out_arr,            \
+                                out_arr_len, (__VA_ARGS__), a, b);             \
     if (return_arr == NULL) {                                                  \
       return NULL;                                                             \
     } else {                                                                   \
