@@ -10,8 +10,6 @@ inline void Tensor_SetData(Tensor *self, PyObject *data) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetX(Tensor *self, PyObject *x) {
@@ -22,8 +20,6 @@ inline void Tensor_SetX(Tensor *self, PyObject *x) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetY(Tensor *self, PyObject *y) {
@@ -34,8 +30,6 @@ inline void Tensor_SetY(Tensor *self, PyObject *y) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 
@@ -47,8 +41,6 @@ inline void Tensor_SetGrad(Tensor *self, PyObject *grad) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetGraph(Tensor *self, PyObject *graph) {
@@ -59,8 +51,6 @@ inline void Tensor_SetGraph(Tensor *self, PyObject *graph) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 
@@ -82,8 +72,6 @@ inline void Tensor_SetAxis(Tensor *self, PyObject *axis) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetHasConv(Tensor *self, int has_conv) {
@@ -97,8 +85,6 @@ inline void Tensor_SetData_without_init_value(Tensor *self, PyObject *data) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetX_without_init_value(Tensor *self, PyObject *x) {
@@ -108,8 +94,6 @@ inline void Tensor_SetX_without_init_value(Tensor *self, PyObject *x) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetY_without_init_value(Tensor *self, PyObject *y) {
@@ -119,8 +103,6 @@ inline void Tensor_SetY_without_init_value(Tensor *self, PyObject *y) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetGrad_without_init_value(Tensor *self, PyObject *grad) {
@@ -130,8 +112,6 @@ inline void Tensor_SetGrad_without_init_value(Tensor *self, PyObject *grad) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetGraph_without_init_value(Tensor *self, PyObject *graph) {
@@ -141,8 +121,6 @@ inline void Tensor_SetGraph_without_init_value(Tensor *self, PyObject *graph) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 
@@ -153,8 +131,6 @@ inline void Tensor_SetAxis_without_init_value(Tensor *self, PyObject *axis) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 
@@ -165,8 +141,6 @@ inline void Tensor_SetData_startwone(Tensor *self, PyObject *data) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetX_startwone(Tensor *self, PyObject *x) {
@@ -176,8 +150,6 @@ inline void Tensor_SetX_startwone(Tensor *self, PyObject *x) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetY_startwone(Tensor *self, PyObject *y) {
@@ -187,8 +159,6 @@ inline void Tensor_SetY_startwone(Tensor *self, PyObject *y) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetGrad_startwone(Tensor *self, PyObject *grad) {
@@ -198,8 +168,6 @@ inline void Tensor_SetGrad_startwone(Tensor *self, PyObject *grad) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetGraph_startwone(Tensor *self, PyObject *graph) {
@@ -209,8 +177,6 @@ inline void Tensor_SetGraph_startwone(Tensor *self, PyObject *graph) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 
@@ -221,8 +187,6 @@ inline void Tensor_SetAxis_startwone(Tensor *self, PyObject *axis) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 
@@ -234,8 +198,6 @@ inline void Tensor_SetData_startwone_without_init(Tensor *self,
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetX_startwone_without_init(Tensor *self, PyObject *x) {
@@ -245,8 +207,6 @@ inline void Tensor_SetX_startwone_without_init(Tensor *self, PyObject *x) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetY_startwone_without_init(Tensor *self, PyObject *y) {
@@ -256,8 +216,6 @@ inline void Tensor_SetY_startwone_without_init(Tensor *self, PyObject *y) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetGrad_startwone_without_init(Tensor *self,
@@ -268,8 +226,6 @@ inline void Tensor_SetGrad_startwone_without_init(Tensor *self,
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 inline void Tensor_SetGraph_startwone_without_init(Tensor *self,
@@ -280,8 +236,6 @@ inline void Tensor_SetGraph_startwone_without_init(Tensor *self,
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 
@@ -293,8 +247,6 @@ inline void Tensor_SetAxis_startwone_without_init(Tensor *self,
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "Unable to allocate memory for Tensor object");
-    PyErr_Print();
-    PyErr_Clear();
   }
 }
 

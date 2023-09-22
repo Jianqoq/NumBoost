@@ -15,7 +15,7 @@
 
 static char *keyword_list[] = {"a", "b", "out", NULL};
 
-inline int compare(const void *a, const void *b) {
+int compare(const void *a, const void *b) {
   int int_a = *((int *)a);
   int int_b = *((int *)b);
 
