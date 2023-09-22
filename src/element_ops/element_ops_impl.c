@@ -13,6 +13,7 @@
 #include "element_ops_def.h"
 #include <numpy/arrayobject.h>
 #include <stdlib.h>
+#include "../numboost_sort_utils.h"
 
 static char *keyword_list[] = {"a", "b", "out", NULL};
 
