@@ -3,7 +3,6 @@
 #include "../binary_ops/binary_op_def.h"
 #include "../import_module_methods.h"
 #include "../numboost_api.h"
-#include "../numboost_sort_utils.h"
 #include "../python_magic/python_math_magic.h"
 #include "../reduction_ops/reduction_ops_def.h"
 #include "../shape.h"
@@ -13,9 +12,20 @@
 #include "element_ops_def.h"
 #include <numpy/arrayobject.h>
 #include <stdlib.h>
-#include "../numboost_sort_utils.h"
 
 static char *keyword_list[] = {"a", "b", "out", NULL};
+
+inline int compare(const void *a, const void *b) {
+  int int_a = *((int *)a);
+  int int_b = *((int *)b);
+
+  if (int_a == int_b)
+    return 0;
+  else if (int_a < int_b)
+    return -1;
+  else
+    return 1;
+}
 
 bool preprocess_axes(PyArrayObject *a, PyObject *axis, int *axes,
                      int *axis_len) {
@@ -648,7 +658,7 @@ Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds) {
 }
 
 Tensor *_mean(PyObject *self, PyObject *args, PyObject *kwds) {
-    (void)self;
+  (void)self;
   char *kwds_ls[] = {"a", "axis", "keepdims", "out", NULL};
   PyObject *_a = NULL;
   PyObject *axis = NULL;
