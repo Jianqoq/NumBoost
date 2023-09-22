@@ -7,8 +7,9 @@
 #include "numboost_api.h"
 #include "python_magic/python_math_magic.h"
 #include "set_tensor_properties.h"
-#include "type_convertor/type_convertor.h"
 #include "tensor_creation/creation_def.h"
+#include "type_convertor/type_convertor.h"
+
 
 extern jnp_method *JNP_METHOD;
 extern Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT;
@@ -185,7 +186,8 @@ PyObject *get_item(Tensor *self, PyObject *item) {
     return NULL;
   if (TRACK)
     return subarray;
-  Tensor *to_return = (Tensor *)tensor_new(self, Py_None, subarray, "SliceBackward");
+  Tensor *to_return =
+      (Tensor *)tensor_new(self, Py_None, subarray, "SliceBackward");
   if (self->require_grad) {
     DEBUG_PRINT("refcount of item: %d\n", (int)Py_REFCNT(item));
     PyArrayObject *arr = (PyArrayObject *)self->data;
@@ -303,19 +305,14 @@ Tensor *self_transpose(Tensor *self, PyObject *const *args, size_t nargsf) {
 Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf) {
   size_t nargs = PyVectorcall_NARGS(nargsf);
   PyArrayObject *array;
-  int order = 0;
-  if (PyUnicode_Check(args[nargs - 1])) {
-    PyObject *order_obj = args[nargs - 1];
-    if (PyUnicode_CompareWithASCIIString(order_obj, "C") == 0) {
-      order = NPY_CORDER;
-    } else if (PyUnicode_CompareWithASCIIString(order_obj, "F") == 0) {
-      order = NPY_FORTRANORDER;
-    } else {
-      PyErr_SetString(PyExc_ValueError, "order must be 'C' or 'F'");
+
+  for (uint8_t i = 0; i < nargs; i++) {
+    if (!PyLong_Check(args[i])) {
+      PyErr_SetString(PyExc_TypeError, "reshape() argument must be int");
       return NULL;
     }
-    nargs -= 1;
   }
+
   Tensor *tensor = self;
   int length = (int)nargs;
   npy_intp dims[NPY_MAXDIMS] = {0};
@@ -324,15 +321,16 @@ Tensor *self_reshape(Tensor *self, PyObject *const *args, size_t nargsf) {
   }
   PyArray_Dims shape = {dims, length};
   array = (PyArrayObject *)tensor->data;
-  PyObject *result = PyArray_Newshape(array, &shape, order);
-  if (result != tensor->data) {
-    tensor->data = result;
-    Py_DECREF(array);
-  }
+  PyObject *result = PyArray_Newshape(array, &shape, 0);
   if (result == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Error in reshape");
     return NULL;
   }
+  if (result != tensor->data) {
+    tensor->data = result;
+    Py_DECREF(array);
+  }
+  Py_INCREF(self);
   return self;
 }
 
