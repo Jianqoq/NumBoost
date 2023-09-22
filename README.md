@@ -18,23 +18,11 @@ Second: Install Dependencies
 ```
 pip install -r requirements.txt
 ```
-Third: Install mkl (currently NumBoost didn't use mkl much, but it will be used in the future)
-```
-wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/cd17b7fe-500e-4305-a89b-bd5b42bfd9f8/l_onemkl_p_2023.1.0.46342_offline.sh
-
-sudo apt-get install -y ncurses-term
-
-sudo sh ./l_onemkl_p_2023.1.0.46342_offline.sh -a -s --eula accept --install-dir /mkl-C/
-
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mkl-C/mkl/2023.1.0/lib/intel64
-
-source /mkl-C/mkl/latest/env/vars.sh
-```
-Forth: cd to src folder and run
+Third: cd to src folder and run
 ```
 python setup.py build_ext
 ```
-Fifth: You might need to add the path of src folder to PYTHONPATH, example is in benchmarks folder
+Forth: You might need to add the path of src folder to PYTHONPATH, example is in benchmarks folder
 
 Windows:
 
@@ -46,9 +34,7 @@ Second: Install Dependencies
 ```
 pip install -r requirements.txt
 ```
-Third: Install mkl, go to https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html and download mkl, make sure your system environment variable has MKLROOT
-
-Forth: cd to src folder and run
+Third: cd to src folder and run
 ```
 python setup.py build_ext
 ```

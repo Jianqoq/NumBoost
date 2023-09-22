@@ -6,11 +6,11 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import platform
 
-if platform.system() == 'Windows':
-    os.add_dll_directory(
-        r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
-    os.add_dll_directory(
-        r'C:\Users\123\autograd-C\Autograd-C\src\libraries\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release')
+# if platform.system() == 'Windows':
+#     os.add_dll_directory(
+#         r'C:\Program Files (x86)\Intel\oneAPI\mkl\2023.1.0\redist\intel64')
+#     os.add_dll_directory(
+#         r'C:\Users\123\autograd-C\Autograd-C\src\libraries\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release')
 import num_boost as nb
 
 sys.path.append(os.path.dirname(os.path.dirname(
