@@ -2,6 +2,7 @@
 #define REDUCTION_OPS_DEF_H
 #include "../numboost_api.h"
 #include "reduction_kernels.h"
+#include "immintrin.h"
 
 #define Register_Reduction_Operation_Array(name, sufix)                        \
   PyObject *(*reduction_##name##_##sufix[])(PyObject *, PyObject **, int *,    \
@@ -45,7 +46,7 @@
   }
 
 #define Register_Reduction_Operation(name, type, result_type_enum, init_val,   \
-                                     kernel)                                   \
+                                     kernel, Kernel_Pre, Kernel_Post)          \
   PyObject *reduction_##name##_##type(PyObject *a, PyObject **out_arr,         \
                                       int *axes, int axis_len,                 \
                                       bool keepdims) {                         \
@@ -65,7 +66,7 @@
     PyArrayObject *result = NULL;                                              \
     Perform_Reduction_Operation(a_, result, axes, axis_len, out, init_val,     \
                                 npy_##type, result_type_enum, keepdims,        \
-                                kernel);                                       \
+                                kernel, Kernel_Pre, Kernel_Post);              \
     return (PyObject *)result;                                                 \
   }
 
@@ -93,27 +94,64 @@
     return (PyObject *)result;                                                 \
   }
 
-#define Register_Reduction_Operations_Floating_Types(name, init_val, kernel)   \
-  Register_Reduction_Operation(name, float, NPY_FLOAT, init_val, kernel);      \
-  Register_Reduction_Operation(name, double, NPY_DOUBLE, init_val, kernel);    \
+#define Register_Mean_Reduction_Operation(name, type, result_type_enum,        \
+                                          init_val)                            \
+  PyObject *reduction_##name##_##type(PyObject *a, PyObject **out_arr,         \
+                                      int *axes, int axis_len,                 \
+                                      bool keepdims) {                         \
+    PyArrayObject *out = NULL;                                                 \
+    if (*out_arr != NULL) {                                                    \
+      if (Py_IS_TYPE(*out_arr, Tensor_type)) {                                 \
+        Tensor *to_replace = (Tensor *)*out_arr;                               \
+        out = (PyArrayObject *)to_replace->data;                               \
+      } else if (Py_IS_TYPE(*out_arr, &PyArray_Type)) {                        \
+        out = (PyArrayObject *)*out_arr;                                       \
+      } else {                                                                 \
+        PyErr_SetString(PyExc_TypeError, "out type not supported");            \
+        return NULL;                                                           \
+      }                                                                        \
+    }                                                                          \
+    PyArrayObject *a_ = (PyArrayObject *)a;                                    \
+    PyArrayObject *result = NULL;                                              \
+    Perform_Mean_Operation(a_, result, axes, axis_len, out, init_val,          \
+                           npy_##type, result_type_enum, keepdims);            \
+    return (PyObject *)result;                                                 \
+  }
+#define Register_Reduction_Operations_Floating_Types(name, init_val, kernel,   \
+                                                     Kernel_Pre, Kernel_Post)  \
+  Register_Reduction_Operation(name, float, NPY_FLOAT, init_val, kernel,       \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, double, NPY_DOUBLE, init_val, kernel,     \
+                               Kernel_Pre, Kernel_Post);                       \
   Register_Reduction_Operation(name, longdouble, NPY_LONGDOUBLE, init_val,     \
-                               kernel);                                        \
-  Register_Reduction_Operation(name, half, NPY_HALF, init_val, kernel);
+                               kernel, Kernel_Pre, Kernel_Post);               \
+  Register_Reduction_Operation(name, half, NPY_HALF, init_val, kernel,         \
+                               Kernel_Pre, Kernel_Post);
 
-#define Register_Reduction_Operations_Interger_Types(name, init_val, kernel)   \
-  Register_Reduction_Operation(name, bool, NPY_BOOL, init_val, kernel);        \
-  Register_Reduction_Operation(name, byte, NPY_BYTE, init_val, kernel);        \
-  Register_Reduction_Operation(name, ubyte, NPY_UBYTE, init_val, kernel);      \
-  Register_Reduction_Operation(name, short, NPY_SHORT, init_val, kernel);      \
-  Register_Reduction_Operation(name, ushort, NPY_USHORT, init_val, kernel);    \
-  Register_Reduction_Operation(name, int, NPY_INT, init_val, kernel);          \
-  Register_Reduction_Operation(name, uint, NPY_UINT, init_val, kernel);        \
-  Register_Reduction_Operation(name, long, NPY_LONG, init_val, kernel);        \
-  Register_Reduction_Operation(name, ulong, NPY_ULONG, init_val, kernel);      \
-  Register_Reduction_Operation(name, longlong, NPY_LONGLONG, init_val,         \
-                               kernel);                                        \
+#define Register_Reduction_Operations_Interger_Types(name, init_val, kernel,   \
+                                                     Kernel_Pre, Kernel_Post)  \
+  Register_Reduction_Operation(name, bool, NPY_BOOL, init_val, kernel,         \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, byte, NPY_BYTE, init_val, kernel,         \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, ubyte, NPY_UBYTE, init_val, kernel,       \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, short, NPY_SHORT, init_val, kernel,       \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, ushort, NPY_USHORT, init_val, kernel,     \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, int, NPY_INT, init_val, kernel,           \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, uint, NPY_UINT, init_val, kernel,         \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, long, NPY_LONG, init_val, kernel,         \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, ulong, NPY_ULONG, init_val, kernel,       \
+                               Kernel_Pre, Kernel_Post);                       \
+  Register_Reduction_Operation(name, longlong, NPY_LONGLONG, init_val, kernel, \
+                               Kernel_Pre, Kernel_Post);                       \
   Register_Reduction_Operation(name, ulonglong, NPY_ULONGLONG, init_val,       \
-                               kernel);
+                               kernel, Kernel_Pre, Kernel_Post);
 
 #define Register_Reduction_Operation_Err_Interger_Types(name)                  \
   Register_Reduction_Operation_Err(name, bool);                                \
@@ -223,4 +261,6 @@ PyObject *numboost_argmax(PyObject *a, PyObject **out_arr, int *axes,
                           int axis_len, bool keepdims);
 PyObject *numboost_argmin(PyObject *a, PyObject **out_arr, int *axes,
                           int axis_len, bool keepdims);
+PyObject *numboost_mean(PyObject *a, PyObject **out_arr, int *axes,
+                        int axis_len, bool keepdims);
 #endif

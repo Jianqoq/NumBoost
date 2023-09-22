@@ -263,7 +263,7 @@ Tensor *_log(PyObject *numboost_module, PyObject *args, PyObject *kwds);
 Tensor *_log10(PyObject *numboost_module, PyObject *args, PyObject *kwds);
 Tensor *_exp(PyObject *numboost_module, PyObject *args, PyObject *kwds);
 
-Tensor *_mean(PyObject *self, PyObject *const *args, size_t nargsf);
+Tensor *_mean(PyObject *self, PyObject *args, PyObject *kwds);
 Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds);
 Tensor *_max(PyObject *self, PyObject *args, PyObject *kwds);
 Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds);

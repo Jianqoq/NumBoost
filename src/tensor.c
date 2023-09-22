@@ -297,7 +297,7 @@ static PyMethodDef module_methods[] = {
      "Method docstring"},
     {"power", (PyCFunction)nb_module_pow, METH_KEYWORDS | METH_VARARGS,
      "Method docstring"},
-    {"mean", (PyCFunction)_mean, METH_FASTCALL, "Method docstring"},
+    {"mean", (PyCFunction)_mean, METH_KEYWORDS | METH_VARARGS, "Method docstring"},
     {"square", (PyCFunction)_mean, METH_FASTCALL, "Method docstring"},
     {"tensordot", (PyCFunction)tensordot, METH_FASTCALL, "Method docstring"},
     {"set_track", (PyCFunction)set_track, METH_FASTCALL, "Method docstring"},
