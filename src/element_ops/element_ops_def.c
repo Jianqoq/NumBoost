@@ -5,7 +5,22 @@
 #include "omp.h"
 
 Register_ElementWise_Operations_Floating_Types(abs, Abs_LoopBody);
-Register_ElementWise_Operations_Interger_Types(abs, Abs_LoopBody);
+Register_ElementWise_Operation(abs, bool, bool, NPY_BOOL, Abs_LoopBody);
+Register_ElementWise_Operation(abs, byte, byte, NPY_BYTE, Abs_LoopBody);
+Register_ElementWise_Operation(abs, ubyte, ubyte, NPY_UBYTE,
+                               AbsUnsigned_LoopBody);
+Register_ElementWise_Operation(abs, short, short, NPY_SHORT, Abs_LoopBody);
+Register_ElementWise_Operation(abs, ushort, ushort, NPY_USHORT,
+                               AbsUnsigned_LoopBody);
+Register_ElementWise_Operation(abs, int, int, NPY_INT, Abs_LoopBody);
+Register_ElementWise_Operation(abs, uint, uint, NPY_UINT, AbsUnsigned_LoopBody);
+Register_ElementWise_Operation(abs, long, long, NPY_LONG, Abs_LoopBody);
+Register_ElementWise_Operation(abs, ulong, ulong, NPY_ULONG,
+                               AbsUnsigned_LoopBody);
+Register_ElementWise_Operation(abs, longlong, longlong, NPY_LONGLONG,
+                               Abs_LoopBody);
+Register_ElementWise_Operation(abs, ulonglong, ulonglong, NPY_ULONGLONG,
+                               AbsUnsigned_LoopBody);
 Register_ElementWise_Operation_Err_Not_Support_Types(abs);
 Register_ElementWise_Operation_Array(abs, );
 Register_ElementWise_Operation_Method(abs, ABS);

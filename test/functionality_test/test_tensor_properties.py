@@ -26,6 +26,8 @@ def test_C_Tensor_slice(array, array2):
 @pytest.mark.parametrize("array", [np.random.randn(10)])
 def test_C_Tensor_max(array):
     a = Tensor(array)
+    b = max(a)
+    b_ = max(array)
     assert np.allclose(max(array), max(a).data), f"correct: {max(array)} | got: {max(a).data}"
 
 
@@ -38,14 +40,14 @@ def test_C_Tensor_min(array):
 @pytest.mark.parametrize("array", [np.random.randn(10, 10)])
 def test_C_Tensor_max_raise(array):
     a = Tensor(array)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         max(a)
 
 
 @pytest.mark.parametrize("array", [np.random.randn(10, 10)])
 def test_C_Tensor_min_raise(array):
     a = Tensor(array)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         min(a)
 
 

@@ -84,3 +84,39 @@ Register_Binary_Operations_Interger_Types_MultiOut(divmod, DivMod_LoopBody,
 Register_Binary_Operation_Err_Not_Support_Types_MultiOut(divmod);
 Register_Binary_Operation_Array_MultiOut(divmod, );
 Register_Binary_Operation_Method_MultiOut(divmod, DIVMOD);
+
+Register_Compare_Operations_Floating_Types(eq, EQ_LoopBody);
+Register_Compare_Operations_Interger_Types(eq, EQ_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types(eq);
+Register_Binary_Operation_Array(eq, );
+Register_Compare_Operation_Method(eq, EQ);
+
+Register_Compare_Operations_Floating_Types(lt, LT_LoopBody);
+Register_Compare_Operations_Interger_Types(lt, LT_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types(lt);
+Register_Binary_Operation_Array(lt, );
+Register_Compare_Operation_Method(lt, LT);
+
+Register_Compare_Operations_Floating_Types(le, LE_LoopBody);
+Register_Compare_Operations_Interger_Types(le, LE_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types(le);
+Register_Binary_Operation_Array(le, );
+Register_Compare_Operation_Method(le, LE);
+
+Register_Compare_Operations_Floating_Types(gt, GT_LoopBody);
+Register_Compare_Operations_Interger_Types(gt, GT_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types(gt);
+Register_Binary_Operation_Array(gt, );
+Register_Compare_Operation_Method(gt, GT);
+
+Register_Compare_Operations_Floating_Types(ge, GE_LoopBody);
+Register_Compare_Operations_Interger_Types(ge, GE_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types(ge);
+Register_Binary_Operation_Array(ge, );
+Register_Compare_Operation_Method(ge, GE);
+
+Register_Compare_Operations_Floating_Types(neq, NEQ_LoopBody);
+Register_Compare_Operations_Interger_Types(neq, NEQ_LoopBody);
+Register_Binary_Operation_Err_Not_Support_Types(neq);
+Register_Binary_Operation_Array(neq, );
+Register_Compare_Operation_Method(neq, GT);

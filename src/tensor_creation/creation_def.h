@@ -20,7 +20,7 @@
     npy_##type *data = (npy_##type *)PyArray_DATA(array);                      \
     npy_intp i;                                                                \
     _Pragma("omp parallel for") for (i = 0; i < size; i++) {                   \
-      Generic(npy_##type) val2 = start + i * step;                             \
+      Generic(npy_##type) val2 = (Generic(npy_##type))(start + i * step);                             \
       data[i] = Demote(npy_##type, val2);                                      \
     }                                                                          \
   }

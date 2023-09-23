@@ -368,9 +368,9 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     free(shape_copy);                                                          \
   } while (0)
 
-#define Perform_Universal_Operation(in_type, out_type, return_arr,             \
-                                    result_type_enum, inner_loop_body,         \
-                                    out_array, out_array_len, results, ...)    \
+#define Perform_Universal_Operation(                                           \
+    in_type, out_type, in_type_enum, result_type_enum, return_arr,             \
+    inner_loop_body, out_array, out_array_len, results, ...)                   \
   do {                                                                         \
     if (out_array_len > Args_Num(Remove_Parentheses(results))) {               \
       PyErr_SetString(PyExc_ValueError, "Number of outputs must be equal or "  \
@@ -382,14 +382,13 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     DEBUG_PRINT("%s: Entered\n", __func__);                                    \
     Replicate0_No_Comma(Handlers, __VA_ARGS__);                                \
     DEBUG_PRINT("%s: Handlers done\n", __func__);                              \
-    Replicate_Correct_Type(Correct_Type, result_type_enum, in_type,            \
-                           __VA_ARGS__);                                       \
+    Replicate_Correct_Type(Correct_Type, in_type_enum, in_type, __VA_ARGS__);  \
     DEBUG_PRINT("%s: Correct_Type done\n", __func__);                          \
     npy_intp *shapes[] = {Replicate0(Shapes, __VA_ARGS__)};                    \
     int ndims[] = {Replicate0(NDims, __VA_ARGS__)};                            \
     npy_intp *shape_ref = shapes[0];                                           \
     int ndim_ref = ndims[0];                                                   \
-    for (int i = 0; i < Args_Num(__VA_ARGS__); i++) {                          \
+    for (int i = 0; i < (Args_Num(__VA_ARGS__)); i++) {                        \
       if (!shape_isequal(shape_ref, shapes[i], ndim_ref, ndims[i])) {          \
         shape_equal = false;                                                   \
         break;                                                                 \
@@ -625,7 +624,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   if (a_ndim == axis_len) {                                                    \
     npy_intp size = PyArray_SIZE(a);                                           \
     int num_threads =                                                          \
-        size < omp_get_max_threads() ? size : omp_get_max_threads();           \
+        (int)size < omp_get_max_threads() ? (int)size : omp_get_max_threads(); \
     in_type *results = malloc(sizeof(in_type) * num_threads);                  \
     _Pragma("omp parallel") /*need to improve when omp is upgraded*/           \
     {                                                                          \
@@ -643,7 +642,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     free(results);                                                             \
   } else {                                                                     \
     /*most inner axis is the one that could be sequential*/                    \
-    npy_intp a_last_index = a_ndim - 1;                                        \
+    int a_last_index = a_ndim - 1;                                             \
     int result_nd = PyArray_NDIM(result);                                      \
     int result_nd_except_last = result_nd - 1;                                 \
     int a_ndim_except_last = a_last_index;                                     \
@@ -753,7 +752,9 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       npy_intp outer_loop_size = result_size / inner_loop_size;                \
       npy_intp inner_loop_size_2 = a_size / result_size;                       \
                                                                                \
-      int num_threads = 1;                                                     \
+      int num_threads = (int)outer_loop_size < omp_get_max_threads()           \
+                            ? (int)outer_loop_size                             \
+                            : omp_get_max_threads();                           \
       npy_intp task_amount = 0;                                                \
       in_type **result_ptr_arr =                                               \
           (in_type **)calloc(num_threads, sizeof(in_type *));                  \
@@ -948,7 +949,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   npy_longlong *result_data = PyArray_DATA(result);                            \
                                                                                \
   /*most inner axis is the one that could be sequential*/                      \
-  npy_intp a_last_index = a_ndim - 1;                                          \
+  int a_last_index = a_ndim - 1;                                               \
   int result_nd = PyArray_NDIM(result);                                        \
   int a_ndim_except_last = a_last_index;                                       \
   npy_intp inner_loop_size = transposed_shape[a_last_index];                   \
@@ -1011,7 +1012,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     npy_intp *_prg = prg_arr[thread_id];                                       \
     npy_intp p = 0;                                                            \
     _Pragma("omp for schedule(static)") for (p = 0; p < result_size; p++) {    \
-      in_type val = init_val;                                                  \
+      Generic(in_type) val = Promote(in_type, init_val);                       \
       for (npy_intp i = 0; i < inner_loop_size; i++) {                         \
         Kernel(Generic(in_type), in_type, index, val, result_data_ptr,         \
                a_data_ptr, 0, i, last_stride);                                 \
@@ -1171,7 +1172,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
   if (a_ndim == axis_len) {                                                    \
     npy_intp size = PyArray_SIZE(a);                                           \
     int num_threads =                                                          \
-        size < omp_get_max_threads() ? size : omp_get_max_threads();           \
+        (int)size < omp_get_max_threads() ? (int)size : omp_get_max_threads(); \
     in_type *results = malloc(sizeof(in_type) * num_threads);                  \
     _Pragma("omp parallel") /*need to improve when omp is upgraded*/           \
     {                                                                          \
@@ -1189,7 +1190,7 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
     free(results);                                                             \
   } else {                                                                     \
     /*most inner axis is the one that could be sequential*/                    \
-    npy_intp a_last_index = a_ndim - 1;                                        \
+    int a_last_index = a_ndim - 1;                                             \
     int result_nd = PyArray_NDIM(result);                                      \
     int result_nd_except_last = result_nd - 1;                                 \
     int a_ndim_except_last = a_last_index;                                     \
@@ -1261,12 +1262,12 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
         npy_intp p = 0;                                                        \
         _Pragma("omp for schedule(static)") for (p = 0; p < result_size;       \
                                                  p++) {                        \
-          in_type val = 0;                                                     \
+          Generic(in_type) val = 0;                                            \
           for (npy_intp j = 0; j < inner_loop_size_2; j++) {                   \
             for (npy_intp i = 0; i < inner_loop_size; i++) {                   \
               Generic(in_type) a_val =                                         \
                   Promote(in_type, a_data_ptr[i * last_stride]);               \
-              val += Demote(in_type, a_val);                                   \
+              val += a_val;                                                    \
             }                                                                  \
             for (int h = a_ndim_except_last - 1; h >= 0; h--) {                \
               if (_prg[h] < transposed_shape_cpy[h]) {                         \
@@ -1280,7 +1281,8 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
               }                                                                \
             }                                                                  \
           }                                                                    \
-          result_data_ptr[0] = val / (inner_loop_size * inner_loop_size_2);    \
+          result_data_ptr[0] =                                                 \
+              Demote(in_type, val / (inner_loop_size * inner_loop_size_2));    \
           result_data_ptr++;                                                   \
         }                                                                      \
       }                                                                        \
@@ -1299,8 +1301,8 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
       npy_intp outer_loop_size = result_size / inner_loop_size;                \
       npy_intp inner_loop_size_2 = a_size / result_size;                       \
                                                                                \
-      int num_threads = outer_loop_size < omp_get_max_threads()                \
-                            ? outer_loop_size                                  \
+      int num_threads = (int)outer_loop_size < omp_get_max_threads()           \
+                            ? (int)outer_loop_size                             \
                             : omp_get_max_threads();                           \
       npy_intp task_amount = 0;                                                \
       in_type **result_ptr_arr =                                               \
@@ -1348,8 +1350,11 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
                                                  p2++) {                       \
           for (npy_intp j = 0; j < inner_loop_size_2; j++) {                   \
             for (npy_intp idx = 0; idx < inner_loop_size; idx++) {             \
-              result_data_ptr[idx] +=                                          \
+              Generic(in_type) a_val =                                         \
                   Promote(in_type, a_data_ptr[idx * last_stride]);             \
+              Generic(in_type) val = Promote(in_type, result_data_ptr[idx]);   \
+              in_type tmp = Demote(in_type, val + a_val);                      \
+              result_data_ptr[idx] = tmp;                                      \
             }                                                                  \
             for (int h = a_last_index; h >= result_nd; h--) {                  \
               if (prg[h] < transposed_shape_cpy[h]) {                          \
@@ -1364,7 +1369,8 @@ inline PyArrayObject *nb_copy(PyArrayObject *arr) {
             }                                                                  \
           }                                                                    \
           for (npy_intp idx = 0; idx < inner_loop_size; idx++) {               \
-            result_data_ptr[idx] /= inner_loop_size_2;                         \
+            Generic(in_type) val = Promote(in_type, result_data_ptr[idx]);     \
+            result_data_ptr[idx] = Demote(in_type, val / inner_loop_size_2);   \
           }                                                                    \
           for (npy_intp t = result_nd_except_last - 1; t >= 0; t--) {          \
             if (a_data_progess[t] < transposed_shape_cpy[t]) {                 \

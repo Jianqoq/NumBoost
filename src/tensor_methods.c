@@ -3,13 +3,13 @@
 #define PY_SSIZE_T_CLEAN
 #include "tensor_methods.h"
 #include "allocator/tensor_alloc.h"
+#include "binary_ops/binary_op_def.h"
 #include "libraries/hash/uthash.h"
 #include "numboost_api.h"
 #include "python_magic/python_math_magic.h"
 #include "set_tensor_properties.h"
 #include "tensor_creation/creation_def.h"
 #include "type_convertor/type_convertor.h"
-
 
 extern jnp_method *JNP_METHOD;
 extern Tensor_need_grad_Dict *TENSOR_NEED_GRAD_DICT;
@@ -136,47 +136,32 @@ PyObject *__iter__(Tensor *self) {
   return (PyObject *)iterator_new(&TensorIterator_type, self);
 }
 
-PyObject *rich_compare(Tensor *self, PyObject *other, int op) {
-  PyArray_Descr *descr = NULL;
-  int ndim = 0;
-  if (PyArray_IsAnyScalar(self->data)) {
-    descr = PyArray_DescrFromScalar(self->data);
-    ndim = 0;
-  } else {
-    descr = ((PyArrayObject_fields *)((PyArrayObject *)self->data))->descr;
-    ndim = ((PyArrayObject_fields *)((PyArrayObject *)self->data))->nd;
-  }
-  if (ndim > 0) {
-    PyErr_SetString(PyExc_ValueError,
-                    "The truth value of an array with more than one dimension "
-                    "is ambiguous. Use a.any() or a.all()");
+PyObject *rich_compare(PyObject *self, PyObject *other, int op) {
+  PyObject *ret = NULL;
+  switch (op) {
+  case Py_LT:
+    ret = numboost_lt(self, other, NULL);
+    break;
+  case Py_LE:
+    ret = numboost_le(self, other, NULL);
+    break;
+  case Py_EQ:
+    ret = numboost_eq(self, other, NULL);
+    break;
+  case Py_NE:
+    ret = numboost_neq(self, other, NULL);
+    break;
+  case Py_GT:
+    ret = numboost_gt(self, other, NULL);
+    break;
+  case Py_GE:
+    ret = numboost_ge(self, other, NULL);
+    break;
+  default:
     return NULL;
   }
-  bool result = false;
-  switch (descr->type_num) {
-    Compare(NPY_BOOL, npy_bool, self, other, result, descr, op);
-    Compare(NPY_BYTE, npy_byte, self, other, result, descr, op);
-    Compare(NPY_UBYTE, npy_ubyte, self, other, result, descr, op);
-    Compare(NPY_SHORT, npy_short, self, other, result, descr, op);
-    Compare(NPY_USHORT, npy_ushort, self, other, result, descr, op);
-    Compare(NPY_INT, npy_int, self, other, result, descr, op);
-    Compare(NPY_UINT, npy_uint, self, other, result, descr, op);
-    Compare(NPY_LONG, npy_long, self, other, result, descr, op);
-    Compare(NPY_ULONG, npy_ulong, self, other, result, descr, op);
-    Compare(NPY_LONGLONG, npy_longlong, self, other, result, descr, op);
-    Compare(NPY_ULONGLONG, npy_ulonglong, self, other, result, descr, op);
-    Compare(NPY_FLOAT, npy_float, self, other, result, descr, op);
-    Compare(NPY_DOUBLE, npy_double, self, other, result, descr, op);
-  }
-  if (result)
-    Py_RETURN_TRUE;
-  else
-    Py_RETURN_FALSE;
-}
-
-PyObject *__min__(Tensor *self) {
-  return PyLong_FromLongLong(
-      ((PyArrayObject_fields *)((PyArrayObject *)self->data))->dimensions[0]);
+  Numboost_AssertNULL(ret);
+  return tensor_empty(ret);
 }
 
 PyObject *get_item(Tensor *self, PyObject *item) {
@@ -243,7 +228,8 @@ PyObject *__new__(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     return NULL;
   if (data) {
     if (!TRACK) {
-      cache = PyArray_FromAny(data, NULL, 0, 0, NPY_ARRAY_DEFAULT, NULL);
+      cache = PyArray_FromAny(
+          data, NULL, 0, NPY_ARRAY_DEFAULT | NPY_ARRAY_C_CONTIGUOUS, 0, NULL);
     } else {
       PyObject *jaxarray = PyObject_CallOneArg(JNP_METHOD->array, data);
       return jaxarray;

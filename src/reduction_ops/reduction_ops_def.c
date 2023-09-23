@@ -2,9 +2,9 @@
 #define NO_IMPORT_ARRAY
 #include "reduction_ops_def.h"
 #include "../numboost_utils.h"
+#include "immintrin.h"
 #include "limits.h"
 #include "reduction_kernels.h"
-#include "immintrin.h"
 
 Register_Reduction_Operations_Floating_Types(sum, 0, Sum_Main, Empty_Pre,
                                              Empty_Post);
@@ -21,8 +21,8 @@ Register_Reduction_Operation(min, double, NPY_DOUBLE, NPY_INFINITY, Min_Main,
                              Empty_Pre, Empty_Post);
 Register_Reduction_Operation(min, longdouble, NPY_LONGDOUBLE, NPY_INFINITYL,
                              Min_Main, Empty_Pre, Empty_Post);
-Register_Reduction_Operation(min, half, NPY_HALF, NPY_INFINITYF, Min_Main,
-                             Empty_Pre, Empty_Post);
+Register_Reduction_Operation(min, half, NPY_HALF, 0x7c00, Min_Main, Empty_Pre,
+                             Empty_Post);
 Register_Reduction_Operation(min, bool, NPY_BOOL, 1, Min_Main, Empty_Pre,
                              Empty_Post);
 Register_Reduction_Operation(min, byte, NPY_BYTE, SCHAR_MAX, Min_Main,
@@ -56,7 +56,7 @@ Register_Reduction_Operation(max, double, NPY_DOUBLE, -NPY_INFINITY, Max_Main,
                              Empty_Pre, Empty_Post);
 Register_Reduction_Operation(max, longdouble, NPY_LONGDOUBLE, -NPY_INFINITYL,
                              Max_Main, Empty_Pre, Empty_Post);
-Register_Reduction_Operation(max, half, NPY_HALF, -NPY_INFINITYF, Max_Main,
+Register_Reduction_Operation(max, half, NPY_HALF, -0x7c00, Max_Main,
                              Empty_Pre, Empty_Post);
 Register_Reduction_Operation(max, bool, NPY_BOOL, 0, Max_Main, Empty_Pre,
                              Empty_Post);
@@ -91,7 +91,7 @@ Register_Arg_Reduction_Operation(argmin, double, NPY_DOUBLE, NPY_INFINITY,
                                  ArgMin_Main);
 Register_Arg_Reduction_Operation(argmin, longdouble, NPY_LONGDOUBLE,
                                  NPY_INFINITYL, ArgMin_Main);
-Register_Arg_Reduction_Operation(argmin, half, NPY_HALF, NPY_INFINITYF,
+Register_Arg_Reduction_Operation(argmin, half, NPY_HALF, 0x7c00,
                                  ArgMin_Main);
 Register_Arg_Reduction_Operation(argmin, bool, NPY_BOOL, 1, ArgMin_Main);
 Register_Arg_Reduction_Operation(argmin, byte, NPY_BYTE, SCHAR_MAX,
@@ -122,7 +122,7 @@ Register_Arg_Reduction_Operation(argmax, double, NPY_DOUBLE, -NPY_INFINITY,
                                  ArgMax_Main);
 Register_Arg_Reduction_Operation(argmax, longdouble, NPY_LONGDOUBLE,
                                  -NPY_INFINITYL, ArgMax_Main);
-Register_Arg_Reduction_Operation(argmax, half, NPY_HALF, -NPY_INFINITYF,
+Register_Arg_Reduction_Operation(argmax, half, NPY_HALF, -0x7c00,
                                  ArgMax_Main);
 Register_Arg_Reduction_Operation(argmax, bool, NPY_BOOL, 0, ArgMax_Main);
 Register_Arg_Reduction_Operation(argmax, byte, NPY_BYTE, -SCHAR_MAX,

@@ -1,8 +1,9 @@
 #define PY_ARRAY_UNIQUE_SYMBOL tensor_c
 #define NO_IMPORT_ARRAY
 #include "ufunc_backward_def.h"
-#include "omp.h"
 #include "backward_kernels.h"
+#include "omp.h"
+
 
 Register_FuseBackward_Operation_FloatingTypes(sin, SinBackward_LoopBody, a, b);
 Register_FuseBackward_Operation_Err_Int(sin, a, b);

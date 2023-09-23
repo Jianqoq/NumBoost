@@ -1,7 +1,19 @@
+#ifdef _MSC_VER
+#define Disable_Unused_Variable_Warning _Pragma("warning(disable : 4146)")
+#define Enable_Unused_Variable_Warning _Pragma("warning(default : 4146)")
+#else
+#define Disable_Unused_Variable_Warning
+#define Enable_Unused_Variable_Warning
+#endif
+
 #define Abs_LoopBody(generic_type, in_type, out_type, i, result_ptr,           \
                      stride_a_last, a_ptr)                                     \
   generic_type a_val = Promote(in_type, a_ptr[i * stride_a_last]);             \
   result_ptr[i] = Demote(in_type, a_val > 0 ? a_val : -a_val);
+
+#define AbsUnsigned_LoopBody(generic_type, in_type, out_type, i, result_ptr,   \
+                             stride_a_last, a_ptr)                             \
+  result_ptr[i] = a_ptr[i * stride_a_last];
 
 #define Sin_LoopBody(generic_type, in_type, out_type, i, result_ptr,           \
                      stride_a_last, a_ptr)                                     \
@@ -101,5 +113,7 @@
 
 #define Negative_LoopBody(generic_type, in_type, out_type, i, result_ptr,      \
                           stride_a_last, a_ptr)                                \
-  generic_type a_val = Promote(in_type, a_ptr[i * stride_a_last]);             \
-  result_ptr[i] = Demote(in_type, -a_val);
+  Disable_Unused_Variable_Warning generic_type a_val =                         \
+      Promote(in_type, a_ptr[i * stride_a_last]);                              \
+  result_ptr[i] = Demote(in_type, -a_val);                                     \
+  Enable_Unused_Variable_Warning

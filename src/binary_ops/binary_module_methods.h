@@ -16,7 +16,7 @@
       return NULL;                                                             \
     }                                                                          \
     PyObject *outs;                                                            \
-    Tensor *to_replace = NULL;                                                        \
+    Tensor *to_replace = NULL;                                                 \
     if (out == Py_None || out == NULL) {                                       \
       outs = NULL;                                                             \
     } else if (Py_IS_TYPE(out, Tensor_type)) {                                 \
@@ -40,7 +40,7 @@
       }                                                                        \
     } else {                                                                   \
       PyObject *to_return =                                                    \
-          tensor_new((Tensor *)a, b, result, backward_fn_name);             \
+          tensor_new((Tensor *)a, b, result, backward_fn_name);                \
       return to_return;                                                        \
     }                                                                          \
   }

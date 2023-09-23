@@ -39,5 +39,5 @@ PyObject *tensor_divmod(PyObject *self, PyObject *other);
 PyObject *tensor_iremainder(PyObject *self, PyObject *other);
 PyObject *tensor_floordiv(PyObject *self, PyObject *other);
 PyObject *tensor_ifloordiv(PyObject *self, PyObject *other);
-
+int tensor_bool(PyObject *self);
 #endif

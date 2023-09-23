@@ -789,7 +789,21 @@ PyObject *binary_result_type_(PyObject *self, PyObject *const *args,
 
 int any_to_type_enum(PyObject *a) {
   if (Py_IS_TYPE(a, Tensor_type)) {
-    return ((PyArrayObject_fields *)((Tensor *)a)->data)->descr->type_num;
+    if (PyArray_Check(((Tensor *)a)->data)) {
+      return ((PyArrayObject_fields *)((Tensor *)a)->data)->descr->type_num;
+    } else if (PyArray_IsAnyScalar(((Tensor *)a)->data)) {
+      PyArray_Descr *descr = PyArray_DescrFromScalar(((Tensor *)a)->data);
+      int ret = -1;
+      if (descr != NULL) {
+        ret = descr->type_num;
+        Py_DECREF(descr);
+      }
+      return ret;
+    } else {
+      PyErr_SetString(PyExc_TypeError,
+                      "unsupported data type in Tensor Object");
+      return -1;
+    }
   } else if (PyArray_Check(a)) {
     return ((PyArrayObject_fields *)a)->descr->type_num;
   } else if (PyBool_Check(a))
@@ -804,8 +818,20 @@ int any_to_type_enum(PyObject *a) {
     return NPY_STRING;
   else if (PyUnicode_Check(a))
     return NPY_UNICODE;
-  else
-    return -1;
+  else if (PyArray_IsAnyScalar(a)) {
+    PyArray_Descr *descr = PyArray_DescrFromScalar(a);
+    int ret = -1;
+    if (descr != NULL) {
+      ret = descr->type_num;
+      Py_DECREF(descr);
+    } else {
+      PyErr_SetString(PyExc_TypeError, "unsupported data type in anyscalar");
+    }
+    return ret;
+  }
+  PyErr_SetString(PyExc_TypeError, "unsupported data type in all branch for "
+                                   "any_to_type_enum");
+  return -1;
 }
 
 int type_2_size[] = {

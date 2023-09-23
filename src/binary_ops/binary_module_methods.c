@@ -6,7 +6,6 @@
 #include "../tensor_creation/creation_def.h"
 #include "binary_op_def.h"
 
-
 static char *keyword_list[] = {"a", "b", "out", NULL};
 
 Register_mudule_methods(add, "AddBackward");

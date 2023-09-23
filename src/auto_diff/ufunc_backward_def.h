@@ -49,9 +49,9 @@
       int out_arr_len) {                                                       \
     PyArrayObject **result =                                                   \
         (PyArrayObject **)malloc(sizeof(PyArrayObject *));                     \
-    Perform_Universal_Operation(npy_##in_type, npy_##out_type, result,         \
-                                result_type, inner_loop_body_universal, out,   \
-                                out_arr_len, (result), __VA_ARGS__);           \
+    Perform_Universal_Operation(                                               \
+        npy_##in_type, npy_##out_type, result_type, result_type, result,       \
+        inner_loop_body_universal, out, out_arr_len, (result), __VA_ARGS__);   \
     if (result == NULL) {                                                      \
       return NULL;                                                             \
     } else {                                                                   \

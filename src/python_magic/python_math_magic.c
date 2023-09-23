@@ -10,7 +10,6 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
-
 extern XLA_OPS *xla_ops;
 extern jnp_method *JNP_METHOD;
 extern bool TRACK;
@@ -604,4 +603,29 @@ PyObject *tensor_ifloordiv(PyObject *self, PyObject *other) {
                     "Left operands in inplace operation is not Tensor Object");
     return NULL;
   }
+}
+
+int tensor_bool(PyObject *self) {
+  Tensor *_self = (Tensor *)self;
+  if (PyArray_SIZE((PyArrayObject*)_self->data) != 1) {
+    PyErr_SetString(PyExc_TypeError,
+                    "The truth value of an array with more than one element is "
+                    "ambiguous. Use a.any() or a.all()");
+    return -1;
+  }
+  PyObject *zero = PyLong_FromLong(0);
+  PyObject *numpy_result = numboost_eq(_self->data, zero, NULL);
+  Py_DECREF(zero);
+  if (numpy_result == NULL) {
+    return -1;
+  } else {
+    npy_bool *data = (npy_bool *)PyArray_DATA((PyArrayObject *)numpy_result);
+    npy_bool is_true = data[0];
+    Py_DECREF(numpy_result);
+    if (is_true)
+      return 0;
+    else
+      return 1;
+  }
+  return -1;
 }
