@@ -5,10 +5,11 @@
 #include "../element_ops/element_ops_def.h"
 #include "../numboost_api.h"
 #include "../numboost_utils.h"
+#include "../tensor_creation/creation_def.h"
 #include "structmember.h"
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include "../tensor_creation/creation_def.h"
+
 
 extern XLA_OPS *xla_ops;
 extern jnp_method *JNP_METHOD;
@@ -155,8 +156,8 @@ PyObject *tensor_negative(PyObject *self) // need to check
   if (numpy_result == NULL) {
     return NULL;
   }
-  PyObject *new_tensor = tensor_new(_self, PyLong_FromLong(-1), numpy_result,
-                                       "NegativeBackward");
+  PyObject *new_tensor =
+      tensor_new(_self, PyLong_FromLong(-1), numpy_result, "NegativeBackward");
   return new_tensor;
 }
 

@@ -108,8 +108,6 @@ PyObject *arange(PyObject *self, PyObject *args, PyObject *kwds) {
   int start = 0, stop = -1, step = -1, dtype = -1;
   (void)self;
   char *kwds_ls[] = {"start", "stop", "step", "dtype", NULL};
-  int axes[NPY_MAXDIMS] = {NULL};
-  int axis_len = 1;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "i|iii", kwds_ls, &start, &stop,
                                    &step, &dtype)) {
     return NULL;

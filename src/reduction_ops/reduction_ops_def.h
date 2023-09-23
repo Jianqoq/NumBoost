@@ -4,7 +4,6 @@
 #include "immintrin.h"
 #include "reduction_kernels.h"
 
-
 #define Register_Reduction_Operation_Array(name, sufix)                        \
   PyObject *(*reduction_##name##_##sufix[])(PyObject *, PyObject **, int *,    \
                                             int, bool) = {                     \
@@ -118,7 +117,7 @@
                            npy_##type, result_type_enum, keepdims);            \
     return (PyObject *)result;                                                 \
   }
-  
+
 #define Register_Reduction_Operations_Floating_Types(name, init_val, kernel,   \
                                                      Kernel_Pre, Kernel_Post)  \
   Register_Reduction_Operation(name, float, NPY_FLOAT, init_val, kernel,       \
@@ -201,9 +200,9 @@
 #define Register_Arg_Reduction_Operation_Method(name, sufix, op_enum)          \
   PyObject *numboost_##name(PyObject *a, PyObject **out_arr, int *axes,        \
                             int axis_len, bool keepdims) {                     \
-    int input_type = any_to_type_enum(a);                                      \
-    PyObject *result = reduction_##name##_##sufix[PyArray_TYPE(a)](            \
-        a, out_arr, axes, axis_len, keepdims);                                 \
+    PyObject *result =                                                         \
+        reduction_##name##_##sufix[PyArray_TYPE((PyArrayObject *)a)](          \
+            a, out_arr, axes, axis_len, keepdims);                             \
     if (result == NULL) {                                                      \
       return NULL;                                                             \
     }                                                                          \

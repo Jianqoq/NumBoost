@@ -29,7 +29,7 @@ PyObject *nb_module_pow(PyObject *numboost_module, PyObject *args,
     return NULL;
   }
   PyObject *outs;
-  Tensor *to_replace;
+  Tensor *to_replace = NULL;
   Tensor *a_ = (Tensor *)a;
   if (out == Py_None || out == NULL) {
     outs = NULL;
@@ -43,7 +43,6 @@ PyObject *nb_module_pow(PyObject *numboost_module, PyObject *args,
   PyObject *result = numboost_pow(a, power, &outs);
   Numboost_AssertNULL(result);
   if (outs) {
-    Tensor *to_ret = (Tensor *)outs;
     if (result != to_replace->data) {
       Py_DECREF(to_replace->data);
       to_replace->data = result;
