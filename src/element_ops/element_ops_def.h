@@ -40,15 +40,15 @@
     return NULL;                                                               \
   }
 
-#define Register_ElementWise_Operation(name, type, result_type,                \
+#define Register_ElementWise_Operation(name, in_type, out_type, result_type,   \
                                        inner_loop_body_universal)              \
-  PyObject *elementwise_##name##_##type(PyObject *a, PyObject **out_arr,       \
-                                        int out_arr_len) {                     \
+  PyObject *elementwise_##name##_##in_type(PyObject *a, PyObject **out_arr,    \
+                                           int out_arr_len) {                  \
     PyArrayObject **result =                                                   \
         (PyArrayObject **)malloc(sizeof(PyArrayObject *));                     \
-    Perform_Universal_Operation(npy_##type, result, result_type,               \
-                                inner_loop_body_universal, out_arr,            \
-                                out_arr_len, (result), a);                     \
+    Perform_Universal_Operation(npy_##in_type, npy_##out_type, result,         \
+                                result_type, inner_loop_body_universal,        \
+                                out_arr, out_arr_len, (result), a);            \
     if (result == NULL) {                                                      \
       return NULL;                                                             \
     } else {                                                                   \
@@ -60,28 +60,38 @@
 
 #define Register_ElementWise_Operations_Floating_Types(name,                   \
                                                        universal_loop_body)    \
-  Register_ElementWise_Operation(name, float, NPY_FLOAT, universal_loop_body); \
-  Register_ElementWise_Operation(name, double, NPY_DOUBLE,                     \
+  Register_ElementWise_Operation(name, float, float, NPY_FLOAT,                \
                                  universal_loop_body);                         \
-  Register_ElementWise_Operation(name, longdouble, NPY_LONGDOUBLE,             \
+  Register_ElementWise_Operation(name, double, double, NPY_DOUBLE,             \
                                  universal_loop_body);                         \
-  Register_ElementWise_Operation(name, half, NPY_HALF, universal_loop_body);
+  Register_ElementWise_Operation(name, longdouble, longdouble, NPY_LONGDOUBLE, \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, half, half, NPY_HALF,                   \
+                                 universal_loop_body);
 
 #define Register_ElementWise_Operations_Interger_Types(name,                   \
                                                        universal_loop_body)    \
-  Register_ElementWise_Operation(name, bool, NPY_BOOL, universal_loop_body);   \
-  Register_ElementWise_Operation(name, byte, NPY_BYTE, universal_loop_body);   \
-  Register_ElementWise_Operation(name, ubyte, NPY_UBYTE, universal_loop_body); \
-  Register_ElementWise_Operation(name, short, NPY_SHORT, universal_loop_body); \
-  Register_ElementWise_Operation(name, ushort, NPY_USHORT,                     \
+  Register_ElementWise_Operation(name, bool, bool, NPY_BOOL,                   \
                                  universal_loop_body);                         \
-  Register_ElementWise_Operation(name, int, NPY_INT, universal_loop_body);     \
-  Register_ElementWise_Operation(name, uint, NPY_UINT, universal_loop_body);   \
-  Register_ElementWise_Operation(name, long, NPY_LONG, universal_loop_body);   \
-  Register_ElementWise_Operation(name, ulong, NPY_ULONG, universal_loop_body); \
-  Register_ElementWise_Operation(name, longlong, NPY_LONGLONG,                 \
+  Register_ElementWise_Operation(name, byte, byte, NPY_BYTE,                   \
                                  universal_loop_body);                         \
-  Register_ElementWise_Operation(name, ulonglong, NPY_ULONGLONG,               \
+  Register_ElementWise_Operation(name, ubyte, ubyte, NPY_UBYTE,                \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, short, short, NPY_SHORT,                \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, ushort, ushort, NPY_USHORT,             \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, int, int, NPY_INT,                      \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, uint, uint, NPY_UINT,                   \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, long, long, NPY_LONG,                   \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, ulong, ulong, NPY_ULONG,                \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, longlong, longlong, NPY_LONGLONG,       \
+                                 universal_loop_body);                         \
+  Register_ElementWise_Operation(name, ulonglong, ulonglong, NPY_ULONGLONG,    \
                                  universal_loop_body);
 
 #define Register_ElementWise_Operation_Err_Interger_Types(name)                \
@@ -138,7 +148,7 @@
       return NULL;                                                             \
     }                                                                          \
     PyObject *outs;                                                            \
-    Tensor *to_replace;                                                        \
+    Tensor *to_replace = NULL;                                                 \
     if (out == Py_None || out == NULL) {                                       \
       outs = NULL;                                                             \
     } else if (Py_IS_TYPE(out, Tensor_type)) {                                 \
@@ -151,7 +161,6 @@
     PyObject *result = numboost_##name(a, &outs);                              \
     Numboost_AssertNULL(result);                                               \
     if (outs) {                                                                \
-      Tensor *to_ret = (Tensor *)outs;                                         \
       if (result != to_replace->data) {                                        \
         Py_DECREF(to_replace->data);                                           \
         to_replace->data = result;                                             \
@@ -163,7 +172,7 @@
       }                                                                        \
     } else {                                                                   \
       PyObject *to_return =                                                    \
-          tensor_new((Tensor *)a, Py_None, result, backward_fn_name);       \
+          tensor_new((Tensor *)a, Py_None, result, backward_fn_name);          \
       return (Tensor *)to_return;                                              \
     }                                                                          \
   }

@@ -543,7 +543,7 @@ Tensor *_sum(PyObject *self, PyObject *args, PyObject *kwds) {
   PyObject *keepdims = NULL;
   PyObject *out = NULL;
   bool keepdims_c = true;
-  int axes[NPY_MAXDIMS] = {NULL};
+  int axes[NPY_MAXDIMS] = {0};
   int axis_len = 1;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OO", kwds_ls, &_a, &axis,
                                    &keepdims, &out)) {
@@ -584,7 +584,7 @@ Tensor *_max(PyObject *self, PyObject *args, PyObject *kwds) {
   PyObject *keepdims = NULL;
   PyObject *out = NULL;
   bool keepdims_c = true;
-  int axes[NPY_MAXDIMS] = {NULL};
+  int axes[NPY_MAXDIMS] = {0};
   int axis_len = 1;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OO", kwds_ls, &_a, &axis,
                                    &keepdims, &out)) {
@@ -625,7 +625,7 @@ Tensor *_min(PyObject *self, PyObject *args, PyObject *kwds) {
   PyObject *keepdims = NULL;
   PyObject *out = NULL;
   bool keepdims_c = true;
-  int axes[NPY_MAXDIMS] = {NULL};
+  int axes[NPY_MAXDIMS] = {0};
   int axis_len = 1;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OO", kwds_ls, &_a, &axis,
                                    &keepdims, &out)) {
@@ -666,7 +666,7 @@ Tensor *_mean(PyObject *self, PyObject *args, PyObject *kwds) {
   PyObject *keepdims = NULL;
   PyObject *out = NULL;
   bool keepdims_c = true;
-  int axes[NPY_MAXDIMS] = {NULL};
+  int axes[NPY_MAXDIMS] = {0};
   int axis_len = 1;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OO", kwds_ls, &_a, &axis,
                                    &keepdims, &out)) {
@@ -707,7 +707,7 @@ Tensor *_argmax(PyObject *self, PyObject *args, PyObject *kwds) {
   PyObject *keepdims = NULL;
   PyObject *out = NULL;
   bool keepdims_c = true;
-  int axes[NPY_MAXDIMS] = {NULL};
+  int axes[NPY_MAXDIMS] = {0};
   int axis_len = 1;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OO", kwds_ls, &_a, &axis,
                                    &keepdims, &out)) {
@@ -748,7 +748,7 @@ Tensor *_argmin(PyObject *self, PyObject *args, PyObject *kwds) {
   PyObject *keepdims = NULL;
   PyObject *out = NULL;
   bool keepdims_c = true;
-  int axes[NPY_MAXDIMS] = {NULL};
+  int axes[NPY_MAXDIMS] = {0};
   int axis_len = 1;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OO", kwds_ls, &_a, &axis,
                                    &keepdims, &out)) {

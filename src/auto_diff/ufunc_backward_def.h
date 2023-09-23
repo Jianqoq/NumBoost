@@ -42,16 +42,16 @@
 @param  inner_loop_body     the macro the user defined
 @param  ...                the tensors that need to be fused
  */
-#define Register_FuseBackward_Operation(name, type, result_type,               \
+#define Register_FuseBackward_Operation(name, in_type, out_type, result_type,  \
                                         inner_loop_body_universal, ...)        \
-  PyObject **name##_backward_##type(                                           \
+  PyObject **name##_backward_##in_type(                                        \
       Replicate0_With_Comma(Parameter_type, __VA_ARGS__), PyObject **out,      \
       int out_arr_len) {                                                       \
     PyArrayObject **result =                                                   \
         (PyArrayObject **)malloc(sizeof(PyArrayObject *));                     \
-    Perform_Universal_Operation(npy_##type, result, result_type,               \
-                                inner_loop_body_universal, out, out_arr_len,   \
-                                (result), __VA_ARGS__);                        \
+    Perform_Universal_Operation(npy_##in_type, npy_##out_type, result,         \
+                                result_type, inner_loop_body_universal, out,   \
+                                out_arr_len, (result), __VA_ARGS__);           \
     if (result == NULL) {                                                      \
       return NULL;                                                             \
     } else {                                                                   \
@@ -69,38 +69,39 @@
 
 #define Register_FuseBackward_Operation_FloatingTypes(                         \
     name, universal_loop_body, ...)                                            \
-  Register_FuseBackward_Operation(name, float, NPY_FLOAT, universal_loop_body, \
+  Register_FuseBackward_Operation(name, float, float, NPY_FLOAT,               \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, double, double, NPY_DOUBLE,            \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, longdouble, longdouble,                \
+                                  NPY_LONGDOUBLE, universal_loop_body,         \
                                   __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, double, NPY_DOUBLE,                    \
-                                  universal_loop_body, __VA_ARGS__);           \
-  Register_FuseBackward_Operation(name, longdouble, NPY_LONGDOUBLE,            \
-                                  universal_loop_body, __VA_ARGS__);           \
-  Register_FuseBackward_Operation(name, half, NPY_HALF, universal_loop_body,   \
-                                  __VA_ARGS__);
+  Register_FuseBackward_Operation(name, half, half, NPY_HALF,                  \
+                                  universal_loop_body, __VA_ARGS__);
 
 #define Register_FuseBackward_Operation_IntergerTypes(                         \
     name, universal_loop_body, ...)                                            \
-  Register_FuseBackward_Operation(name, bool, NPY_FLOAT, universal_loop_body,  \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, byte, NPY_BYTE, universal_loop_body,   \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, ubyte, NPY_UBYTE, universal_loop_body, \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, short, NPY_SHORT, universal_loop_body, \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, ushort, NPY_USHORT,                    \
+  Register_FuseBackward_Operation(name, bool, bool, NPY_FLOAT,                 \
                                   universal_loop_body, __VA_ARGS__);           \
-  Register_FuseBackward_Operation(name, int, NPY_INT, universal_loop_body,     \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, uint, NPY_UINT, universal_loop_body,   \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, long, NPY_LONG, universal_loop_body,   \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, ulong, NPY_ULONG, universal_loop_body, \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, longlong, NPY_LONGLONG,                \
+  Register_FuseBackward_Operation(name, byte, byte, NPY_BYTE,                  \
                                   universal_loop_body, __VA_ARGS__);           \
-  Register_FuseBackward_Operation(name, ulonglong, NPY_ULONGLONG,              \
+  Register_FuseBackward_Operation(name, ubyte, ubyte, NPY_UBYTE,               \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, short, short, NPY_SHORT,               \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, ushort, ushort, NPY_USHORT,            \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, int, int, NPY_INT,                     \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, uint, uint, NPY_UINT,                  \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, long, long, NPY_LONG,                  \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, ulong, ulong, NPY_ULONG,               \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, longlong, longlong, NPY_LONGLONG,      \
+                                  universal_loop_body, __VA_ARGS__);           \
+  Register_FuseBackward_Operation(name, ulonglong, ulonglong, NPY_ULONGLONG,   \
                                   universal_loop_body, __VA_ARGS__);
 
 #define Register_FuseBackward_Operation_Err_Int(name, ...)                     \
@@ -200,6 +201,7 @@ PyObject **numboost_sqrt_backward(PyObject *a, PyObject *b, PyObject **out,
                                   int out_arr_len, int result_type);
 PyObject **numboost_abs_backward(PyObject *a, PyObject *b, PyObject **out,
                                  int out_arr_len, int result_type);
-PyObject **numboost_power_backward(PyObject *a, PyObject *power, PyObject *grad, PyObject **out,
-                                   int out_arr_len, int result_type);
+PyObject **numboost_power_backward(PyObject *a, PyObject *power, PyObject *grad,
+                                   PyObject **out, int out_arr_len,
+                                   int result_type);
 #endif // _NUMBOOST_AUTO_DIFF_UFUNC_BACKWARD_DEF_H_

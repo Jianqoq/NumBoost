@@ -155,7 +155,7 @@
 
 #define Init_Prd(x) Init_Prd_Helper(x)
 #define Init_Prd_Helper(x)                                                     \
-  npy_intp prd_##x = result_##x##_ptr_arr[id] - result_##x##_ptr_saved;
+  npy_intp prd_##x = result_##x##_ptr_arr[id] - result_##x##_ptr;
 #define Adjust_Prd(x) Adjust_Prd_Helper(x)
 #define Adjust_Prd_Helper(x)                                                   \
   current_shape_process[j] = prd_##x % __shape[j];                             \
@@ -200,7 +200,6 @@
 #define Get_Result_Ptr(x) result_##x##_ptr
 #define Init_Result_Ptrs(x, type)                                              \
   type *result_##x##_ptr = (type *)PyArray_DATA(x);                            \
-  type *result_##x##_ptr_saved = (type *)PyArray_DATA(x);                      \
   type *result_##x##_ptr_cpy = (type *)PyArray_DATA(x);
 
 #define Alloc_Copy_Strides_And_Indices(x, type, new_shapes, result, index)     \

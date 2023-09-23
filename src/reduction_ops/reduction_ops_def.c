@@ -27,7 +27,7 @@ Register_Reduction_Operation(min, bool, NPY_BOOL, 1, Min_Main, Empty_Pre,
                              Empty_Post);
 Register_Reduction_Operation(min, byte, NPY_BYTE, SCHAR_MAX, Min_Main,
                              Empty_Pre, Empty_Post);
-Register_Reduction_Operation(min, ubyte, NPY_UBYTE, USHRT_MAX, Min_Main,
+Register_Reduction_Operation(min, ubyte, NPY_UBYTE, UCHAR_MAX, Min_Main,
                              Empty_Pre, Empty_Post);
 Register_Reduction_Operation(min, short, NPY_SHORT, SHRT_MAX, Min_Main,
                              Empty_Pre, Empty_Post);
@@ -96,7 +96,7 @@ Register_Arg_Reduction_Operation(argmin, half, NPY_HALF, NPY_INFINITYF,
 Register_Arg_Reduction_Operation(argmin, bool, NPY_BOOL, 1, ArgMin_Main);
 Register_Arg_Reduction_Operation(argmin, byte, NPY_BYTE, SCHAR_MAX,
                                  ArgMin_Main);
-Register_Arg_Reduction_Operation(argmin, ubyte, NPY_UBYTE, USHRT_MAX,
+Register_Arg_Reduction_Operation(argmin, ubyte, NPY_UBYTE, UCHAR_MAX,
                                  ArgMin_Main);
 Register_Arg_Reduction_Operation(argmin, short, NPY_SHORT, SHRT_MAX,
                                  ArgMin_Main);
