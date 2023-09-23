@@ -1,8 +1,9 @@
 #ifndef REDUCTION_OPS_DEF_H
 #define REDUCTION_OPS_DEF_H
 #include "../numboost_api.h"
-#include "reduction_kernels.h"
 #include "immintrin.h"
+#include "reduction_kernels.h"
+
 
 #define Register_Reduction_Operation_Array(name, sufix)                        \
   PyObject *(*reduction_##name##_##sufix[])(PyObject *, PyObject **, int *,    \
@@ -117,6 +118,7 @@
                            npy_##type, result_type_enum, keepdims);            \
     return (PyObject *)result;                                                 \
   }
+  
 #define Register_Reduction_Operations_Floating_Types(name, init_val, kernel,   \
                                                      Kernel_Pre, Kernel_Post)  \
   Register_Reduction_Operation(name, float, NPY_FLOAT, init_val, kernel,       \
@@ -246,7 +248,7 @@
       }                                                                        \
     } else {                                                                   \
       PyObject *to_return =                                                    \
-          tensor_new((Tensor *)a, Py_None, result, backward_fn_name);       \
+          tensor_new((Tensor *)a, Py_None, result, backward_fn_name);          \
       return (Tensor *)to_return;                                              \
     }                                                                          \
   }

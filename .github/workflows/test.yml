@@ -18,13 +18,13 @@ jobs:
         if: steps.cache-pip.outputs.cache-hit != 'true'
         run: pip install -r requirements.txt
 
-      - name: Install mkl
-        run: |
-          wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/cd17b7fe-500e-4305-a89b-bd5b42bfd9f8/l_onemkl_p_2023.1.0.46342_offline.sh
-          sudo apt-get install -y ncurses-term
-          sudo sh ./l_onemkl_p_2023.1.0.46342_offline.sh -a -s --eula accept --install-dir /mkl-C/
-          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mkl-C/mkl/2023.1.0/lib/intel64
-          source /mkl-C/mkl/latest/env/vars.sh
+#      - name: Install mkl
+#        run: |
+#          wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/cd17b7fe-500e-4305-a89b-bd5b42bfd9f8/l_onemkl_p_2023.1.0.46342_offline.sh
+#          sudo apt-get install -y ncurses-term
+#          sudo sh ./l_onemkl_p_2023.1.0.46342_offline.sh -a -s --eula accept --install-dir /mkl-C/
+#          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mkl-C/mkl/2023.1.0/lib/intel64
+#          source /mkl-C/mkl/latest/env/vars.sh
 
       - name: compile tensor module
         run: |

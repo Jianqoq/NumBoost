@@ -53,9 +53,11 @@ if platform.system() == 'Windows':
     extra_link_args = []
     numboost_files = [f for f in files if f.startswith('Numboost') and f.endswith('.pyd')]
 else:
-    args = ['-O3', '-fopenmp', '-I/mkl-C/mkl/latest/include', '-mavx', '-mavx2', '-I/usr/local/include',
+    # args = ['-O3', '-fopenmp', '-I/mkl-C/mkl/latest/include', '-mavx', '-mavx2', '-I/usr/local/include',
+    #         '-L/usr/local/lib', '-Wall']
+    # extra_link_args = ['-lmkl_rt']
+    args = ['-O3', '-fopenmp', '-mavx', '-mavx2', '-I/usr/local/include',
             '-L/usr/local/lib', '-Wall']
-    extra_link_args = ['-lmkl_rt']
     if os.path.exists('Numboost.cpython-38-x86_64-linux-gnu.so'):
         os.remove('Numboost.cpython-38-x86_64-linux-gnu.so')
     numboost_files = [f for f in files if f.startswith('Numboost') and f.endswith('.so')]
@@ -89,12 +91,15 @@ mymodule = Extension('Numboost',
                          r'C:\Users\123\autograd-C\Autograd-C\src\libraries\jemalloc-5.3.0\jemalloc-5.3.0\msvc\x64\Release',
                          os.path.join(os.path.dirname(numpy.core.__file__), 'lib')
                      ],
-                     libraries=['mkl_rt', 'npymath']
+                    #  libraries=['mkl_rt', 'npymath']
+                    #  if platform.system() == 'Windows' else [
+                    #      'mkl_rt', 'gomp', 'npymath'],
+                     libraries=['npymath']
                      if platform.system() == 'Windows' else [
-                         'mkl_rt', 'gomp', 'npymath'],
+                         'gomp', 'npymath'],
                      language='c',
                      extra_compile_args=args,
-                     extra_link_args=extra_link_args,
+                     # extra_link_args=extra_link_args,
                      define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_25_API_VERSION')] + numboost_custom_macro_args)
 
 setup(name='Numboost',

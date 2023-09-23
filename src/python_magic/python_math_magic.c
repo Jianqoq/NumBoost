@@ -5,7 +5,6 @@
 #include "../element_ops/element_ops_def.h"
 #include "../numboost_api.h"
 #include "../numboost_utils.h"
-#include "mkl.h"
 #include "structmember.h"
 #include <Python.h>
 #include <numpy/arrayobject.h>
