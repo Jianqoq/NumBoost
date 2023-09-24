@@ -20,6 +20,7 @@ typedef enum {
   GT,
   EQ,
   NEQ,
+  WHERE,
   /*====== seperator for binary and elementwise operation ======*/
   POSITIVE,
   NEGATIVE,

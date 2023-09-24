@@ -4,12 +4,6 @@
 #define Empty_Post(...)
 #define Empty_Pre(...)
 
-#define Mean_Main(generic_type, type, result_data_ptr, a_data_ptr, result_idx, \
-                  a_idx, a_stride)                                             \
-  generic_type a_val = Promote(type, a_data_ptr[a_idx * a_stride]);            \
-  result_data_ptr[result_idx] +=                                               \
-      Demote(type, (a_val / (inner_loop_size * inner_loop_size_2)));
-
 #define Sum_Main(generic_type, type, result_data_ptr, a_data_ptr, result_idx,  \
                  a_idx, a_stride)                                              \
   generic_type a_val = Promote(type, a_data_ptr[a_idx * a_stride]);            \

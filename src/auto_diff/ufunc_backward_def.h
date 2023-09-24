@@ -4,38 +4,6 @@
 #include "../numboost_api.h"
 #include "../numboost_utils.h"
 
-#define Register_FuseBackward_Operation_Set(name, inner_loop_body, ...)        \
-  Register_FuseBackward_Operation(name, bool, NPY_BOOL, inner_loop_body,       \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, byte, NPY_BYTE, inner_loop_body,       \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, ubyte, NPY_UBYTE, inner_loop_body,     \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, short, NPY_SHORT, inner_loop_body,     \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, ushort, NPY_USHORT, inner_loop_body,   \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, int, NPY_INT, inner_loop_body,         \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, uint, NPY_UINT, inner_loop_body,       \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, long, NPY_LONG, inner_loop_body,       \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, ulong, NPY_ULONG, inner_loop_body,     \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, longlong, NPY_LONGLONG,                \
-                                  inner_loop_body, __VA_ARGS__);               \
-  Register_FuseBackward_Operation(name, ulonglong, NPY_ULONGLONG,              \
-                                  inner_loop_body, __VA_ARGS__);               \
-  Register_FuseBackward_Operation(name, float, NPY_FLOAT, inner_loop_body,     \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, double, NPY_DOUBLE, inner_loop_body,   \
-                                  __VA_ARGS__);                                \
-  Register_FuseBackward_Operation(name, longdouble, NPY_LONGDOUBLE,            \
-                                  inner_loop_body, __VA_ARGS__);               \
-  Register_FuseBackward_Operation(name, half, NPY_HALF, inner_loop_body,       \
-                                  __VA_ARGS__);
-
 /*! @function
 @param  name  backward_fn_name [ sin, cos, etc.]
 @param  type  C-type [ long, int, float, double, etc.]
@@ -103,19 +71,6 @@
                                   universal_loop_body, __VA_ARGS__);           \
   Register_FuseBackward_Operation(name, ulonglong, ulonglong, NPY_ULONGLONG,   \
                                   universal_loop_body, __VA_ARGS__);
-
-#define Register_FuseBackward_Operation_Err_Int(name, ...)                     \
-  Register_FuseBackward_Operation_Err(name, bool, __VA_ARGS__);                \
-  Register_FuseBackward_Operation_Err(name, byte, __VA_ARGS__);                \
-  Register_FuseBackward_Operation_Err(name, ubyte, __VA_ARGS__);               \
-  Register_FuseBackward_Operation_Err(name, short, __VA_ARGS__);               \
-  Register_FuseBackward_Operation_Err(name, ushort, __VA_ARGS__);              \
-  Register_FuseBackward_Operation_Err(name, int, __VA_ARGS__);                 \
-  Register_FuseBackward_Operation_Err(name, uint, __VA_ARGS__);                \
-  Register_FuseBackward_Operation_Err(name, long, __VA_ARGS__);                \
-  Register_FuseBackward_Operation_Err(name, ulong, __VA_ARGS__);               \
-  Register_FuseBackward_Operation_Err(name, longlong, __VA_ARGS__);            \
-  Register_FuseBackward_Operation_Err(name, ulonglong, __VA_ARGS__);
 
 #define Register_FuseBackward_Operation_Err_Int(name, ...)                     \
   Register_FuseBackward_Operation_Err(name, bool, __VA_ARGS__);                \

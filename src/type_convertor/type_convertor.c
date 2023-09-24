@@ -17,38 +17,27 @@ int gloabal_float_type = NPY_FLOAT;
   case ADD:                                                                    \
   case SUB:                                                                    \
   case MUL:                                                                    \
+  case MOD:                                                                    \
+  case BITWISE_AND:                                                            \
+  case BITWISE_OR:                                                             \
+  case BITWISE_XOR:                                                            \
+  case SQUARE:                                                                 \
+  case DIVMOD:                                                                 \
+  case WHERE:                                                                  \
     if (is_float_number(b_dtype))                                              \
       return float_type_based_on_size(max(a_size, b_size));                    \
     else                                                                       \
       return max(a_dtype, b_dtype);                                            \
   case DIV:                                                                    \
     return float_type_based_on_size(max(a_size, b_size));                      \
-  case MOD:                                                                    \
-    if (is_float_number(b_dtype))                                              \
-      return float_type_based_on_size(max(a_size, b_size));                    \
-    else                                                                       \
-      return max(a_dtype, b_dtype);                                            \
   case POW:                                                                    \
     return gloabal_float_type;                                                 \
   case FLOOR_DIV:                                                              \
     return max(a_dtype, b_dtype);                                              \
-  case BITWISE_AND:                                                            \
-  case BITWISE_OR:                                                             \
-  case BITWISE_XOR:                                                            \
-    if (is_float_number(b_dtype))                                              \
-      return float_type_based_on_size(max(a_size, b_size));                    \
-    else                                                                       \
-      return max(a_dtype, b_dtype);                                            \
   case LSHIFT:                                                                 \
   case RSHIFT:                                                                 \
     if (is_float_number(b_dtype))                                              \
       return -1;                                                               \
-    else                                                                       \
-      return max(a_dtype, b_dtype);                                            \
-  case SQUARE:                                                                 \
-  case DIVMOD:                                                                 \
-    if (is_float_number(b_dtype))                                              \
-      return float_type_based_on_size(max(a_size, b_size));                    \
     else                                                                       \
       return max(a_dtype, b_dtype);                                            \
   default:                                                                     \
@@ -61,38 +50,27 @@ int gloabal_float_type = NPY_FLOAT;
   case ADD:                                                                    \
   case SUB:                                                                    \
   case MUL:                                                                    \
+  case MOD:                                                                    \
+  case BITWISE_AND:                                                            \
+  case BITWISE_OR:                                                             \
+  case BITWISE_XOR:                                                            \
+  case SQUARE:                                                                 \
+  case DIVMOD:                                                                 \
+  case WHERE:                                                                  \
     if (is_float_number(b_dtype))                                              \
       return float_type_based_on_size(max(a_size, b_size));                    \
     else                                                                       \
       return max(a_dtype, b_dtype);                                            \
   case DIV:                                                                    \
     return float_type_based_on_size(max(a_size, b_size));                      \
-  case MOD:                                                                    \
-    if (is_float_number(b_dtype))                                              \
-      return float_type_based_on_size(max(a_size, b_size));                    \
-    else                                                                       \
-      return max(a_dtype, b_dtype);                                            \
   case POW:                                                                    \
     return gloabal_float_type;                                                 \
   case FLOOR_DIV:                                                              \
     return max(a_dtype, b_dtype);                                              \
-  case BITWISE_AND:                                                            \
-  case BITWISE_OR:                                                             \
-  case BITWISE_XOR:                                                            \
-    if (is_float_number(b_dtype))                                              \
-      return float_type_based_on_size(max(a_size, b_size));                    \
-    else                                                                       \
-      return max(a_dtype, b_dtype);                                            \
   case LSHIFT:                                                                 \
   case RSHIFT:                                                                 \
     if (is_float_number(b_dtype))                                              \
       return -1;                                                               \
-    else                                                                       \
-      return max(a_dtype, b_dtype);                                            \
-  case SQUARE:                                                                 \
-  case DIVMOD:                                                                 \
-    if (is_float_number(b_dtype))                                              \
-      return float_type_based_on_size(max(a_size, b_size));                    \
     else                                                                       \
       return max(a_dtype, b_dtype);                                            \
   default:                                                                     \
@@ -647,24 +625,23 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
     case MUL:
     case DIV:
     case MOD:
+    case SQUARE:
+    case DIVMOD:
+    case WHERE:
+    case BITWISE_AND:
+    case BITWISE_OR:
+    case BITWISE_XOR:
       return float_type_based_on_size(max(a_size, b_size));
     case POW:
       return gloabal_float_type;
     case FLOOR_DIV:
       return max(a_dtype, b_dtype);
-    case BITWISE_AND:
-    case BITWISE_OR:
-    case BITWISE_XOR:
-      return float_type_based_on_size(max(a_size, b_size));
     case LSHIFT:
     case RSHIFT:
       PyErr_SetString(
           PyExc_TypeError,
           "unsupported operand type(s) for >> or <<: 'float' and 'float'");
       return -1;
-    case SQUARE:
-    case DIVMOD:
-      return float_type_based_on_size(max(a_size, b_size));
     default:
       return max(a_dtype, b_dtype);
     }
@@ -687,6 +664,11 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
     case MUL:
     case DIV:
     case MOD:
+    case WHERE:
+    case SQUARE:
+    case BITWISE_AND:
+    case BITWISE_OR:
+    case BITWISE_XOR:
       return float_type_based_on_size(max(a_size, b_size));
     case POW:
       return gloabal_float_type;
@@ -695,18 +677,12 @@ int binary_result_type(int op, int a_dtype, int a_size, int b_dtype,
         return float_type_based_on_size(max(a_size, b_size));
       else
         return gloabal_float_type;
-    case BITWISE_AND:
-    case BITWISE_OR:
-    case BITWISE_XOR:
-      return float_type_based_on_size(max(a_size, b_size));
     case LSHIFT:
     case RSHIFT:
       PyErr_SetString(
           PyExc_TypeError,
           "unsupported operand type(s) for >> or <<: 'float' and 'float'");
       return -1;
-    case SQUARE:
-      return float_type_based_on_size(max(a_size, b_size));
     default:
       return max(a_dtype, b_dtype);
     }

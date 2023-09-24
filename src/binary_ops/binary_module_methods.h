@@ -59,4 +59,5 @@ PyObject *nb_module_mod(PyObject *numboost_module, PyObject *args,
                         PyObject *kwds);
 PyObject *nb_module_fdiv(PyObject *numboost_module, PyObject *args,
                          PyObject *kwds);
+PyObject *nb_module_where(PyObject *numboost_module, PyObject *args, PyObject *kwds);
 #endif // NUMBOOST_BINARY_PYTHON_METHODS_H

@@ -30,7 +30,7 @@ PyObject *astype(Tensor *self, PyObject *const *args, size_t nargsf) {
 
 PyObject *__str__(Tensor *self) {
   DEBUG_PRINT("Calling __str__\n");
-  char *result, *dest, *prefix = "Tensor(", *end = ")\n";
+  char *result, *dest, *prefix = "\nTensor(", *end = ")\n";
   if (TRACK) {
     prefix = "\n\tTensor(";
     end = ")";
@@ -97,7 +97,7 @@ PyObject *__str__(Tensor *self) {
         "<",
         self->grad_fn,
         ">",
-        ")\n"};
+        ")"};
     uint64_t string_array_len = sizeof(string_array) / sizeof(string_array[0]);
     uint64_t string_total_len = 1;
     for (uint64_t i = 0; i < string_array_len; i++) {

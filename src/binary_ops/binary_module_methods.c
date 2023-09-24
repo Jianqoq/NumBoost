@@ -4,6 +4,7 @@
 #include "../python_magic/python_math_magic.h"
 #include "../tensor.h"
 #include "../tensor_creation/creation_def.h"
+#include "../ufunc_ops/ufunc_def.h"
 #include "binary_op_def.h"
 
 static char *keyword_list[] = {"a", "b", "out", NULL};
@@ -57,4 +58,125 @@ PyObject *nb_module_pow(PyObject *numboost_module, PyObject *args,
       store_power((Tensor *)to_return, power);
     return to_return;
   }
+}
+
+PyObject *nb_module_where(PyObject *numboost_module, PyObject *args,
+                          PyObject *kwds) {
+  (void)numboost_module;
+  PyObject *condition = NULL, *x = NULL, *y = NULL, *exact_indice = NULL;
+  char *nb_where_kws_list[] = {"condition", "x", "y", "exact_indice", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOp", nb_where_kws_list,
+                                   &condition, &x, &y, &exact_indice)) {
+    return NULL;
+  }
+  PyArrayObject *condition_ = NULL;
+  if (Py_IS_TYPE(condition, Tensor_type)) {
+    condition_ = (PyArrayObject *)((Tensor *)condition)->data;
+  } else {
+    PyErr_SetString(PyExc_TypeError, "condition must be Tensor");
+    return NULL;
+  }
+  if (x == NULL && y == NULL) {
+    npy_bool *condition_data = (npy_bool *)PyArray_DATA(condition_);
+    npy_intp size = PyArray_SIZE(condition_);
+    npy_intp cnt = 0;
+    npy_intp i;
+    int thread_num = 1;
+    npy_intp *threads_cnt = (npy_intp *)malloc(sizeof(npy_intp) * thread_num);
+#pragma omp parallel num_threads(thread_num) reduction(+ : cnt)
+    {
+      int tid = omp_get_thread_num();
+      threads_cnt[tid] = 0;
+#pragma omp for
+      for (i = 0; i < size; ++i) {
+        if (condition_data[i]) {
+          threads_cnt[tid]++;
+          cnt++;
+        }
+      }
+    }
+    npy_intp start_idx = 0;
+    for (i = 0; i < thread_num; ++i) {
+      npy_intp tmp_cnt = threads_cnt[i];
+      threads_cnt[i] = start_idx;
+      start_idx += tmp_cnt;
+    }
+    if (exact_indice == NULL || exact_indice == Py_False) {
+      PyArrayObject *true_index =
+          (PyArrayObject *)PyArray_EMPTY(1, &cnt, NPY_INTP, 0);
+      npy_longlong *true_index_data = (npy_longlong *)PyArray_DATA(true_index);
+#pragma omp parallel num_threads(thread_num)
+      {
+        int tid = omp_get_thread_num();
+        npy_intp start = threads_cnt[tid];
+        npy_intp k;
+#pragma omp for
+        for (k = 0; k < size; ++k) {
+          if (condition_data[k]) {
+            true_index_data[start++] = k;
+          }
+        }
+      }
+      return tensor_empty((PyObject *)true_index);
+    } else {
+      PyArrayObject_fields *fields = (PyArrayObject_fields *)condition_;
+      PyArrayObject **true_index_arr =
+          (PyArrayObject **)malloc(sizeof(PyArrayObject *) * fields->nd);
+      npy_longlong **true_index_data =
+          (npy_longlong **)malloc(sizeof(npy_longlong *) * fields->nd);
+      for (i = 0; i < fields->nd; ++i) {
+        PyArrayObject *tmp =
+            (PyArrayObject *)PyArray_EMPTY(1, &cnt, NPY_INTP, 0);
+        Numboost_AssertNULL(tmp);
+        true_index_arr[i] = tmp;
+        true_index_data[i] = (npy_longlong *)PyArray_DATA(tmp);
+      }
+      npy_intp *shape = fields->dimensions;
+#pragma omp parallel num_threads(thread_num)
+      {
+        int tid = omp_get_thread_num();
+        npy_intp start = threads_cnt[tid];
+        npy_intp k;
+        npy_intp i;
+#pragma omp for
+        for (k = 0; k < size; ++k) {
+          if (condition_data[k]) {
+            npy_intp prg = k;
+            for (i = fields->nd - 1; i >= 0; i--) {
+              true_index_data[i][start] = prg % shape[i];
+              prg /= shape[i];
+            }
+            start++;
+          }
+        }
+      }
+      PyObject *result = PyDict_New();
+      for (i = fields->nd - 1; i >= 0; i--) {
+        PyObject *ret = tensor_empty((PyObject *)true_index_arr[i]);
+        char key[100];
+        sprintf(key, "axis: %lld", (long long)i);
+        Numboost_AssertNULL(ret);
+        PyObject *key_str = PyUnicode_FromString(key);
+        Numboost_AssertNULL(key_str);
+        PyDict_SetItem(result, key_str, ret);
+      }
+      return result;
+    }
+  } else {
+    if (x == NULL || y == NULL) {
+      PyErr_SetString(PyExc_TypeError, "x and y both must be present");
+      return NULL;
+    } else {
+      int a_type = any_to_type_enum(x);
+      int b_type = any_to_type_enum(y);
+      int a_size = type_2_size[a_type];
+      int b_size = type_2_size[b_type];
+      int result_type =
+          binary_result_type(WHERE, a_type, a_size, b_type, b_size);
+      PyObject **result = numboost_where(condition, x, y, NULL, 1, result_type);
+      Numboost_AssertNULL(result);
+      return tensor_empty(result[0]);
+    }
+  }
+  return NULL;
 }
