@@ -180,3 +180,86 @@ PyObject *nb_module_where(PyObject *numboost_module, PyObject *args,
   }
   return NULL;
 }
+
+PyObject *nb_module_any(PyObject *numboost_module, PyObject *args,
+                        PyObject *kwds) {
+  (void)numboost_module;
+  PyObject *a = NULL, *axis = NULL, *out = NULL, *keepdims = NULL,
+           *where = NULL;
+  char *nb_any_kws_list[] = {"a", "axis", "out", "keepdims", "where", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOp", nb_any_kws_list, &a,
+                                   &axis, &out, &keepdims, &where)) {
+    return NULL;
+  }
+  PyArrayObject *a_ = NULL;
+  if (Py_IS_TYPE(a, Tensor_type)) {
+    a_ = (PyArrayObject *)((Tensor *)a)->data;
+  } else {
+    PyErr_SetString(PyExc_TypeError, "a must be Tensor");
+    return NULL;
+  }
+  Py_ssize_t *axes = NULL;
+  if (axis == NULL || axis == Py_None) {
+    axes = NULL;
+  } else if (PyTuple_Check(axis) || PyList_Check(axis)) {
+    Py_ssize_t len = PySequence_Size(axis);
+    axes = (Py_ssize_t *)malloc(sizeof(Py_ssize_t) * len);
+    Py_ssize_t i;
+    for (i = 0; i < len; ++i) {
+      PyObject *tmp = PySequence_GetItem(axis, i);
+      Numboost_AssertNULL(tmp);
+      if (!PyLong_Check(tmp)) {
+        PyErr_SetString(PyExc_TypeError, "axis must be int");
+        return NULL;
+      }
+      axes[i] = PyLong_AsLong(tmp);
+      Py_DECREF(tmp);
+    }
+  } else {
+    PyErr_SetString(PyExc_TypeError, "axis must be list or tuple");
+    return NULL;
+  }
+  PyObject *out_ = NULL;
+  if (out == NULL || out == Py_None) {
+    out_ = NULL;
+  } else if (Py_IS_TYPE(out, Tensor_type)) {
+    out_ = ((Tensor *)out)->data;
+  } else {
+    PyErr_SetString(PyExc_TypeError, "out must be None or Tensor");
+    return NULL;
+  }
+  bool keepdims_ = false;
+  if (keepdims == NULL || keepdims == Py_None) {
+    keepdims_ = false;
+  } else if (PyBool_Check(keepdims)) {
+    keepdims_ = (keepdims == Py_True);
+  } else {
+    PyErr_SetString(PyExc_TypeError, "keepdims must be bool");
+    return NULL;
+  }
+  PyObject *where_ = NULL;
+  if (where == NULL || where == Py_None) {
+    where_ = NULL;
+  } else if (Py_IS_TYPE(where, Tensor_type)) {
+    where_ = ((Tensor *)where)->data;
+    int where_nd = PyArray_NDIM(where_);
+    npy_intp *where_shape = PyArray_SHAPE((PyArrayObject *)where_);
+    if (where_nd != PyArray_NDIM(a_)) {
+      PyErr_SetString(PyExc_TypeError, "where must have same shape with a");
+      return NULL;
+    }
+    npy_intp *a_shape = PyArray_SHAPE(a_);
+    int i;
+    for (i = 0; i < where_nd; ++i) {
+      if (where_shape[i] != a_shape[i]) {
+        PyErr_SetString(PyExc_TypeError, "where must have same shape with a");
+        return NULL;
+      }
+    }
+  } else {
+    PyErr_SetString(PyExc_TypeError, "where must be None or Tensor");
+    return NULL;
+  }
+  return NULL;
+  // PyObject *result = numboost_any(a_, where_, out_, axes, keepdims_);
+}
