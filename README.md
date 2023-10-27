@@ -1,4 +1,6 @@
 # NumBoost
+Migrating to Rust https://github.com/Jianqoq/utensor-rs
+
 Linux, Windows
 
 Python: 3.11+
